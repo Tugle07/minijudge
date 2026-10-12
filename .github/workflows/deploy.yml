@@ -1,0 +1,56 @@
+name: Test & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build lõi C & chấm bài mẫu
+        run: |
+          sudo apt-get update && sudo apt-get install -y gcc make
+          bash scripts/test-samples.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Kiểm tra cú pháp web & judge worker
+        run: |
+          cd web && npm ci
+          node --check server.js
+          for f in lib/*.js routes/*.js ../judge/worker.js; do node --check "$f"; done
+          for f in public/js/*.js public/js/views/*.js; do node --input-type=module --check < "$f"; done
+
+      - name: Test tích hợp API (server thật + judge thật)
+        run: cd web && npm test
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, minijudge]
+    concurrency: deploy-production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build & khởi động lại container
+        run: |
+          ENV_FILE="$HOME/minijudge.env"
+          [ -f "$ENV_FILE" ] || touch "$ENV_FILE"
+          docker compose --env-file "$ENV_FILE" up -d --build --remove-orphans
+          docker image prune -f
+
+      - name: Kiểm tra web đã chạy
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8080/api/problems > /dev/null && echo "Web OK" && exit 0
+            sleep 2
+          done
+          docker compose logs --tail 50 web judge
+          exit 1

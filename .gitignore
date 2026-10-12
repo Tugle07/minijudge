@@ -1,0 +1,7 @@
+build/
+data/
+web/node_modules/
+web/data/
+*.exe
+*.o
+.env

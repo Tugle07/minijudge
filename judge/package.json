@@ -1,0 +1,6 @@
+{
+  "name": "minijudge-judge-worker",
+  "private": true,
+  "type": "module",
+  "main": "worker.js"
+}

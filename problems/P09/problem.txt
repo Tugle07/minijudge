@@ -1,0 +1,6 @@
+title=Bốc thẻ hai đầu
+time_ms=1000
+memory_mb=256
+tests=11
+difficulty=Dễ
+samples=1,2

@@ -1,0 +1,67 @@
+name: minijudge
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    environment:
+      JUDGE_URL: http://judge:4000/judge
+      JUDGE_CONCURRENCY: "2"
+      COOKIE_SECURE: "1"
+      TRUST_CLOUDFLARE: "1"
+      REGISTER_CODE: ${REGISTER_CODE:-}
+      ADMIN_USERS: ${ADMIN_USERS:-}
+      CUSTOM_PROBLEMS_DIR: /problems-custom
+    volumes:
+      - minijudge-data:/data
+      - minijudge-problems:/problems-custom
+    ports:
+      - "127.0.0.1:8080:3000"
+    networks: [public, judge-net]
+    depends_on: [judge]
+    restart: unless-stopped
+
+  judge:
+    build:
+      context: .
+      dockerfile: docker/judge.Dockerfile
+    read_only: true
+    environment:
+      WORKER_CONCURRENCY: "2"
+      CUSTOM_PROBLEMS_DIR: /custom-problems
+    volumes:
+      # Bài tạo trên trang Admin: judge chỉ được đọc, không thấy database ở minijudge-data.
+      - minijudge-problems:/custom-problems:ro
+    tmpfs:
+      - /work:exec,size=256m,mode=1777
+      - /tmp:exec,size=128m,mode=1777
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, KILL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 1536m
+    cpus: 2.0
+    networks: [judge-net]
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    # Mặc định: Quick Tunnel (link *.trycloudflare.com, đổi mỗi lần khởi động lại).
+    # Có tên miền riêng: đặt TUNNEL_COMMAND="tunnel --no-autoupdate run" và TUNNEL_TOKEN trong file env.
+    command: ${TUNNEL_COMMAND:-tunnel --no-autoupdate --url http://web:3000}
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    networks: [public]
+    depends_on: [web]
+    restart: unless-stopped
+
+networks:
+  public: {}
+  judge-net:
+    internal: true
+
+volumes:
+  minijudge-data:
+  minijudge-problems:

@@ -1,0 +1,18 @@
+{
+  "name": "minijudge-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web front-end cho MiniJudge: goi judge-cli (C) de cham bai",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "w1",
+    "num": "01",
+    "short": "Tuần 1",
+    "title": "Tuần 1 — Làm quen",
+    "desc": "Nhập xuất, if/else, vòng lặp, tham lam đơn giản",
+    "tags": ["Nhập xuất", "Rẽ nhánh", "Vòng lặp", "Tham lam", "Sắp xếp"],
+    "difficulty": "Dễ",
+    "status": "open",
+    "deadline": null,
+    "hue": 200,
+    "problems": ["P01", "P06", "P07", "P04", "P03", "P05", "P08"]
+  },
+  {
+    "id": "w2",
+    "num": "02",
+    "short": "Tuần 2",
+    "title": "Tuần 2 — Hai con trỏ & Cửa sổ trượt",
+    "desc": "Two pointers, sliding window, prefix sum",
+    "tags": ["Hai con trỏ", "Cửa sổ trượt", "Tổng tiền tố"],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": "2026-10-20T23:59",
+    "hue": 280,
+    "problems": ["P17", "P16", "P14", "P13", "P09", "P10", "P11", "P02", "P12", "P15"]
+  }
+]

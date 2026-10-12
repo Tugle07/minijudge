@@ -1,0 +1,6 @@
+title=Đoạn con độ dài K có tổng lớn nhất
+time_ms=1000
+memory_mb=256
+tests=3
+difficulty=Trung bình
+samples=1,2

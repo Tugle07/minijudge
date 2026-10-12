@@ -1,0 +1,6 @@
+title=Tổng hai số
+time_ms=1000
+memory_mb=256
+tests=3
+difficulty=Dễ
+samples=1,2
