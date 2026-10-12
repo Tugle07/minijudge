@@ -1,0 +1,1 @@
+Trừ dần lượng nước qua từng bậc. Tiền có thể vượt $2 \cdot 10^9$ — dùng `long long`. Tính bằng số nguyên: tổng $= $ `tien * 115 / 100` (luôn chia hết với bảng giá này), tránh sai số số thực. (Đề cương mục 3.1, 3.6 — dạng bài thi giữa kỳ)

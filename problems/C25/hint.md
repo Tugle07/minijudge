@@ -1,0 +1,1 @@
+Với mỗi mã số chỉ cần lần xuất hiện **đầu tiên** và **cuối cùng**. Mã số tới $10^9$ nên không dùng được mảng đánh dấu — tạo mảng cặp `(giá trị, vị trí)` rồi sắp xếp, các phần tử cùng giá trị sẽ đứng liền nhau.

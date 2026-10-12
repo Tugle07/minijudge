@@ -1,0 +1,1 @@
+Hai vòng lặp mất $n^2/2 = 2 \cdot 10^{10}$ phép → TLE. Sắp xếp dãy (`qsort`), rồi với mỗi giá trị đếm số lần xuất hiện của giá trị $+K$ bằng **tìm kiếm nhị phân** hoặc **hai con trỏ**. Trường hợp $K = 0$ xử lý riêng.

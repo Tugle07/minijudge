@@ -1,0 +1,1 @@
+Giữ 4 biên `top, bottom, left, right`. Mỗi vòng điền: hàng trên (trái → phải), cột phải (xuống), hàng dưới (phải → trái), cột trái (lên), rồi thu hẹp biên. Kiểm tra `top <= bottom` và `left <= right` trước hai bước cuối.

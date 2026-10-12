@@ -1,0 +1,1 @@
+Dùng `qsort` với hàm so sánh tự viết: khác tính chẵn lẻ thì số chẵn đứng trước; cùng chẵn thì tăng; cùng lẻ thì giảm. Lưu ý số âm: `-3 % 2 == -1` trong C — kiểm tra lẻ bằng `x % 2 != 0`. Không trả về `a - b` (có thể tràn).

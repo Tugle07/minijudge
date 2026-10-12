@@ -1,0 +1,1 @@
+Có khoảng $2 \cdot 10^6$ cặp, mỗi cặp kiểm tra $s$ có chính phương không: `r = (long long)sqrt(s)`, rồi chỉnh `r` lên/xuống cho tới khi `r*r <= s < (r+1)*(r+1)`, so sánh `r*r == s`. Tổng tới $2 \cdot 10^9$ — vượt `int`.

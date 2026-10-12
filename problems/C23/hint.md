@@ -1,0 +1,1 @@
+Chỉ số dư khi chia cho $K$ là quan trọng: đếm `cnt[r]`. Dư $r$ ghép với dư $(K - r) \bmod K$. Trong C, `-7 % 4 == -3` — chuẩn hóa `r = ((x % K) + K) % K`. Kết quả tới $2 \cdot 10^{10}$: dùng `long long`.

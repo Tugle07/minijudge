@@ -1,0 +1,1 @@
+Chỉ dùng mảng tĩnh `#define MAX 101`. Sao chép mảng gốc trước khi sắp xếp (ý 7 dùng mảng gốc). Chèn: tìm vị trí đầu tiên có `a[i] < x`, dời các phần tử từ cuối sang phải một ô. Số lẻ âm: kiểm tra `a[i] % 2 != 0`. (Đề cương mục 3.7, 3.9 — dạng đề thi thực hành giữa kỳ)

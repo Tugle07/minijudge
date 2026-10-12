@@ -1,28 +1,321 @@
 [
   {
     "id": "w1",
-    "num": "01",
+    "num": "T1",
     "short": "Tuần 1",
     "title": "Tuần 1 — Làm quen",
+    "group": "Bài tập theo tuần",
     "desc": "Nhập xuất, if/else, vòng lặp, tham lam đơn giản",
-    "tags": ["Nhập xuất", "Rẽ nhánh", "Vòng lặp", "Tham lam", "Sắp xếp"],
+    "tags": [
+      "Nhập xuất",
+      "Rẽ nhánh",
+      "Vòng lặp",
+      "Tham lam"
+    ],
     "difficulty": "Dễ",
     "status": "open",
     "deadline": null,
     "hue": 200,
-    "problems": ["P01", "P06", "P07", "P04", "P03", "P05", "P08"]
+    "problems": [
+      "P01",
+      "P06",
+      "P07",
+      "P04",
+      "P03",
+      "P05",
+      "P08"
+    ]
   },
   {
     "id": "w2",
-    "num": "02",
+    "num": "T2",
     "short": "Tuần 2",
     "title": "Tuần 2 — Hai con trỏ & Cửa sổ trượt",
+    "group": "Bài tập theo tuần",
     "desc": "Two pointers, sliding window, prefix sum",
-    "tags": ["Hai con trỏ", "Cửa sổ trượt", "Tổng tiền tố"],
+    "tags": [
+      "Hai con trỏ",
+      "Cửa sổ trượt",
+      "Tổng tiền tố"
+    ],
     "difficulty": "Trung bình",
     "status": "open",
     "deadline": "2026-10-20T23:59",
     "hue": 280,
-    "problems": ["P17", "P16", "P14", "P13", "P09", "P10", "P11", "P02", "P12", "P15"]
+    "problems": [
+      "P17",
+      "P16",
+      "P14",
+      "P13",
+      "P09",
+      "P10",
+      "P11",
+      "P02",
+      "P12",
+      "P15"
+    ]
+  },
+  {
+    "id": "ch2",
+    "num": "02",
+    "short": "Chương 2",
+    "title": "Chương 2 — Kiểu dữ liệu & biểu thức",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "printf/scanf, chia nguyên và chia dư, ép kiểu, phép toán bit",
+    "tags": [
+      "Kiểu dữ liệu",
+      "Toán tử",
+      "Ép kiểu",
+      "Bitwise"
+    ],
+    "difficulty": "Dễ",
+    "status": "open",
+    "deadline": null,
+    "hue": 150,
+    "problems": [
+      "K01",
+      "K03",
+      "K02",
+      "K04"
+    ]
+  },
+  {
+    "id": "ch3a",
+    "num": "3.1",
+    "short": "Chương 3 · Rẽ nhánh & lặp",
+    "title": "Chương 3 — Rẽ nhánh & vòng lặp",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "if/else, switch, for/while/do-while, break, vòng lặp lồng nhau",
+    "tags": [
+      "if/else",
+      "switch",
+      "Vòng lặp"
+    ],
+    "difficulty": "Dễ",
+    "status": "open",
+    "deadline": null,
+    "hue": 120,
+    "problems": [
+      "K05",
+      "K06",
+      "K08",
+      "K09",
+      "K11",
+      "K10"
+    ]
+  },
+  {
+    "id": "ch3b",
+    "num": "3.6",
+    "short": "Chương 3 · Bài toán số học",
+    "title": "Chương 3 — Bài toán số học",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "Số thuận nghịch, nguyên tố, ước số, chính phương, hoàn hảo, phân tích thừa số",
+    "tags": [
+      "Vòng lặp",
+      "Số học"
+    ],
+    "difficulty": "Dễ",
+    "status": "open",
+    "deadline": null,
+    "hue": 95,
+    "problems": [
+      "C03",
+      "C04",
+      "C01",
+      "C02",
+      "C05",
+      "C08"
+    ]
+  },
+  {
+    "id": "ch3c",
+    "num": "3.7",
+    "short": "Chương 3 · Mảng một chiều",
+    "title": "Chương 3 — Mảng một chiều",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "Duyệt mảng, mảng đánh dấu, chèn/xóa, sắp xếp, tìm kiếm nhị phân",
+    "tags": [
+      "Mảng",
+      "Sắp xếp",
+      "Tìm kiếm"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": null,
+    "hue": 70,
+    "problems": [
+      "C14",
+      "C10",
+      "C11",
+      "K14",
+      "C12",
+      "C13"
+    ]
+  },
+  {
+    "id": "ch3d",
+    "num": "3.8",
+    "short": "Chương 3 · Mảng hai chiều",
+    "title": "Chương 3 — Mảng hai chiều",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "Ma trận, đường chéo, chuyển vị, nhân ma trận, xoắn ốc",
+    "tags": [
+      "Mảng 2 chiều",
+      "Ma trận"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": null,
+    "hue": 45,
+    "problems": [
+      "K15",
+      "C15",
+      "K16",
+      "C16",
+      "C17"
+    ]
+  },
+  {
+    "id": "gk",
+    "num": "GK",
+    "short": "Ôn thi giữa kỳ",
+    "title": "Ôn thi giữa kỳ — đề tổng hợp",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "Dạng đề thực hành giữa kỳ: tính tiền bậc thang, bài mảng nhiều ý (mảng tĩnh, tự cài đặt sắp xếp)",
+    "tags": [
+      "Giữa kỳ",
+      "Mảng",
+      "Bậc thang"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": null,
+    "hue": 20,
+    "problems": [
+      "K07",
+      "K12",
+      "K13"
+    ]
+  },
+  {
+    "id": "ch4",
+    "num": "04",
+    "short": "Chương 4",
+    "title": "Chương 4 — Hàm & đệ quy",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "Tách hàm, đệ quy Euclid, Fibonacci, Tháp Hà Nội, đệ quy có nhớ",
+    "tags": [
+      "Hàm",
+      "Đệ quy"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": null,
+    "hue": 330,
+    "problems": [
+      "C06",
+      "C07",
+      "C09",
+      "K17"
+    ]
+  },
+  {
+    "id": "ch5",
+    "num": "05",
+    "short": "Chương 5",
+    "title": "Chương 5 — Con trỏ, xâu ký tự & cấp phát động",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "Truyền tham chiếu, string.h, ctype.h, mảng con trỏ, malloc/realloc",
+    "tags": [
+      "Con trỏ",
+      "Xâu",
+      "Cấp phát động"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": null,
+    "hue": 300,
+    "problems": [
+      "K18",
+      "C18",
+      "C20",
+      "C19",
+      "K20",
+      "C29",
+      "K19",
+      "C33",
+      "C21",
+      "K21"
+    ]
+  },
+  {
+    "id": "ch6",
+    "num": "06",
+    "short": "Chương 6",
+    "title": "Chương 6 — Struct & enum",
+    "group": "Lộ trình Kỹ thuật lập trình",
+    "desc": "typedef struct, cấu trúc lồng nhau, mảng cấu trúc, sắp xếp theo nhiều tiêu chí, enum",
+    "tags": [
+      "Struct",
+      "Enum"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "deadline": null,
+    "hue": 270,
+    "problems": [
+      "K23",
+      "K22",
+      "C22",
+      "K24"
+    ]
+  },
+  {
+    "id": "nc1",
+    "num": "N1",
+    "short": "Nâng cao · Mảng",
+    "title": "Mảng nâng cao — đếm cặp, cộng dồn, ngăn xếp",
+    "group": "Nâng cao — tư duy thuật toán",
+    "desc": "Bài vượt chương trình, giới hạn lớn: cần thuật toán tốt hơn duyệt trâu",
+    "tags": [
+      "Đếm cặp",
+      "Tổng tiền tố",
+      "Ngăn xếp"
+    ],
+    "difficulty": "Khó",
+    "status": "open",
+    "deadline": null,
+    "hue": 10,
+    "problems": [
+      "C32",
+      "C30",
+      "C34",
+      "C23",
+      "C24",
+      "C25",
+      "C28"
+    ]
+  },
+  {
+    "id": "nc2",
+    "num": "N2",
+    "short": "Nâng cao · Số học",
+    "title": "Số học nâng cao",
+    "group": "Nâng cao — tư duy thuật toán",
+    "desc": "Thừa số nguyên tố, công thức Legendre, lũy thừa nhanh",
+    "tags": [
+      "Số học",
+      "Lũy thừa nhanh"
+    ],
+    "difficulty": "Khó",
+    "status": "open",
+    "deadline": null,
+    "hue": 0,
+    "problems": [
+      "C26",
+      "C31",
+      "C27"
+    ]
   }
 ]

@@ -1,0 +1,1 @@
+Công thức đệ quy: $f(n) = f(n-1) + f(n-2) + f(n-3)$, $f(0) = 1$. Đệ quy thuần gọi lại hàng tỉ lần → TLE; lưu kết quả đã tính vào mảng (đệ quy có nhớ) hoặc chuyển sang vòng lặp. Dùng `long long`. (Đề cương mục 4.5, slide 4.8)

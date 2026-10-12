@@ -1,0 +1,1 @@
+Cấu trúc lồng nhau: `struct NgaySinh { int ngay, thang, nam; };` nằm trong `struct SinhVien`. Viết hàm `int timTheoMa(SinhVien ds[], int n, const char *ma)` trả về vị trí hoặc $-1$. In ngày bằng `%02d/%02d/%04d`. (Đề cương mục 6.2, 6.3 — slide 6.2, 6.3)

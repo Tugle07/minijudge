@@ -1,0 +1,1 @@
+Khai báo `enum` và một mảng xâu `const char *TEN[] = {"CHO_XAC_NHAN", ...}` để in tên theo giá trị enum. Lưu đơn hàng trong `struct` có thành phần kiểu `enum TrangThai`. (Đề cương mục 6.4 — slide 6.4)

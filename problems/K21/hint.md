@@ -1,0 +1,1 @@
+Bắt đầu với `malloc` sức chứa nhỏ; khi đầy thì `realloc` gấp đôi. Luôn kiểm tra kết quả khác `NULL` và `free` khi xong. So sánh với trung bình mà không dùng số thực: `a[i] * n > tong` (kiểu `long long`). (Đề cương mục 5.8, slide 5.11)

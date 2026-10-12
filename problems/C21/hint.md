@@ -1,0 +1,1 @@
+Sau `scanf("%d", &t)` còn ký tự xuống dòng — đọc bỏ bằng `getchar()` trước khi `fgets`. Tách từ bằng `strtok(line, " \n")`, dùng `tolower` / `toupper` từ `<ctype.h>`, lưu các từ vào mảng 2 chiều để lấy được từ cuối.

@@ -1,0 +1,1 @@
+Đọc bằng `fgets` rồi xóa `'\n'`: `s[strcspn(s, "\n")] = 0`. `strcmp` chỉ đảm bảo dấu của kết quả, không phải đúng $\pm 1$. `strstr(s, t)` trả về con trỏ — vị trí là `p - s`; đếm tiếp bằng `strstr(p + 1, t)`. Mảng đích của `strcat` cần đủ chỗ cho cả hai xâu. (Đề cương mục 5.6, 5.7)

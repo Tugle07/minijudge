@@ -1,0 +1,1 @@
+`typedef struct { char ma[11]; char ten[51]; long long gia; int soLuong; } SanPham;` và mảng `SanPham ds[1000]`. Sau `scanf` mã, đọc bỏ ký tự xuống dòng trước khi `fgets` tên. Tổng có thể tới $10^{16}$. (Đề cương mục 6.1, 6.3 — slide 6.3)

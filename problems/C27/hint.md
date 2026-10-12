@@ -1,0 +1,1 @@
+Với $p$ nguyên tố, số mũ của $p$ trong $N!$ là $\lfloor N/p \rfloor + \lfloor N/p^2 \rfloor + \ldots$ (công thức Legendre — chia $N$ cho $p$ liên tục để tránh tràn số). Phân tích $k = \prod p^{e}$, đáp án là $\min \lfloor \text{mũ}_p(N!) / e \rfloor$.

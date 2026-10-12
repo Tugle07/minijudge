@@ -1,0 +1,1 @@
+Trung bình: `(double)tong / dem` và in `%.2lf`. Xóa mọi phần tử bằng $x$ trong một lần duyệt: giữ biến `k`, chỉ chép `a[i]` sang `a[k++]` khi `a[i] != x`. (Đề cương mục 3.7, 3.9 — dạng đề thi thực hành giữa kỳ)

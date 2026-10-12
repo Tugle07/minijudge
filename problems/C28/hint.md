@@ -1,0 +1,1 @@
+Cách thử từng ngày phía sau là $O(n^2)$ → TLE với dãy giảm dần. Dùng **ngăn xếp** (mảng + biến đỉnh) chứa chỉ số các ngày chưa có đáp án: khi gặp ngày $i$, lấy ra mọi ngày ở đỉnh có nhiệt độ nhỏ hơn $t_i$ và gán đáp án cho chúng. Mỗi chỉ số vào/ra ngăn xếp đúng một lần.

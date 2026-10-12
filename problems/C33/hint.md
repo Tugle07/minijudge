@@ -1,0 +1,1 @@
+Đọc bằng `fgets`, tách bằng `strtok(s, \" .,!?;:-\\r\\n\")`, đổi về chữ thường bằng `tolower`. Lưu các từ khác nhau vào mảng `char words[5000][101]` cùng mảng đếm; mỗi từ mới dùng `strcmp` để tìm trong danh sách.
