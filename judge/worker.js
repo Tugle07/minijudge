@@ -4,7 +4,8 @@ import { createRunner, ID_RE } from './judge-runner.js';
 
 /* Dịch vụ chấm bài chạy trong container riêng (không có database, không ra Internet).
  * POST /judge {problemId, source}      → kết quả chấm của judge-cli
- * POST /run   {source, input, timeMs}  → chạy thử với input tự nhập */
+ * POST /run   {source, input, timeMs}  → chạy thử với input tự nhập
+ * POST /check {source}                 → chỉ kiểm tra cú pháp (gcc -fsyntax-only), không chạy code */
 const PORT = Number(process.env.PORT || 4000);
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -18,6 +19,9 @@ const runner = createRunner({
 /* Giới hạn số bài chạy cùng lúc (WORKER_CONCURRENCY, mặc định 1). */
 const CONCURRENCY = Math.max(1, Number(process.env.WORKER_CONCURRENCY) || 1);
 const waiting = [];
+/* Kiểm tra cú pháp nhẹ nên không xếp hàng sau bài chấm, nhưng giới hạn số lượt chạy cùng lúc. */
+const MAX_CHECKS = 4;
+let checking = 0;
 const freeSlots = Array.from({ length: CONCURRENCY }, (_, i) => i);
 function enqueue(task) {
   return new Promise((resolve, reject) => {
@@ -52,6 +56,7 @@ const ROUTES = {
     typeof source === 'string' && typeof input === 'string'
       ? (slot) => runner.run(source, input, Number(timeMs) || 2000, Number(memoryMb) || 256, slot)
       : null,
+  '/check': ({ source }) => (typeof source === 'string' ? () => runner.check(source) : null),
 };
 
 const server = http.createServer((req, res) => {
@@ -76,6 +81,15 @@ const server = http.createServer((req, res) => {
       return send(res, 400, { error: 'invalid json' });
     }
     if (!task) return send(res, 400, { error: 'invalid input' });
+    if (req.url === '/check') {
+      if (checking >= MAX_CHECKS) return send(res, 429, { ok: false, busy: true, log: '' });
+      checking += 1;
+      try {
+        return send(res, 200, await task());
+      } finally {
+        checking -= 1;
+      }
+    }
     try {
       send(res, 200, await enqueue(task));
     } catch (e) {

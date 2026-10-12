@@ -49,7 +49,7 @@ jobs:
       - name: Kiểm tra web đã chạy
         run: |
           for i in $(seq 1 30); do
-            curl -fsS http://127.0.0.1:8080/api/problems > /dev/null && echo "Web OK" && exit 0
+            curl -fsS http://127.0.0.1:8080/api/health && echo " Web + judge OK" && exit 0
             sleep 2
           done
           docker compose logs --tail 50 web judge

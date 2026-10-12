@@ -1,8 +1,9 @@
 import { api } from './api.js';
-import { avatarColor, currentTheme, esc, go, initials, themeButton, toast } from './ui.js';
+import { avatarColor, currentTheme, esc, go, initials, themeButton } from './ui.js';
 import * as authView from './views/auth.js';
 import * as homeView from './views/home.js';
 import * as problemView from './views/problem.js';
+import * as profileView from './views/profile.js';
 import * as rankView from './views/rank.js';
 import * as setView from './views/set.js';
 import * as submissionsView from './views/submissions.js';
@@ -11,12 +12,13 @@ const topbar = document.getElementById('topbar');
 const view = document.getElementById('view');
 
 const ROUTES = {
-  login: { view: authView, nav: null },
-  home: { view: homeView, nav: 'home' },
-  set: { view: setView, nav: 'home' },
-  problem: { view: problemView, nav: 'home' },
-  submissions: { view: submissionsView, nav: 'submissions' },
-  rank: { view: rankView, nav: 'rank' },
+  login: { view: authView, nav: null, title: 'Đăng nhập' },
+  home: { view: homeView, nav: 'home', title: 'Bài tập' },
+  set: { view: setView, nav: 'home', title: 'Khối bài' },
+  problem: { view: problemView, nav: 'home', title: 'Đề bài' },
+  submissions: { view: submissionsView, nav: 'submissions', title: 'Bài nộp của tôi' },
+  rank: { view: rankView, nav: 'rank', title: 'Bảng xếp hạng' },
+  profile: { view: profileView, nav: 'profile', title: 'Hồ sơ' },
 };
 const NAV = [
   ['home', 'Bài tập'],
@@ -76,7 +78,7 @@ document.addEventListener('click', async (e) => {
   if (act === 'admin') location.href = '/admin.html';
   if (act === 'profile') {
     menu.hidden = true;
-    toast('Trang hồ sơ sẽ có trong bản cập nhật sau.');
+    go('#/profile');
   }
   if (act === 'logout') {
     await api('/api/logout', { method: 'POST' });
@@ -102,6 +104,7 @@ async function router() {
   window.scrollTo(0, 0);
   if (route.nav) renderTopbar(route.nav);
   else topbar.hidden = true;
+  document.title = `${page === 'problem' && arg ? decodeURIComponent(arg) : route.title} · MiniJudge`;
 
   try {
     const ctx = { view, user: app.user, arg: arg && decodeURIComponent(arg), extra, onLoggedIn };

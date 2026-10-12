@@ -162,3 +162,9 @@ button.trow:hover:not(:disabled) { background: var(--bg3); }
 
 @media (min-width: 820px) { .narrow-only { display: none !important; } }
 @media (max-width: 819px) { .wide-only { display: none !important; } }
+
+/* Tắt ligature của font code (vd == thành một ký hiệu liền) để người mới thấy đúng từng ký tự đã gõ. */
+code, pre, kbd, samp, textarea, .mono, .cm-editor, .cm-content {
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+}

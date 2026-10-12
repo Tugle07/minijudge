@@ -18,6 +18,7 @@ export async function createJudgeClient({ judgeUrl, judgeBin, problemsDir, custo
     return {
       judge: (problemId, source, { origin } = {}) => post('/judge', { problemId, source, origin }),
       run: (source, input, timeMs, memoryMb) => post('/run', { source, input, timeMs, memoryMb }),
+      check: (source) => post('/check', { source }),
       health: async () => {
         const res = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
         return res.ok ? res.json() : { ok: false };

@@ -124,6 +124,40 @@ describe('MiniJudge API', () => {
     assert.equal(ce.data.verdict, 'CE');
   });
 
+  test('kiểm tra cú pháp khi đang gõ', async () => {
+    const bad = await api('/api/check', { method: 'POST', body: { source: 'int main(void) {\n    int n\n    return 0;\n}\n' } });
+    assert.equal(bad.data.ok, false);
+    assert.match(bad.data.log, /main\.c:3:\d+: error: expected/);
+    assert.doesNotMatch(bad.data.log, /[\\/]work[\\/]/);
+    const good = await api('/api/check', { method: 'POST', body: { source: AC_P01 } });
+    assert.equal(good.data.ok, true);
+  });
+
+  test('health công khai, có header bảo mật', async () => {
+    const res = await fetch(`${BASE}/api/health`);
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).ok, true);
+    const page = await fetch(`${BASE}/`);
+    const csp = page.headers.get('content-security-policy');
+    assert.match(csp, /script-src 'self' https:\/\/cdn\.jsdelivr\.net 'sha256-/);
+    assert.equal(page.headers.get('x-frame-options'), 'DENY');
+  });
+
+  test('hồ sơ cá nhân và đổi mật khẩu', async () => {
+    const p = await api('/api/me/profile');
+    assert.equal(p.data.username, 'sv_test');
+    assert.equal(p.data.solved, 1);
+    assert.equal(p.data.activity.length, 84);
+    assert.ok(p.data.activity[83] >= 2);
+    const wrong = await api('/api/me/password', { method: 'POST', body: { current: 'sai', next: 'matkhau-moi' } });
+    assert.equal(wrong.data.fields.current, 'Mật khẩu hiện tại không đúng');
+    const ok = await api('/api/me/password', { method: 'POST', body: { current: 'matkhau-test', next: 'matkhau-moi' } });
+    assert.equal(ok.status, 200);
+    assert.equal((await api('/api/me')).data.user.username, 'sv_test');
+    assert.equal((await client()('/api/login', { method: 'POST', body: { username: 'sv_test', password: 'matkhau-test' } })).status, 401);
+    assert.equal((await client()('/api/login', { method: 'POST', body: { username: 'sv_test', password: 'matkhau-moi' } })).status, 200);
+  });
+
   test('chỉ xem được bài nộp của chính mình', async () => {
     const other = client();
     await other('/api/register', { method: 'POST', body: { username: 'sv_khac', password: 'matkhau-test', code: CODE } });

@@ -76,6 +76,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
         title: b.title.trim().slice(0, 120),
         short: String(b.short || b.title.split(' — ')[0]).trim().slice(0, 40),
         num: String(b.num || (idx >= 0 ? sets[idx].num : String(sets.length + 1).padStart(2, '0'))).slice(0, 4),
+        group: String(b.group ?? (idx >= 0 ? sets[idx].group : '')).trim().slice(0, 60),
         desc: String(b.desc || '').slice(0, 200),
         tags: Array.isArray(b.tags) ? b.tags.map((t) => String(t).slice(0, 30)).slice(0, 10) : [],
         difficulty: ['Dễ', 'Trung bình', 'Khó'].includes(b.difficulty) ? b.difficulty : 'Trung bình',

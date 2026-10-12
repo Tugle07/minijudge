@@ -1,4 +1,28 @@
+import { explainHtml, parseGccLog } from '../gcc-explain.js';
 import { esc, SHIMMER, SPINNER, verdictAbbr, verdictLabel, verdictVar } from '../ui.js';
+
+/* Lỗi biên dịch dạng danh sách: bấm "Dòng N" để nhảy tới dòng đó, kèm giải thích tiếng Việt; log gốc thu gọn bên dưới. */
+export function compileErrorsHtml(log, title = 'Lỗi biên dịch') {
+  const items = parseGccLog(log);
+  const raw = `<details class="raw-log"><summary>Xem log gốc của gcc</summary><pre class="celog" tabindex="0">${esc(log || '(trống)')}</pre></details>`;
+  if (!items.length) return `<div class="celog-wrap"><span>${title} (gcc)</span><pre class="celog" tabindex="0">${esc(log || '(trống)')}</pre></div>`;
+  const errs = items.filter((i) => i.severity === 'error').length;
+  return `
+    <div class="celog-wrap">
+      <span>${title} · ${errs} lỗi${items.length > errs ? `, ${items.length - errs} cảnh báo` : ''}</span>
+      <ul class="err-list">${items
+        .slice(0, 12)
+        .map(
+          (i) => `
+        <li class="${i.severity}">
+          ${i.line ? `<button class="err-line" data-goto-line="${i.line}" title="Nhảy tới dòng ${i.line}">Dòng ${i.line}</button>` : '<span class="err-line">Liên kết</span>'}
+          <div><div class="err-vi">${i.explain ? explainHtml(i.explain, esc) : esc(i.message)}</div>${i.explain ? `<div class="err-gcc mono">${esc(i.message)}</div>` : ''}</div>
+        </li>`,
+        )
+        .join('')}</ul>
+      ${raw}
+    </div>`;
+}
 
 const testRow = (n, inner, time, mem) =>
   `<div class="test-row" role="row"><span class="mono muted">#${n}</span>${inner}<span class="num">${time}</span><span class="num">${mem}</span></div>`;
@@ -7,7 +31,7 @@ const head = `<div class="test-row head"><span>Test</span><span>Kết quả</spa
 function summary(sub, total) {
   const ok = sub.testsPassed ?? 0;
   const stat = `${sub.timeMs ?? 0} ms · ${sub.memoryKb ?? 0} KB`;
-  if (sub.verdict === 'CE') return 'Code chưa biên dịch được. Xem log bên dưới.';
+  if (sub.verdict === 'CE') return 'Code chưa biên dịch được. Bấm "Dòng …" bên dưới để tới chỗ lỗi.';
   if (sub.verdict === 'IE') return 'Hệ thống chấm gặp lỗi. Thử nộp lại sau ít phút.';
   if (sub.verdict === 'AC') return `${ok}/${total} test đúng · ${stat}`;
   return `Sai ở test #${ok + 1} · ${ok}/${total} test đúng · ${stat}`;
@@ -45,7 +69,7 @@ function warningsHtml(log) {
   return `
     <details class="warn-box">
       <summary>⚠ ${n} cảnh báo biên dịch <span class="faint">(-Wall) — nên sửa để code sạch hơn</span></summary>
-      <pre class="celog" tabindex="0">${esc(log)}</pre>
+      ${compileErrorsHtml(log, 'Cảnh báo')}
     </details>`;
 }
 
@@ -54,9 +78,7 @@ export function runResultHtml(run) {
   if (!run) return '<div class="result-empty">Nhập input rồi nhấn <b>Chạy</b>. Chạy thử không tính vào bài nộp.</div>';
   if (run.loading) return `<div class="judging"><div class="judging-line">${SPINNER}<span>Đang biên dịch và chạy…</span></div>${SHIMMER}</div>`;
   if (run.error) return `<div class="result-empty" style="color:var(--wa)">${esc(run.error)}</div>`;
-  if (run.verdict === 'CE') {
-    return `<div class="celog-wrap"><span>Lỗi biên dịch (gcc)</span><pre class="celog" tabindex="0">${esc(run.compile_log)}</pre></div>`;
-  }
+  if (run.verdict === 'CE') return compileErrorsHtml(run.compile_log);
   const ok = run.verdict === 'OK';
   const color = ok ? 'var(--ac)' : verdictVar(run.verdict);
   const label = ok ? 'Chạy xong' : verdictLabel(run.verdict);
@@ -95,9 +117,8 @@ export function resultHtml(state, totalTests) {
         <span class="summary">${esc(summary(sub, totalTests))}</span>
       </div>
     </div>`;
-  if (v === 'CE' || v === 'IE') {
-    return `${banner}<div class="celog-wrap"><span>Log biên dịch (gcc)</span><pre class="celog" tabindex="0">${esc(sub.compileLog || '(trống)')}</pre></div>`;
-  }
+  if (v === 'CE') return `${banner}${compileErrorsHtml(sub.compileLog)}`;
+  if (v === 'IE') return `${banner}<div class="celog-wrap"><span>Log hệ thống</span><pre class="celog" tabindex="0">${esc(sub.compileLog || '(trống)')}</pre></div>`;
   const rows = Array.from({ length: totalTests }, (_, i) => {
     const t = sub.tests[i];
     if (!t) return testRow(i + 1, '<span class="faint">Không chạy</span>', '—', '—');

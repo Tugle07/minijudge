@@ -38,6 +38,22 @@ function invoke(judgeBin, workRoot, files, buildArgs, env) {
   });
 }
 
+/* Chỉ kiểm tra cú pháp (gcc -fsyntax-only, không tạo file chạy, không chạy code) để báo lỗi ngay khi đang gõ. */
+function syntaxCheck(workRoot, source) {
+  return new Promise((resolve) => {
+    const dir = path.join(workRoot, crypto.randomUUID());
+    fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+    fs.writeFileSync(path.join(dir, 'main.c'), source, { mode: 0o644 });
+    const gcc = process.env.MJ_GCC || 'gcc';
+    const opts = { cwd: dir, timeout: 8000, maxBuffer: 1 << 18, windowsHide: true };
+    execFile(gcc, ['-std=c11', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', 'main.c'], opts, (err, _out, stderr) => {
+      fs.rmSync(dir, { recursive: true, force: true });
+      if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
+      resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
+    });
+  });
+}
+
 /* slot: số thứ tự luồng chấm (0, 1, …) → UID sandbox riêng 60000 + slot khi judge chạy bằng root. */
 const slotEnv = (slot) => (slot == null ? {} : { MJ_SANDBOX_UID: String(60000 + slot) });
 
@@ -54,6 +70,7 @@ export function createRunner({ judgeBin, problemsDir, customDir, workRoot }) {
         slotEnv(slot),
       ),
     health: async () => ({ ok: true }),
+    check: (source) => syntaxCheck(workRoot, source),
     run: (source, input, timeMs = 2000, memoryMb = 256, slot) =>
       invoke(
         judgeBin,

@@ -15,9 +15,22 @@ function failedSample(row, problem) {
   return { test: testNo, input: problem.samples[k].input, expected: problem.samples[k].output, output: row.fail_output };
 }
 
-export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit }) {
+export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit, checkLimit }) {
   const r = Router();
   r.use(auth.requireUser);
+
+  /* Kiểm tra cú pháp khi đang gõ: chỉ chạy gcc -fsyntax-only, không chạy chương trình. */
+  r.post('/check', checkLimit, async (req, res) => {
+    const { source } = req.body ?? {};
+    if (typeof source !== 'string' || Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn không hợp lệ' });
+    if (!judge.check) return res.json({ ok: true, log: '' });
+    try {
+      const { ok, log } = await judge.check(source);
+      res.json({ ok: Boolean(ok), log: log || '' });
+    } catch {
+      res.json({ ok: false, log: '', busy: true });
+    }
+  });
 
   r.post('/run', runLimit, async (req, res) => {
     const { problemId, source, input } = req.body ?? {};

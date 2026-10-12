@@ -63,6 +63,7 @@ function normalizeSet(s, i) {
     num: s.num || String(i + 1).padStart(2, '0'),
     short: s.short || String(s.title || '').split(' — ')[0] || s.id,
     title: s.title || s.id,
+    group: String(s.group || '').slice(0, 60),
     desc: s.desc || '',
     tags: Array.isArray(s.tags) ? s.tags : [],
     difficulty: s.difficulty || 'Trung bình',
@@ -81,11 +82,22 @@ export function createCatalog({ db, repoDir, customDir }) {
   const listSets = db.prepare('SELECT data FROM problem_sets ORDER BY position, id');
   const listMeta = db.prepare('SELECT id, status, tags, solution FROM problem_meta');
 
-  if (db.prepare('SELECT COUNT(*) AS n FROM problem_sets').get().n === 0) {
-    const seed = JSON.parse(readIfExists(path.join(repoDir, 'sets.json')) || '[]');
-    const insert = db.prepare('INSERT INTO problem_sets (id, data, position) VALUES (?, ?, ?)');
-    seed.forEach((s, i) => insert.run(String(s.id), JSON.stringify(normalizeSet(s, i)), i));
-  }
+  /* Khối mới thêm vào sets.json (qua git) được nạp vào DB đúng một lần; khối Admin đã xóa không bị nạp lại. */
+  const seed = JSON.parse(readIfExists(path.join(repoDir, 'sets.json')) || '[]');
+  const existing = db.prepare('SELECT id FROM problem_sets').all().map((r) => r.id);
+  const seededRow = db.prepare("SELECT value FROM settings WHERE key = 'seeded_sets'").get();
+  const seeded = new Set(seededRow ? JSON.parse(seededRow.value) : existing);
+  const insert = db.prepare('INSERT INTO problem_sets (id, data, position) VALUES (?, ?, ?)');
+  let position = db.prepare('SELECT COALESCE(MAX(position), -1) AS p FROM problem_sets').get().p;
+  seed.forEach((s, i) => {
+    const id = String(s.id);
+    if (seeded.has(id) || existing.includes(id)) return;
+    insert.run(id, JSON.stringify(normalizeSet(s, i)), ++position);
+    seeded.add(id);
+  });
+  db.prepare("INSERT INTO settings (key, value) VALUES ('seeded_sets', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(
+    JSON.stringify([...seeded, ...existing.filter((id) => !seeded.has(id))]),
+  );
 
   catalog.reload = () => {
     const meta = new Map(listMeta.all().map((m) => [m.id, m]));

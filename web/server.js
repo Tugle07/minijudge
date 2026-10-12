@@ -11,12 +11,14 @@ import { createJudgeClient, createJudgeQueue } from './lib/judge-queue.js';
 import { createProblemStore } from './lib/problem-store.js';
 import { createCatalog } from './lib/problems.js';
 import { clientIp, createRateLimit } from './lib/rate-limit.js';
+import { securityHeaders } from './lib/security.js';
 import { createSettings } from './lib/settings.js';
 import { createStats } from './lib/stats.js';
 import { adminProblemRoutes } from './routes/admin-problem-routes.js';
 import { adminRoutes } from './routes/admin-routes.js';
 import { authRoutes } from './routes/auth-routes.js';
 import { catalogRoutes } from './routes/catalog-routes.js';
+import { profileRoutes } from './routes/profile-routes.js';
 import { submissionRoutes } from './routes/submission-routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,7 +73,8 @@ const queue = createJudgeQueue({
 if (process.env.BACKUP !== '0') scheduleBackups(db, path.join(DATA_DIR, 'backups'));
 const authLimit = createRateLimit({ windowMs: 15 * 60_000, max: 20, message: 'Thử quá nhiều lần, đợi 15 phút rồi thử lại.' });
 const submitLimit = createRateLimit({ windowMs: 60_000, max: 6, message: 'Nộp quá nhanh, đợi 1 phút nhé' });
-const runLimit = createRateLimit({ windowMs: 60_000, max: 12, message: 'Chạy thử quá nhanh, đợi một chút nhé' });
+const runLimit = createRateLimit({ windowMs: 60_000, max: 30, message: 'Chạy thử quá nhanh, đợi một chút nhé' });
+const checkLimit = createRateLimit({ windowMs: 60_000, max: 40, message: 'Kiểm tra cú pháp quá nhanh' });
 
 for (const { id } of db.prepare("SELECT id FROM submissions WHERE verdict = 'PENDING' ORDER BY id").all()) {
   queue.push(id);
@@ -82,13 +85,24 @@ app.disable('x-powered-by');
 const smallJson = express.json({ limit: '128kb' });
 /* Upload test (Admin) tự đặt giới hạn lớn hơn ở route riêng. */
 app.use((req, res, next) => (/^\/api\/admin\/problems\/[^/]+\/tests$/.test(req.path) && req.method === 'POST' ? next() : smallJson(req, res, next)));
+app.use(securityHeaders(path.join(__dirname, 'public')));
 app.use(clientIp(TRUST_CLOUDFLARE));
 app.use(auth.loadUser);
 app.use(express.static(path.join(__dirname, 'public')));
 
+/* Công khai, không cần đăng nhập: dùng cho bước kiểm tra sau deploy và giám sát. */
+app.get('/api/health', async (_req, res) => {
+  let judgeOk = false;
+  try {
+    judgeOk = Boolean((await judge.health()).ok);
+  } catch {}
+  res.status(judgeOk ? 200 : 503).json({ ok: judgeOk, problems: catalog.problems.length, queue: queue.pending });
+});
+
 app.use('/api', authRoutes({ db, auth, authLimit, settings, adminUsers: ADMIN_USERS }));
 app.use('/api', catalogRoutes({ catalog, stats, auth, settings }));
-app.use('/api', submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit }));
+app.use('/api', submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit, checkLimit }));
+app.use('/api', profileRoutes({ db, catalog, stats, auth, authLimit }));
 app.use('/api/admin', adminRoutes({ db, catalog, auth, queue, judge, settings, adminStats }));
 app.use('/api/admin', adminProblemRoutes({ db, catalog, auth, judge, store, adminStats }));
 app.use('/api', (_req, res) => res.status(404).json({ error: 'API không tồn tại' }));

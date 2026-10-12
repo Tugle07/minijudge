@@ -57,12 +57,13 @@ export async function render(ctx) {
     const isNew = !set;
     const f = set
       ? { ...set, openAt: toLocal(set.openAt), deadline: toLocal(set.deadline) }
-      : { title: '', desc: '', hue: SWATCH_HUES[4], tags: [], difficulty: 'Trung bình', openAt: '', deadline: '', status: 'draft', problems: [] };
+      : { title: '', group: '', desc: '', hue: SWATCH_HUES[4], tags: [], difficulty: 'Trung bình', openAt: '', deadline: '', status: 'draft', problems: [] };
     let errors = {};
     const titleOf = (id) => problems.find((p) => p.id === id)?.title ?? id;
 
     const body = () => `
       <label class="afield"><span>Tên khối</span><input class="input ${errors.title ? 'err' : ''}" data-f="title" value="${esc(f.title)}" placeholder="vd. Tuần 3 — Sắp xếp & Tìm kiếm" />${errors.title ? `<span class="err-text">${esc(errors.title)}</span>` : ''}</label>
+      <label class="afield"><span>Nhóm</span><input class="input" data-f="group" value="${esc(f.group || '')}" list="set-groups" placeholder="vd. Lộ trình KTLT" /><datalist id="set-groups">${[...new Set(sets.map((s) => s.group).filter(Boolean))].map((g) => `<option value="${esc(g)}"></option>`).join('')}</datalist><span class="help">Trang chủ gom các khối cùng nhóm thành một mục, theo thứ tự khối.</span></label>
       <label class="afield"><span>Mô tả</span><input class="input" data-f="desc" value="${esc(f.desc)}" placeholder="Một dòng ngắn" /></label>
       <div class="afield"><span>Màu đại diện</span><div class="swatches">${SWATCH_HUES.map((h) => `<button type="button" class="${h === f.hue ? 'on' : ''}" style="background:${hueColor(h)}" data-hue="${h}" aria-label="Chọn màu" aria-pressed="${h === f.hue}"></button>`).join('')}</div></div>
       <div class="afield"><span>Nhãn chủ đề</span><div class="tag-input">${f.tags.map((t, i) => `<span class="chip-x">${esc(t)}<button type="button" data-untag="${i}" aria-label="Bỏ nhãn">×</button></span>`).join('')}<input data-tag placeholder="Nhập rồi Enter" /></div></div>

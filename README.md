@@ -96,6 +96,12 @@ bash scripts/test-samples.sh
 cd web && npm test
 ```
 
+Trình soạn code trên web dùng CodeMirror 6, đã đóng gói sẵn ở `web/public/vendor/codemirror.js` (không cần mạng/CDN). Chỉ khi đổi phiên bản thư viện mới cần build lại:
+
+```bash
+cd web && npm install && npm run build:editor
+```
+
 Test tích hợp chạy server thật + judge thật: 8 test luồng sinh viên, 5 test luồng Admin (tạo bài → test → kiểm tra lời giải → xuất bản → sinh viên nộp → chấm lại → khóa tài khoản…). CI chạy cả hai mỗi lần push.
 
 ## Thêm đề mới
