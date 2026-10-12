@@ -86,6 +86,18 @@ const smallJson = express.json({ limit: '128kb' });
 /* Upload test (Admin) tự đặt giới hạn lớn hơn ở route riêng. */
 app.use((req, res, next) => (/^\/api\/admin\/problems\/[^/]+\/tests$/.test(req.path) && req.method === 'POST' ? next() : smallJson(req, res, next)));
 app.use(securityHeaders(path.join(__dirname, 'public')));
+/* Sau Cloudflare: người dùng vào bằng http:// thì chuyển sang https:// (cookie đăng nhập chỉ gửi qua HTTPS). */
+if (TRUST_CLOUDFLARE) {
+  app.use((req, res, next) => {
+    let scheme = '';
+    try {
+      scheme = JSON.parse(req.get('cf-visitor') || '{}').scheme || '';
+    } catch {}
+    if (scheme === 'http' && (req.method === 'GET' || req.method === 'HEAD')) return res.redirect(301, `https://${req.get('host')}${req.originalUrl}`);
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000');
+    next();
+  });
+}
 app.use(clientIp(TRUST_CLOUDFLARE));
 app.use(auth.loadUser);
 app.use(express.static(path.join(__dirname, 'public')));
