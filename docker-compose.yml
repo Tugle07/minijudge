@@ -16,6 +16,8 @@ services:
     volumes:
       - minijudge-data:/data
       - minijudge-problems:/problems-custom
+    # Chỉ mở trên máy chủ (cho health check); người dùng vào qua Cloudflare Tunnel,
+    # để không ai gọi thẳng cổng này và giả header CF-Connecting-IP.
     ports:
       - "127.0.0.1:8080:3000"
     networks: [public, judge-net]
