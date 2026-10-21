@@ -46,6 +46,15 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     return p;
   }
 
+  /* Ai được xem bảng xếp hạng: Admin; thí sinh đã hoàn tất bài làm (bấm kết thúc hoặc hết giờ) nếu bật boardAfterFinish;
+   * mọi người sau giờ thi nếu Admin đã công bố kết quả. */
+  const canSeeBoard = (c, user, me) => {
+    if (user.role === 'admin') return true;
+    const ended = contests.phase(c) === 'ended';
+    if (ended && c.settings.publishResults) return true;
+    return Boolean(me && c.settings.boardAfterFinish !== false && (me.finished_at || ended));
+  };
+
   const publicContest = (c, user, me) => ({
     id: c.id,
     title: c.title,
@@ -59,6 +68,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     joined: Boolean(me),
     finished: Boolean(me?.finished_at),
     resultsPublished: Boolean(c.settings.publishResults),
+    canSeeBoard: canSeeBoard(c, user, me),
     problemCount: contests.problemsOf(c.id).length,
   });
 
@@ -233,15 +243,24 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     res.json({ ok: true });
   });
 
-  /* Bảng kết quả: chỉ khi cuộc thi đã kết thúc và Admin đã công bố. */
+  /* Bảng xếp hạng: xem điều kiện ở canSeeBoard. Trong giờ thi là bảng trực tiếp, kèm trạng thái đang làm / đã kết thúc. */
   r.get('/contests/:id/results', (req, res) => {
     const c = load(req, res);
     if (!c) return;
-    if (req.user.role !== 'admin' && (contests.phase(c) !== 'ended' || !c.settings.publishResults)) {
-      return res.status(403).json({ error: 'Kết quả chưa được công bố' });
+    if (!canSeeBoard(c, req.user, contests.participant(c.id, req.user.id))) {
+      return res.status(403).json({ error: 'Bạn chỉ xem được bảng xếp hạng sau khi hoàn tất bài làm' });
     }
     const board = contests.scoreboard(c.id);
-    res.json({ ...board, rows: board.rows.map(({ userId, ...row }) => row) });
+    const phase = contests.phase(c);
+    res.json({
+      ...board,
+      now: Date.now(),
+      phase,
+      rows: board.rows.map(({ userId, ...row }) => ({
+        ...row,
+        finished: phase === 'ended' || Boolean(contests.participant(c.id, userId)?.finished_at),
+      })),
+    });
   });
 
   return r;

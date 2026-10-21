@@ -562,7 +562,7 @@ export async function render(ctx) {
     const { contest } = state.info;
     const info = state.info;
     let board = null;
-    if (contest.phase === 'ended' && contest.resultsPublished) board = await api(`/api/contests/${cid}/results`).catch(() => null);
+    if (contest.canSeeBoard) board = await api(`/api/contests/${cid}/results`).catch(() => null);
     ctx.view.innerHTML = `
       <main class="page" style="max-width:900px">
         <button class="link-btn" data-go="#/contests" style="align-self:flex-start">‹ Danh sách cuộc thi</button>
@@ -576,13 +576,48 @@ export async function render(ctx) {
             ${info.problems.map((p) => `<div class="trow exam-sum-cols"><b class="mono">${esc(p.label)}</b><span class="ellipsis">${esc(p.title)}</span><span class="right mono muted">${p.tries}</span><b class="right mono">${scoreText(p.myScore, p.points)}</b></div>`).join('')}
             <div class="trow exam-sum-cols"><span></span><b>Tổng điểm</b><span></span><b class="right mono" style="font-size:16px">${Number(info.total.toFixed(2))}/${info.problems.reduce((s, p) => s + p.points, 0)}</b></div>
           </div>` : ''}
-        ${board ? `
-          <h2 class="section-title">Bảng kết quả</h2>
-          <div class="rank-scroll"><div class="table">
-            <div class="trow thead" style="grid-template-columns:52px minmax(160px,1fr) repeat(${board.problems.length},64px) 80px"><span>#</span><span>Thí sinh</span>${board.problems.map((p) => `<span class="right">${esc(p.label)}</span>`).join('')}<span class="right">Tổng</span></div>
-            ${board.rows.map((r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:52px minmax(160px,1fr) repeat(${board.problems.length},64px) 80px"><b class="mono">${r.rank}</b><span class="ellipsis">${esc(r.fullName || r.username)}</span>${r.cells.map((c) => `<span class="right mono muted">${c.score == null ? '·' : Number(c.score.toFixed(2))}</span>`).join('')}<b class="right mono">${Number(r.total.toFixed(2))}</b></div>`).join('')}
-          </div></div>` : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Kết quả chung sẽ được công bố sau khi cuộc thi kết thúc.</p>'}
+        <div data-board>${board ? boardHtml(board) : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Bảng xếp hạng hiện sau khi bạn hoàn tất bài làm.</p>'}</div>
       </main>`;
+    /* Trong giờ thi bảng xếp hạng là trực tiếp: tự cập nhật 15 giây một lần. */
+    if (board && board.phase === 'running') {
+      const refresh = async () => {
+        if (!state.alive) return;
+        const fresh = await api(`/api/contests/${cid}/results`).catch(() => null);
+        const box = ctx.view.querySelector('[data-board]');
+        if (fresh && box) box.innerHTML = boardHtml(fresh);
+        if (fresh?.phase === 'running') later(refresh, 15_000);
+      };
+      later(refresh, 15_000);
+    }
+  }
+
+  function boardHtml(b) {
+    const cols = `48px minmax(170px,1fr) repeat(${b.problems.length},72px) 84px`;
+    const max = b.problems.reduce((s, p) => s + p.points, 0);
+    const live = b.phase === 'running';
+    const working = b.rows.filter((r) => !r.finished).length;
+    const cell = (c, p) => {
+      if (c.score == null) return '<span class="right faint">·</span>';
+      const cls = c.score >= p.points ? 'full' : c.score > 0 ? 'part' : 'zero';
+      return `<span class="right mono board-cell ${cls}" title="${c.tries} lần nộp">${Number(c.score.toFixed(2))}</span>`;
+    };
+    return `
+      <div class="board-head">
+        <h2 class="section-title">Bảng xếp hạng${live ? ' <span class="board-live">trực tiếp</span>' : ''}</h2>
+        <span class="faint" style="font-size:13px">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài, cập nhật mỗi 15 giây` : ''} · bằng điểm thì ai đạt điểm đó sớm hơn xếp trên</span>
+      </div>
+      <div class="rank-scroll"><div class="table" style="min-width:${48 + 170 + b.problems.length * 72 + 84 + 64}px">
+        <div class="trow thead" style="grid-template-columns:${cols}"><span>#</span><span>Thí sinh</span>${b.problems.map((p) => `<span class="right" title="${esc(p.title)}">${esc(p.label)} <small class="faint">/${p.points}</small></span>`).join('')}<span class="right">Tổng /${max}</span></div>
+        ${b.rows
+          .map(
+            (r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:${cols}">
+              <b class="mono">${r.rank}</b>
+              <span class="rank-user"><span class="ellipsis" style="font-weight:550">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span><small>${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã kết thúc' : 'đang làm bài'}</small></span>
+              ${r.cells.map((c, i) => cell(c, b.problems[i])).join('')}
+              <b class="right mono">${Number(r.total.toFixed(2))}</b></div>`,
+          )
+          .join('') || '<div class="empty">Chưa có thí sinh.</div>'}
+      </div></div>`;
   }
 
   return () => {

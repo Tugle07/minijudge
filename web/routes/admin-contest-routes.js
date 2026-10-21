@@ -15,6 +15,7 @@ function readSettings(b) {
     ipPrefixes: list(b.ipPrefixes).map((s) => s.slice(0, 45)),
     allowUsers: list(b.allowUsers).map((s) => s.slice(0, 40)),
     publishResults: Boolean(b.publishResults),
+    boardAfterFinish: b.boardAfterFinish !== false,
     blockMultiScreen: b.blockMultiScreen !== false,
   };
 }

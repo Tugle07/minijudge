@@ -203,10 +203,18 @@ describe('Cuộc thi', () => {
     assert.equal((await sv1(`/api/contests/${cid}/submit`, { method: 'POST', body: { label: 'A', source: AC_P01 } })).status, 423, 'phiên cũ mất quyền');
   });
 
-  test('Nộp bài kết thúc rồi thì không nộp tiếp và mở lại luyện tập; kết quả chờ công bố', async () => {
+  test('Nộp bài kết thúc rồi thì không nộp tiếp, mở lại luyện tập và xem được bảng xếp hạng trực tiếp', async () => {
+    assert.equal((await sv1(`/api/contests/${cid}/results`)).status, 403, 'đang làm bài thì chưa xem bảng xếp hạng');
     assert.equal((await sv2(`/api/contests/${cid}/finish`, { method: 'POST' })).status, 200);
     assert.equal((await sv2(`/api/contests/${cid}/submit`, { method: 'POST', body: { label: 'A', source: AC_P01 } })).status, 409);
     assert.equal((await sv2('/api/home')).status, 200);
-    assert.equal((await sv2(`/api/contests/${cid}/results`)).status, 403);
+    const board = await sv2(`/api/contests/${cid}/results`);
+    assert.equal(board.status, 200);
+    assert.equal(board.data.phase, 'running');
+    assert.equal(board.data.rows.find((r) => r.username === 'sv_hai')?.finished, true);
+    assert.equal(board.data.rows.find((r) => r.username === 'sv_mot')?.finished, false);
+    assert.ok(board.data.rows.every((r) => !('userId' in r)));
+    assert.equal((await admin(`/api/admin/contests/${cid}`, { method: 'PUT', body: { settings: { boardAfterFinish: false } } })).status, 200);
+    assert.equal((await sv2(`/api/contests/${cid}/results`)).status, 403, 'Admin tắt tùy chọn thì không xem được');
   });
 });

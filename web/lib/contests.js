@@ -112,7 +112,7 @@ export function createContests(db, catalog) {
       startAt: row.start_at,
       endAt: row.end_at,
       status: row.status,
-      settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, blockMultiScreen: true, ...JSON.parse(row.settings || '{}') },
+      settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, ...JSON.parse(row.settings || '{}') },
       createdAt: row.created_at,
     };
 

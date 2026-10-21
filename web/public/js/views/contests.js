@@ -40,7 +40,7 @@ export async function render(ctx) {
           : c.phase === 'running'
             ? `Còn <b class="mono">${fmtCountdown(c.endAt - now)}</b>`
             : `Kết thúc lúc ${fmtTime(c.endAt)}`;
-      const cta = c.phase === 'running' ? (c.finished ? 'Xem bài đã nộp' : c.joined ? 'Tiếp tục làm bài' : 'Vào phòng thi') : c.phase === 'ended' ? 'Xem kết quả' : 'Xem thông tin';
+      const cta = c.phase === 'running' ? (c.finished ? (c.canSeeBoard ? 'Xem bảng xếp hạng' : 'Xem bài đã nộp') : c.joined ? 'Tiếp tục làm bài' : 'Vào phòng thi') : c.phase === 'ended' ? (c.canSeeBoard ? 'Xem bảng xếp hạng' : 'Xem kết quả') : 'Xem thông tin';
       return `
         <button class="contest-card ${c.phase}" data-go="#/contest/${c.id}">
           <div class="contest-card-top">
