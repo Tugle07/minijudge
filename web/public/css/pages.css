@@ -186,10 +186,17 @@
 
 /* ---------- Bài nộp của tôi / Xếp hạng ---------- */
 .sub-cols { grid-template-columns: 76px 130px minmax(0, 1fr) minmax(0, 190px) 180px; }
-.rank-cols { grid-template-columns: 56px minmax(0, 1fr) 72px repeat(var(--sets, 1), 64px) 130px; }
+.rank-cols { grid-template-columns: 52px minmax(180px, 1fr) 64px repeat(var(--cols, 1), minmax(52px, 80px)) 120px; }
+.rank-scroll { overflow-x: auto; }
+.rank-table { min-width: calc(52px + 180px + 64px + var(--cols, 1) * 52px + 120px + 48px); }
+.rank-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rank-ok { color: var(--ac); font-weight: 700; }
+.center { text-align: center; }
+.tab-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ac); margin-right: 7px; vertical-align: 2px; }
 @media (max-width: 819px) {
   .sub-cols { grid-template-columns: 64px minmax(0, 1fr) 56px; }
   .rank-cols { grid-template-columns: 40px minmax(0, 1fr) 56px; }
+  .rank-table { min-width: 0; }
 }
 .me-card {
   display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--r-md);

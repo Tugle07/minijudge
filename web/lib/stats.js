@@ -36,13 +36,14 @@ export function createStats(db, catalog) {
 
   function leaderboard() {
     const rows = new Map(
-      allUsers.all().map(({ username }) => [username, { username, total: 0, perSet: {}, lastAcAt: 0, setLastAcAt: {} }]),
+      allUsers.all().map(({ username }) => [username, { username, total: 0, perSet: {}, lastAcAt: 0, setLastAcAt: {}, solved: new Set() }]),
     );
     for (const { username, problem_id, at } of firstAcs.all()) {
       const row = rows.get(username);
       const setId = catalog.problemMap.get(problem_id)?.setId;
       if (!row || !setId) continue;
       row.total += 1;
+      row.solved.add(problem_id);
       row.lastAcAt = Math.max(row.lastAcAt, at);
       row.perSet[setId] = (row.perSet[setId] || 0) + 1;
       row.setLastAcAt[setId] = Math.max(row.setLastAcAt[setId] || 0, at);

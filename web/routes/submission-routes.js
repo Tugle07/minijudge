@@ -108,15 +108,21 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
   r.get('/leaderboard', (req, res) => {
     const rows = stats.leaderboard();
     const visible = catalog.visibleSets();
-    const setId = visible.some((s) => s.id === req.query.set) ? req.query.set : null;
+    const set = visible.find((s) => s.id === req.query.set) || null;
+    const setId = set ? set.id : null;
+    const problems = set ? catalog.visibleProblems(set) : [];
     const { sorted } = stats.rankOf(rows, req.user.username, setId);
     res.json({
-      sets: visible.map((s) => ({ id: s.id, short: s.short, status: s.status, count: catalog.visibleProblems(s).length })),
+      sets: visible.map((s) => ({
+        id: s.id, short: s.short, group: s.group || '', status: s.status, count: catalog.visibleProblems(s).length,
+      })),
       setId,
+      problems: problems.map((pid) => ({ id: pid, title: catalog.problemMap.get(pid)?.title || pid })),
       rows: sorted.map((r) => ({
         username: r.username,
         total: r.total,
         perSet: r.perSet,
+        solved: problems.filter((pid) => r.solved.has(pid)),
         lastAcAt: setId ? r.setLastAcAt[setId] || 0 : r.lastAcAt,
       })),
     });
