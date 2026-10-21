@@ -233,3 +233,5 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent); }
   .editor-open .pane-right { display: flex; }
   .editor-open .topbar, .editor-open .mobile-bar { display: none; }
 }
+.celog-wrap > .run-hint, .run-hint { display: block; padding: 8px 12px; border-left: 3px solid var(--tle); border-radius: var(--r-sm); background: color-mix(in oklch, var(--tle) 10%, transparent); color: var(--fg2); font-size: 13px; line-height: 1.5; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.exam-run .run-actions { margin-bottom: 8px; }

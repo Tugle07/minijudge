@@ -89,6 +89,7 @@ export function runResultHtml(run) {
         <span style="color:${color};font-size:14px;font-weight:600">${esc(label)}</span>
         <span class="mono faint" style="font-size:13px">${run.time_ms} ms · ${run.memory_kb} KB${ok ? '' : ` · exit ${run.exit_code}`}</span>
       </span>
+      ${ok && !run.output ? '<span class="run-hint">Chương trình chạy xong nhưng không in gì. Kiểm tra lại input đã đủ theo đề chưa (ví dụ có số test t thì phải có đủ t dòng dữ liệu phía sau), hoặc bấm "Dùng ví dụ" để chạy với input mẫu.</span>' : ''}
       <pre class="celog" tabindex="0">${esc(run.output) || '<span class="faint">(chương trình không in gì)</span>'}${run.truncated ? '\n<span class="faint">… (đã cắt bớt, chỉ hiện 4KB đầu)</span>' : ''}</pre>
     </div>${warningsHtml(run.compile_log)}`;
 }

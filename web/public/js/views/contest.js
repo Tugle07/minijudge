@@ -201,6 +201,7 @@ export async function render(ctx) {
             <div class="exam-panel">
               <details class="exam-run" data-run-box><summary>Chạy thử với input tự nhập</summary>
                 <textarea data-run-input spellcheck="false" placeholder="Nhập input…"></textarea>
+                <div class="run-actions" data-run-fill></div>
                 <div data-run-result></div>
               </details>
               <div data-subs></div>
@@ -352,6 +353,7 @@ export async function render(ctx) {
         </div>`;
       $('[data-statement]').scrollTop = 0;
       const runInput = $('[data-run-input]');
+      $('[data-run-fill]').innerHTML = `<button class="btn" data-run>Chạy</button>${p.samples.map((_, i) => `<button class="btn" data-fill="${i}">Dùng ví dụ ${i + 1}</button>`).join('')}<span class="faint" style="font-size:12.5px">Không tính điểm</span>`;
       if (runInput && !runInput.value) runInput.value = p.samples[0]?.input ?? '';
       await loadSubs();
     }
@@ -601,6 +603,12 @@ export async function render(ctx) {
         return guardState();
       }
       if (t.closest('[data-notice-ok]')) return ($('[data-notice]').hidden = true);
+      const fill = t.closest('[data-fill]');
+      if (fill && state.problem) {
+        const inp = $('[data-run-input]');
+        inp.value = state.problem.samples[Number(fill.dataset.fill)]?.input ?? '';
+        return inp.focus();
+      }
       const box = $('[data-confirm]');
       if (t.closest('[data-cancel-finish]')) return (box.hidden = true);
       if (t.closest('[data-finish]')) {
