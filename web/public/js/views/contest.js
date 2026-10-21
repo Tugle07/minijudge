@@ -255,8 +255,7 @@ export async function render(ctx) {
         <span class="rail-count"><b>${list.length} bài</b><small>Đã nộp ${done}/${list.length}</small></span>
         ${list
           .map(
-            (p) => `<button class="exam-tab ${p.label === state.label ? 'on' : ''} ${p.myScore == null ? 'todo' : p.myScore === p.points ? 'full' : 'part'}" data-label="${esc(p.label)}">
-              <b class="tab-label">${esc(p.label)}</b><span class="tab-text"><span class="ellipsis">${esc(p.title || '')}</span><small>${statusText(p)}</small></span></button>`,
+            (p) => `<button class="exam-tab ${p.label === state.label ? 'on' : ''} ${p.myScore == null ? 'todo' : p.myScore === p.points ? 'full' : 'part'}" data-label="${esc(p.label)}" title="${esc(p.label)}. ${esc(p.title || '')} · ${statusText(p)}" aria-label="Bài ${esc(p.label)}, ${statusText(p)}">${esc(p.label)}</button>`,
           )
           .join('')}`;
     }
@@ -268,7 +267,7 @@ export async function render(ctx) {
       const next = list[i + 1];
       return `<div class="exam-nav">
           ${prev ? `<button class="btn" data-label="${esc(prev.label)}">← Bài ${esc(prev.label)}</button>` : '<span></span>'}
-          ${next ? `<button class="btn-primary exam-next" data-label="${esc(next.label)}">Bài tiếp theo: ${esc(next.label)}. ${esc(next.title || '')} →</button>` : '<span class="faint" style="font-size:13.5px">Đây là bài cuối cùng.</span>'}
+          ${next ? `<button class="btn-primary exam-next" data-label="${esc(next.label)}">Bài tiếp theo: ${esc(next.label)} →</button>` : '<span class="faint" style="font-size:13.5px">Đây là bài cuối cùng.</span>'}
         </div>`;
     }
     async function openProblem(label) {
