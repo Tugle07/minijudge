@@ -153,12 +153,12 @@ export async function render(ctx) {
       <div class="exam" data-exam>
         <header class="exam-bar">
           <b class="exam-title ellipsis">${esc(contest.title)}</b>
-          <nav class="exam-tabs" data-tabs></nav>
           <div class="spacer"></div>
           <span class="exam-guard" data-guard title="Trạng thái giám sát"></span>
           <span class="exam-clock mono" data-clock></span>
-          <button class="btn" data-finish>Nộp bài &amp; kết thúc</button>
+          <button class="btn exam-finish" data-finish>Nộp bài &amp; kết thúc</button>
         </header>
+        <nav class="exam-rail" data-tabs aria-label="Danh sách bài thi"></nav>
         <div class="exam-body">
           <section class="exam-left" data-statement><div class="editor-loading">Đang tải đề…</div></section>
           <section class="exam-right">
@@ -181,6 +181,7 @@ export async function render(ctx) {
           </section>
         </div>
         <div class="exam-overlay" data-overlay hidden></div>
+        <div class="exam-overlay" data-confirm hidden></div>
       </div>`;
     document.body.classList.add('exam-mode');
     const $ = (s) => ctx.view.querySelector(s);
@@ -245,10 +246,30 @@ export async function render(ctx) {
     cleanups.push(() => editor.destroy?.());
 
     /* --- Đề bài + bài nộp --- */
+    /* Thanh chọn bài: luôn hiện đủ số bài + trạng thái từng bài để thí sinh không bỏ sót bài. */
+    const statusText = (p) => (p.myScore == null ? 'Chưa nộp' : `${scoreText(p.myScore, p.points)} điểm`);
     function drawTabs() {
-      $('[data-tabs]').innerHTML = state.info.problems
-        .map((p) => `<button class="exam-tab ${p.label === state.label ? 'on' : ''} ${p.myScore === p.points ? 'full' : p.myScore ? 'part' : ''}" data-label="${esc(p.label)}"><b>${esc(p.label)}</b><span class="mono">${scoreText(p.myScore, p.points)}</span></button>`)
-        .join('');
+      const list = state.info.problems;
+      const done = list.filter((p) => p.myScore != null).length;
+      $('[data-tabs]').innerHTML = `
+        <span class="rail-count"><b>${list.length} bài</b><small>Đã nộp ${done}/${list.length}</small></span>
+        ${list
+          .map(
+            (p) => `<button class="exam-tab ${p.label === state.label ? 'on' : ''} ${p.myScore == null ? 'todo' : p.myScore === p.points ? 'full' : 'part'}" data-label="${esc(p.label)}">
+              <b class="tab-label">${esc(p.label)}</b><span class="tab-text"><span class="ellipsis">${esc(p.title || '')}</span><small>${statusText(p)}</small></span></button>`,
+          )
+          .join('')}`;
+    }
+    /* Nút sang bài trước / bài tiếp theo ở cuối đề. */
+    function problemNav(label) {
+      const list = state.info.problems;
+      const i = list.findIndex((p) => p.label === label);
+      const prev = list[i - 1];
+      const next = list[i + 1];
+      return `<div class="exam-nav">
+          ${prev ? `<button class="btn" data-label="${esc(prev.label)}">← Bài ${esc(prev.label)}</button>` : '<span></span>'}
+          ${next ? `<button class="btn-primary exam-next" data-label="${esc(next.label)}">Bài tiếp theo: ${esc(next.label)}. ${esc(next.title || '')} →</button>` : '<span class="faint" style="font-size:13.5px">Đây là bài cuối cùng.</span>'}
+        </div>`;
     }
     async function openProblem(label) {
       if (state.label && editor.value) saveDraft(cid, state.label, editor.value);
@@ -259,6 +280,7 @@ export async function render(ctx) {
       state.problem = p;
       $('[data-statement]').innerHTML = `
         <div class="pane-left-inner">
+          <span class="exam-pos">Bài ${state.info.problems.findIndex((x) => x.label === p.label) + 1}/${state.info.problems.length}</span>
           <div class="prob-head"><h1 class="prob-title"><span class="mono">${esc(p.label)}.</span> ${esc(p.title)}</h1></div>
           <dl class="prob-facts">
             <div><dt>Thời gian</dt><dd class="num">${p.timeMs} ms</dd></div><div><dt>Bộ nhớ</dt><dd class="num">${p.memoryMb} MB</dd></div><div><dt>Điểm tối đa</dt><dd class="num">${p.points}</dd></div>
@@ -269,7 +291,9 @@ export async function render(ctx) {
             <p class="st-note">Mỗi subtask chỉ được điểm khi <b>đúng tất cả</b> test của subtask đó; sai 1 test thì subtask đó được 0 điểm. Điểm bài = tổng điểm các subtask đạt được, tính theo lần nộp cao điểm nhất của bạn.</p></div>
           <article class="statement">${renderMarkdown(p.statement)}</article>
           ${p.samples.length ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${p.samples.map((s, i) => `<div class="sample"><div><div class="sample-head">INPUT #${i + 1}</div><pre>${esc(s.input)}</pre></div><div><div class="sample-head">OUTPUT #${i + 1}</div><pre>${esc(s.output)}</pre></div></div>`).join('')}</div>` : ''}
+          ${problemNav(p.label)}
         </div>`;
+      $('[data-statement]').scrollTop = 0;
       const runInput = $('[data-run-input]');
       if (runInput && !runInput.value) runInput.value = p.samples[0]?.input ?? '';
       await loadSubs();
@@ -477,16 +501,36 @@ export async function render(ctx) {
     ctx.view.addEventListener('click', async (e) => {
       const t = e.target;
       const tab = t.closest('[data-label]');
-      if (tab) return openProblem(tab.dataset.label).catch(handleError);
+      if (tab) {
+        $('[data-confirm]').hidden = true;
+        return openProblem(tab.dataset.label).catch(handleError);
+      }
       if (t.closest('[data-submit]')) return submit();
       if (t.closest('[data-run]')) return runCustom();
       if (t.closest('[data-refs]')) {
         await enterFullscreen();
         return guardState();
       }
+      const box = $('[data-confirm]');
+      if (t.closest('[data-cancel-finish]')) return (box.hidden = true);
       if (t.closest('[data-finish]')) {
-        const done = state.info.problems.filter((p) => p.myScore != null).length;
-        if (!confirm(`Nộp bài và kết thúc? Bạn đã làm ${done}/${state.info.problems.length} bài. Sau khi kết thúc sẽ không nộp thêm được nữa.`)) return;
+        /* Hộp xác nhận ngay trong trang (confirm() của trình duyệt có thể làm thoát toàn màn hình). */
+        const list = state.info.problems;
+        const todo = list.filter((p) => p.myScore == null);
+        box.innerHTML = `<div class="exam-overlay-box exam-confirm-box">
+            <b>Nộp bài và kết thúc?</b>
+            ${todo.length ? `<p class="bad-text" style="margin:0">Bạn còn <b>${todo.length}</b> bài chưa nộp: ${todo.map((p) => esc(p.label)).join(', ')}.</p>` : '<p style="margin:0">Bạn đã nộp đủ các bài.</p>'}
+            <div class="confirm-list">${list.map((p) => `<button class="confirm-row ${p.myScore == null ? 'todo' : ''}" data-label="${esc(p.label)}"><b class="mono">${esc(p.label)}</b><span class="ellipsis">${esc(p.title || '')}</span><span>${statusText(p)}</span></button>`).join('')}</div>
+            <p style="margin:0">Sau khi kết thúc sẽ <b>không nộp thêm được nữa</b>, kể cả khi còn giờ.</p>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+              <button class="btn-primary" data-cancel-finish>Quay lại làm bài</button>
+              <button class="btn exam-finish" data-finish-yes>Kết thúc bài thi</button>
+            </div></div>`;
+        box.hidden = false;
+        return;
+      }
+      if (t.closest('[data-finish-yes]')) {
+        box.hidden = true;
         try {
           state.ending = true;
           await api(`/api/contests/${cid}/finish`, { method: 'POST' });
