@@ -114,6 +114,26 @@ async function editor(ctx, summary, problems, onSaved) {
   let errors = {};
   const pmap = new Map(problems.map((p) => [p.id, p]));
 
+  /* "1-5,8" → [1,2,3,4,5,8]; dùng để cảnh báo test chưa thuộc subtask nào. */
+  const testsOf = (spec, max) =>
+    String(spec || '').split(',').flatMap((part) => {
+      const [a, b = a] = part.trim().split('-').map(Number);
+      if (!a || !b || b < a) return [];
+      return Array.from({ length: Math.min(b, max) - a + 1 }, (_, k) => a + k).filter((x) => x >= 1 && x <= max);
+    });
+  const scoringNote = (cp, p) => {
+    const n = p?.tests ?? 0;
+    const used = new Set(cp.subtasks.flatMap((s) => testsOf(s.tests, n)));
+    const free = Array.from({ length: n }, (_, k) => k + 1).filter((x) => !used.has(x));
+    const one = cp.subtasks.length === 1 && n > 1 && used.size === n;
+    return `<div class="st-rule">
+        <span><b>Cách tính điểm:</b> mỗi subtask chỉ được điểm khi <b>đúng tất cả</b> test trong subtask đó; sai dù 1 test thì subtask đó được 0 điểm.
+        Điểm bài = tổng điểm các subtask đạt được; thí sinh nộp nhiều lần thì lấy lần cao điểm nhất.</span>
+        ${one ? `<span class="st-warn">Bài này đang có 1 subtask gồm cả ${n} test: đúng ${n - 1}/${n} test vẫn được 0 điểm. Muốn cho điểm từng phần, bấm "Chấm theo từng test" hoặc chia nhóm.</span>` : ''}
+        ${free.length ? `<span class="st-warn">Test ${free.join(', ')} chưa thuộc subtask nào nên không được tính điểm.</span>` : ''}
+      </div>`;
+  };
+
   const problemCard = (cp, i) => {
     const p = pmap.get(cp.problemId);
     const total = cp.subtasks.reduce((s, x) => s + (Number(x.points) || 0), 0);
@@ -142,7 +162,9 @@ async function editor(ctx, summary, problems, onSaved) {
         </table>
         <div style="display:flex;gap:8px;align-items:center"><button class="btn-line" style="height:30px" data-stadd="${i}">+ Subtask</button>
           <button class="btn-line" style="height:30px" data-steven="${i}" title="Chia đều 100 điểm cho từng nhóm test">Chia 100 điểm đều theo ${Math.min(5, p?.tests ?? 1)} nhóm</button>
+          <button class="btn-line" style="height:30px" data-steach="${i}" title="Mỗi test là một subtask, đúng bao nhiêu test được bấy nhiêu phần điểm">Chấm theo từng test</button>
           ${errors[`p${i}`] ? `<span class="err-text" style="color:var(--wa);font-size:13px">${esc(errors[`p${i}`])}</span>` : ''}</div>
+        ${scoringNote(cp, p)}
       </div>`;
   };
 
@@ -239,6 +261,15 @@ async function editor(ctx, summary, problems, onSaved) {
     } else if (d('strm')) {
       const [i, k] = d('strm').split(':').map(Number);
       f.problems[i].subtasks.splice(k, 1);
+    } else if (d('steach') != null) {
+      const cp = f.problems[Number(d('steach'))];
+      const n = Math.max(1, pmap.get(cp.problemId)?.tests ?? 1);
+      const base = Math.floor((100 / n) * 100) / 100;
+      cp.subtasks = Array.from({ length: n }, (_, k) => ({
+        name: `Test ${k + 1}`,
+        tests: `${k + 1}`,
+        points: k === n - 1 ? Math.round((100 - base * (n - 1)) * 100) / 100 : base,
+      }));
     } else if (d('steven') != null) {
       const cp = f.problems[Number(d('steven'))];
       const n = pmap.get(cp.problemId)?.tests ?? 1;

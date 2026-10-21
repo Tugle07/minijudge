@@ -65,6 +65,8 @@ body.exam-mode { overflow: hidden; }
 .exam-subtasks > .st-bar { display: flex; gap: 3px; height: 6px; margin: 4px 0 6px; }
 .st-bar span { flex: 1 1 0; border-radius: 2px; background: color-mix(in oklch, var(--accent) 55%, var(--bg3)); }
 .st-bar span:nth-child(even) { background: var(--accent); }
+.st-note { margin: 6px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; color: var(--fg2); line-height: 1.55; }
+.st-note b { color: var(--fg); }
 .exam-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in oklch, var(--bg) 88%, transparent); backdrop-filter: blur(6px); z-index: 60; }
 .exam-overlay-box { max-width: 460px; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; padding: 28px; border-radius: var(--r-xl); border: 1px solid var(--wa); background: var(--bg2); }
 .exam-overlay-box b { font-size: 18px; }

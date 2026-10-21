@@ -154,3 +154,6 @@
 .ed-foot .dirty i { width: 8px; height: 8px; border-radius: 50%; background: var(--tle); }
 .notice { padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line2); background: var(--bg2); font-size: 14px; color: var(--fg2); }
 .atable .pill { white-space: nowrap; }
+.st-rule { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: var(--r-sm); font-size: 13.5px; color: var(--fg2); line-height: 1.55; }
+.st-rule b { color: var(--fg); }
+.st-warn { color: var(--wa); font-weight: 500; }

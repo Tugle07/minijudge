@@ -88,7 +88,7 @@ export async function render(ctx) {
               <li>Bài làm ở chế độ <b>toàn màn hình</b>. Thoát toàn màn hình, chuyển tab hay chuyển sang ứng dụng khác đều được <b>ghi lại và báo giám thị</b>.</li>
               <li>Chỉ mở bài thi ở <b>một tab, một máy</b>. Mở ở tab/máy thứ hai sẽ bị chặn.</li>
               <li>Không dán code từ bên ngoài vào trình soạn thảo. Phần luyện tập bị khóa trong giờ thi.</li>
-              <li>Mỗi bài chia nhiều subtask; đúng hết các test của subtask thì được điểm subtask đó. Điểm của bài là lần nộp cao điểm nhất.</li>
+              <li>Mỗi bài chia nhiều subtask (nhóm test). Subtask chỉ được điểm khi <b>đúng tất cả</b> test trong nhóm; sai 1 test thì nhóm đó 0 điểm. Ví dụ subtask 1 gồm test 1–5 (40 điểm): đúng 5/5 được 40, đúng 4/5 được 0. Điểm bài là tổng các subtask đạt được, lấy lần nộp cao điểm nhất.</li>
               <li>Sau giờ thi, hệ thống so sánh code giữa các thí sinh để phát hiện bài giống nhau.</li>
             </ul>
           </div>
@@ -265,7 +265,8 @@ export async function render(ctx) {
           </dl>
           <div class="exam-subtasks"><b>Thang điểm</b>
             <div class="st-bar" aria-hidden="true">${p.subtasks.map((s) => `<span style="flex-grow:${Math.max(1, s.points)}"></span>`).join('')}</div>
-            ${p.subtasks.map((s, i) => `<div><span>Subtask ${i + 1}: ${esc(s.name)}</span><b class="mono">${s.points} điểm</b></div>`).join('')}</div>
+            ${p.subtasks.map((s, i) => `<div><span>Subtask ${i + 1}: ${esc(s.name)}${s.tests ? ` <span class="faint mono">· test ${esc(String(s.tests).replace(/-/g, '–'))}</span>` : ''}</span><b class="mono">${s.points} điểm</b></div>`).join('')}
+            <p class="st-note">Mỗi subtask chỉ được điểm khi <b>đúng tất cả</b> test của subtask đó; sai 1 test thì subtask đó được 0 điểm. Điểm bài = tổng điểm các subtask đạt được, tính theo lần nộp cao điểm nhất của bạn.</p></div>
           <article class="statement">${renderMarkdown(p.statement)}</article>
           ${p.samples.length ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${p.samples.map((s, i) => `<div class="sample"><div><div class="sample-head">INPUT #${i + 1}</div><pre>${esc(s.input)}</pre></div><div><div class="sample-head">OUTPUT #${i + 1}</div><pre>${esc(s.output)}</pre></div></div>`).join('')}</div>` : ''}
         </div>`;
@@ -275,7 +276,7 @@ export async function render(ctx) {
     }
     function subHtml(s) {
       const sts = s.subtasks?.length
-        ? `<div class="exam-st">${s.subtasks.map((st) => `<span class="${st.got ? 'ok' : 'no'}" title="${esc(st.name)}: đúng ${st.passedTests}/${st.tests} test">${st.got ? '✓' : '✗'} ${esc(st.name)} <b class="mono">${st.got}/${st.points}</b></span>`).join('')}</div>`
+        ? `<div class="exam-st">${s.subtasks.map((st) => `<span class="${st.got ? 'ok' : 'no'}">${st.got ? '✓' : '✗'} ${esc(st.name)} · đúng ${st.passedTests}/${st.tests} test · <b class="mono">${st.got}/${st.points} điểm</b></span>`).join('')}</div>`
         : '';
       return `<div class="exam-sub" data-sub="${s.id}">
           <div class="exam-sub-head">${badge(s.verdict)}<span>${esc(verdictLabel(s.verdict))}</span><span class="faint mono" style="font-size:12.5px">${s.verdict === 'PENDING' ? '' : statLine(s)}</span><div class="spacer"></div>
