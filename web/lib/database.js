@@ -125,4 +125,6 @@ function migrate(db) {
   if (!users.has('locked')) db.exec('ALTER TABLE users ADD COLUMN locked INTEGER NOT NULL DEFAULT 0');
   if (!users.has('last_seen')) db.exec('ALTER TABLE users ADD COLUMN last_seen INTEGER');
   if (!users.has('full_name')) db.exec("ALTER TABLE users ADD COLUMN full_name TEXT NOT NULL DEFAULT ''");
+  const parts = columnsOf(db, 'contest_participants');
+  if (parts.size && !parts.has('device')) db.exec("ALTER TABLE contest_participants ADD COLUMN device TEXT NOT NULL DEFAULT ''");
 }

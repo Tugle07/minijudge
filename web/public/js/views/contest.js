@@ -94,7 +94,9 @@ export async function render(ctx) {
   /* ---------- Sảnh chờ: luật thi, kiểm tra máy, nhập mã phòng ---------- */
   function lobby(mode) {
     const { contest } = state.info;
+    const touchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches;
     const checks = [
+      ...(contest.desktopOnly !== false ? [['Đang dùng máy tính (không phải điện thoại / máy tính bảng)', !touchOnly, 'Cuộc thi này chỉ làm trên máy tính của phòng thi']] : []),
       ['Trình duyệt hỗ trợ toàn màn hình', Boolean(document.documentElement.requestFullscreen)],
       ['Chỉ dùng một màn hình', !isExtended(), 'Rút màn hình phụ / máy chiếu trước khi vào thi'],
     ];
@@ -161,7 +163,7 @@ export async function render(ctx) {
       navigator.clipboard?.writeText('').catch(() => {});
       const fs = await enterFullscreen();
       try {
-        await api(`/api/contests/${cid}/join`, { method: 'POST', body: { code: box.querySelector('[data-code]')?.value ?? '', extended: isExtended() } });
+        await api(`/api/contests/${cid}/join`, { method: 'POST', body: { code: box.querySelector('[data-code]')?.value ?? '', extended: isExtended(), touch: touchOnly } });
       } catch (err) {
         if (isFullscreen()) document.exitFullscreen().catch(() => {});
         return showError(err.message);
@@ -228,8 +230,13 @@ export async function render(ctx) {
       el.textContent = `Đã ghi nhận ${state.vcount} lần rời bài`;
       el.title = 'Số lần hệ thống ghi nhận bạn rời bài thi (chuyển tab, đổi cửa sổ, thoát toàn màn hình, dán code từ ngoài…)';
     };
+    let lastViolationAt = 0;
     const violation = (type, detail, what) => {
       report(type, detail);
+      /* Nhiều tín hiệu trong cùng một lần rời (< 3 giây) chỉ tính 1 lần, khớp với cách server đếm. */
+      const merged = Date.now() - lastViolationAt < 3000;
+      lastViolationAt = Date.now();
+      if (merged) return;
       state.vcount += 1;
       drawVcount();
       const box = $('[data-notice]');
@@ -476,10 +483,30 @@ export async function render(ctx) {
       else if (isFullscreen()) report('fullscreen_enter', '');
       guardState();
     };
+    /* Mỗi lần rời bài là một "lượt rời": 1 dòng khi rời + 1 dòng khi quay lại, tính 1 vi phạm.
+     * Trình duyệt báo "ẩn trang" và "mất focus" riêng cho cùng một lần rời, nên gộp lại để không ghi trùng. */
+    let away = null;
+    let blurTimer = null;
+    const awayText = (kind) => (kind === 'tab_hidden' ? 'bạn đã rời khỏi trang thi' : 'bạn đã chuyển sang cửa sổ khác');
+    const startAway = (kind, at = Date.now()) => {
+      if (away || state.ending || state.unloading) return;
+      away = { kind, at };
+      violation(kind, kind === 'tab_hidden' ? 'Rời trang thi (chuyển tab hoặc thu nhỏ)' : 'Chuyển sang cửa sổ khác', awayText(kind));
+      leaveBeep();
+    };
+    const endAway = () => {
+      clearTimeout(blurTimer);
+      if (document.hidden || !document.hasFocus()) return;
+      blurAt = 0;
+      if (!away) return;
+      const sec = Math.max(1, Math.round((Date.now() - away.at) / 1000));
+      report('tab_visible', `Quay lại sau ${sec} giây`);
+      const b = $('[data-notice] .notice-text b');
+      if (b) b.textContent = `Hệ thống vừa ghi nhận: ${awayText(away.kind)} trong ${sec} giây`;
+      away = null;
+    };
     const onVis = () => {
       if (document.hidden) {
-        hiddenAt = Date.now();
-        state.hiddenCounted = false;
         if (state.unloading) {
           /* keepalive: yêu cầu vẫn được gửi xong dù trang đang đóng. */
           fetch(`/api/contests/${cid}/events`, {
@@ -487,36 +514,20 @@ export async function render(ctx) {
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ type: 'tab_hidden', detail: 'Tải lại hoặc đóng trang thi' }),
           }).catch(() => {});
-        }
-        else if (!state.ending) {
-          violation('tab_hidden', 'Rời trang thi', 'bạn đã rời khỏi trang thi');
-          leaveBeep();
-        }
-      } else if (hiddenAt) {
-        const sec = Math.round((Date.now() - hiddenAt) / 1000);
-        report('tab_visible', `Quay lại sau ${sec} giây`);
-        const box = $('[data-notice] .notice-text b');
-        if (box) box.textContent = `Hệ thống vừa ghi nhận: bạn đã rời khỏi trang thi trong ${sec} giây`;
-        hiddenAt = 0;
-      }
+        } else startAway('tab_hidden', blurAt || Date.now());
+      } else endAway();
       guardState();
     };
-    let blurBeepTimer = null;
     const onBlur = () => {
-      if (document.hidden) return;
+      if (document.hidden || away) return;
       blurAt = Date.now();
-      /* Chỉ bíp khi rời cửa sổ quá 1,5 giây, tránh kêu oan vì thông báo hệ thống thoáng qua. */
-      clearTimeout(blurBeepTimer);
-      blurBeepTimer = setTimeout(() => blurAt && !document.hasFocus() && leaveBeep(), 1500);
+      /* Rời cửa sổ dưới 1,5 giây (thông báo hệ thống thoáng qua) không tính. */
+      clearTimeout(blurTimer);
+      blurTimer = setTimeout(() => {
+        if (!document.hasFocus() && !document.hidden) startAway('blur', blurAt);
+      }, 1500);
     };
-    const onFocus = () => {
-      clearTimeout(blurBeepTimer);
-      if (blurAt && Date.now() - blurAt > 1500 && !state.ending) {
-        const sec = Math.round((Date.now() - blurAt) / 1000);
-        violation('blur', `Chuyển sang cửa sổ khác ${sec} giây`, `bạn đã chuyển sang cửa sổ khác trong ${sec} giây`);
-      }
-      blurAt = 0;
-    };
+    const onFocus = () => endAway();
     const onKey = (e) => {
       const k = e.key?.toLowerCase();
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) || (e.ctrlKey && k === 'u')) {

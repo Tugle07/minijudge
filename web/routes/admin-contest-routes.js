@@ -25,6 +25,7 @@ function readSettings(b) {
     blockMultiScreen: b.blockMultiScreen !== false,
     beepOnLeave: b.beepOnLeave !== false,
     blockPaste: b.blockPaste !== false,
+    desktopOnly: b.desktopOnly !== false,
   };
 }
 
@@ -187,12 +188,21 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     /* Cột cuối: liệt kê từng loại vi phạm, số lần, giờ xảy ra và chi tiết ghi nhận. */
     const byUser = new Map();
     const evs = db
-      .prepare(`SELECT user_id, type, detail, at FROM contest_events WHERE contest_id = ? AND type IN (${VIOLATIONS.map(() => '?').join(',')}) ORDER BY at`)
-      .all(c.id, ...VIOLATIONS);
+      .prepare(`SELECT user_id, type, detail, at FROM contest_events WHERE contest_id = ? AND type IN (${[...VIOLATIONS, 'tab_visible'].map(() => '?').join(',')}) ORDER BY at, id`)
+      .all(c.id, ...VIOLATIONS, 'tab_visible');
+    const lastAway = new Map();
     for (const e of evs) {
+      /* "Quay lại sau X giây" gắn vào lần rời ngay trước đó của cùng thí sinh. */
+      if (e.type === 'tab_visible') {
+        const prev = lastAway.get(e.user_id);
+        if (prev) prev.back = e.detail;
+        lastAway.delete(e.user_id);
+        continue;
+      }
       const m = byUser.get(e.user_id) ?? new Map();
       m.set(e.type, [...(m.get(e.type) ?? []), e]);
       byUser.set(e.user_id, m);
+      if (e.type === 'tab_hidden' || e.type === 'blur') lastAway.set(e.user_id, e);
     }
     const note = (userId) => {
       const m = byUser.get(userId);
@@ -201,7 +211,10 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
         .map((t) => {
           const list = m.get(t);
           const label = VIOLATION_TEXT[t] || t;
-          const items = list.map((e) => `${vnTime(e.at)}${e.detail && e.detail !== label ? ` (${e.detail})` : ''}`);
+          const items = list.map((e) => {
+            const notes = [e.detail && e.detail !== label ? e.detail : '', e.back ? e.back.toLowerCase() : ''].filter(Boolean);
+            return `${vnTime(e.at)}${notes.length ? ` (${notes.join(', ')})` : ''}`;
+          });
           return `${label} ×${list.length}: ${items.join('; ')}`;
         })
         .join(' | ');

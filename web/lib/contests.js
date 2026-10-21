@@ -12,6 +12,34 @@ export const EVENT_TYPES = [
 export const CLIENT_EVENTS = ['fullscreen_exit', 'fullscreen_enter', 'tab_hidden', 'tab_visible', 'blur', 'second_tab', 'paste_blocked', 'devtools_key', 'context_menu'];
 export const VIOLATIONS = ['fullscreen_exit', 'tab_hidden', 'blur', 'multi_screen', 'second_tab', 'paste_blocked', 'devtools_key'];
 const ONLINE_MS = 25_000;
+const INCIDENT_GAP_MS = 3_000;
+
+/* Một lần Alt+Tab có thể sinh 2–3 tín hiệu (thoát toàn màn hình, ẩn trang, mất focus) gần như cùng lúc.
+ * Gộp các vi phạm cách nhau dưới 3 giây, hoặc chưa có "quay lại" xen giữa, thành một lần vi phạm. */
+export function countIncidents(events) {
+  let n = 0;
+  let lastViolation = -Infinity;
+  let lastReturn = -Infinity;
+  for (const e of [...events].sort((a, b) => a.at - b.at)) {
+    if (e.type === 'tab_visible' || e.type === 'fullscreen_enter') {
+      lastReturn = e.at;
+      continue;
+    }
+    if (!VIOLATIONS.includes(e.type)) continue;
+    /* Bản cũ báo "đổi cửa sổ" ngay sau lúc quay lại, nên tín hiệu sát lần quay lại cũng thuộc lần rời trước. */
+    if (e.at - lastViolation > INCIDENT_GAP_MS && e.at - lastReturn > INCIDENT_GAP_MS) n += 1;
+    lastViolation = e.at;
+  }
+  return n;
+}
+
+/* Nhận diện thiết bị từ User-Agent: điện thoại / máy tính bảng / máy tính. */
+export function deviceOf(ua = '') {
+  const s = String(ua);
+  if (/iPad|Tablet|PlayBook|Silk|Android(?!.*Mobile)/i.test(s)) return 'tablet';
+  if (/Mobi|iPhone|iPod|Android.*Mobile|Windows Phone|Opera Mini|IEMobile/i.test(s)) return 'mobile';
+  return 'desktop';
+}
 const LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /* "1-5, 8, 10-12" → [1,2,3,4,5,8,10,11,12]; trả null nếu sai cú pháp hoặc vượt số test. */
@@ -103,6 +131,8 @@ export function createContests(db, catalog) {
        WHERE s.contest_id = ? GROUP BY s.user_id, s.problem_id`,
     ),
     eventCounts: db.prepare('SELECT user_id, type, COUNT(*) AS n FROM contest_events WHERE contest_id = ? GROUP BY user_id, type'),
+    eventTimes: db.prepare('SELECT user_id, type, at FROM contest_events WHERE contest_id = ? ORDER BY at, id'),
+    userEventTimes: db.prepare('SELECT type, at FROM contest_events WHERE contest_id = ? AND user_id = ? ORDER BY at, id'),
     insertEvent: db.prepare('INSERT INTO contest_events (contest_id, user_id, type, detail, at) VALUES (?, ?, ?, ?, ?)'),
   };
 
@@ -114,7 +144,7 @@ export function createContests(db, catalog) {
       startAt: row.start_at,
       endAt: row.end_at,
       status: row.status,
-      settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, ...JSON.parse(row.settings || '{}') },
+      settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, ...JSON.parse(row.settings || '{}') },
       createdAt: row.created_at,
     };
 
@@ -188,6 +218,8 @@ export function createContests(db, catalog) {
       counts.set(e.user_id, m);
     }
     const board = new Map(scoreboard(contestId).rows.map((r) => [r.userId, r]));
+    const byUser = new Map();
+    for (const e of q.eventTimes.all(contestId)) byUser.set(e.user_id, [...(byUser.get(e.user_id) ?? []), e]);
     return q.participants.all(contestId).map((p) => {
       const ev = counts.get(p.user_id) ?? {};
       const state = JSON.parse(p.state || '{}');
@@ -204,7 +236,8 @@ export function createContests(db, catalog) {
         visible: state.visible !== false,
         extended: Boolean(state.extended),
         events: ev,
-        violations: VIOLATIONS.reduce((s, t) => s + (ev[t] || 0), 0),
+        violations: countIncidents(byUser.get(p.user_id) ?? []),
+        device: p.device || '',
         total: board.get(p.user_id)?.total ?? 0,
         rank: board.get(p.user_id)?.rank ?? null,
       };
@@ -260,6 +293,7 @@ export function createContests(db, catalog) {
     activeFor: (userId, now = Date.now()) => parse(q.activeFor.get(userId, now, now)),
     /* Bài đang nằm trong cuộc thi chưa kết thúc: ẩn khỏi phần luyện tập để không lộ đề. */
     lockedProblemIds: () => new Set(q.lockedProblems.all(Date.now()).map((r) => r.problem_id)),
+    incidentsOf: (contestId, userId) => countIncidents(q.userEventTimes.all(contestId, userId)),
     logEvent: (contestId, userId, type, detail = '') => q.insertEvent.run(contestId, userId, type, String(detail).slice(0, 300), Date.now()),
     scoreSubmission,
     scoreboard,

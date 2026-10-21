@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { CLIENT_EVENTS, VIOLATIONS } from '../lib/contests.js';
+import { CLIENT_EVENTS, deviceOf } from '../lib/contests.js';
 
 const MAX_SOURCE_BYTES = 64 * 1024;
 const STALE_SESSION_MS = 45_000;
@@ -66,6 +66,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     blockMultiScreen: c.settings.blockMultiScreen !== false,
     beepOnLeave: c.settings.beepOnLeave !== false,
     blockPaste: c.settings.blockPaste !== false,
+    desktopOnly: c.settings.desktopOnly !== false,
     allowed: allowed(c, user),
     joined: Boolean(me),
     finished: Boolean(me?.finished_at),
@@ -105,9 +106,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
       }));
       out.total = out.problems.reduce((s, p) => s + (p.myScore || 0), 0);
       out.otherSession = Boolean(me.session_hash && me.session_hash !== req.sessionHash);
-      out.myViolations = db
-        .prepare(`SELECT COUNT(*) AS n FROM contest_events WHERE contest_id = ? AND user_id = ? AND type IN (${VIOLATIONS.map(() => '?').join(',')})`)
-        .get(c.id, req.user.id, ...VIOLATIONS).n;
+      out.myViolations = contests.incidentsOf(c.id, req.user.id);
     }
     res.json(out);
   });
@@ -119,7 +118,12 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     if (phase !== 'running') return res.status(409).json({ error: phase === 'upcoming' ? 'Chưa đến giờ thi' : 'Cuộc thi đã kết thúc' });
     if (!allowed(c, req.user)) return res.status(403).json({ error: 'Tài khoản của bạn không có trong danh sách thí sinh' });
     if (!ipOk(c, req.clientIp)) return res.status(403).json({ error: 'Chỉ được vào thi bằng mạng của phòng thi' });
-    const { code, extended } = req.body ?? {};
+    const { code, extended, touch } = req.body ?? {};
+    /* Điện thoại / máy tính bảng: bàn phím có nút dán clipboard không qua sự kiện "dán", lại dễ chụp màn hình gửi chat. */
+    const device = deviceOf(req.headers['user-agent']);
+    if (c.settings.desktopOnly !== false && (device !== 'desktop' || touch === true)) {
+      return res.status(403).json({ error: 'Cuộc thi này chỉ làm trên máy tính. Hãy vào bằng máy tính của phòng thi.', code: 'desktop_only' });
+    }
     const already = contests.participant(c.id, req.user.id);
     /* Mã phòng chỉ cần ở lần vào đầu tiên; vào lại (tải lại trang, máy khác sau khi mở khóa) không hỏi lại. */
     if (!already && c.settings.code && String(code || '').trim().toUpperCase() !== c.settings.code.trim().toUpperCase()) {
@@ -133,8 +137,8 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     const me = contests.participant(c.id, req.user.id);
     if (me?.finished_at) return res.status(409).json({ error: 'Bạn đã nộp bài và kết thúc' });
     if (!me) {
-      db.prepare('INSERT INTO contest_participants (contest_id, user_id, joined_at, session_hash, ip, last_seen) VALUES (?, ?, ?, ?, ?, ?)').run(
-        c.id, req.user.id, now, req.sessionHash, req.clientIp ?? null, now,
+      db.prepare('INSERT INTO contest_participants (contest_id, user_id, joined_at, session_hash, ip, last_seen, device) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+        c.id, req.user.id, now, req.sessionHash, req.clientIp ?? null, now, device,
       );
       contests.logEvent(c.id, req.user.id, 'join', req.clientIp ?? '');
     } else if (me.session_hash !== req.sessionHash) {

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { parseTests, scoreTests, similarity } from '../lib/contests.js';
+import { countIncidents, deviceOf, parseTests, scoreTests, similarity } from '../lib/contests.js';
 
 /* Test tích hợp chế độ thi: tạo cuộc thi + subtask → thí sinh vào phòng bằng mã → nộp bài chấm đủ test →
  * điểm subtask, khóa luyện tập trong giờ thi, chỉ một phiên/thiết bị, giám sát, bảng điểm, so code giống nhau. */
@@ -89,6 +89,28 @@ describe('Hàm tính điểm', () => {
     const b = 'int main()\n{\n  int sum = 0; // cộng dồn\n  for (int k = 0; k < 10; k++) { sum += k; }\n  printf("%d", sum);\n  return 0;\n}';
     assert.ok(similarity(a, b) > 0.9);
     assert.ok(similarity(a, 'int main(){char s[100];scanf("%s",s);puts(s);}') < 0.3);
+  });
+});
+
+describe('Đếm lần vi phạm và nhận diện thiết bị', () => {
+  const ev = (type, sec) => ({ type, at: sec * 1000 });
+  test('một lần Alt+Tab sinh 3 tín hiệu chỉ tính 1 lần', () => {
+    assert.equal(countIncidents([ev('fullscreen_exit', 10), ev('tab_hidden', 10.2), ev('blur', 11), ev('tab_visible', 20)]), 1);
+  });
+  test('rời, quay lại, rồi rời lần nữa tính 2 lần', () => {
+    assert.equal(countIncidents([ev('tab_hidden', 10), ev('tab_visible', 15), ev('blur', 40), ev('tab_visible', 45)]), 2);
+  });
+  test('bản cũ báo "đổi cửa sổ" ngay sau lúc quay lại vẫn thuộc lần rời trước', () => {
+    assert.equal(countIncidents([ev('tab_hidden', 10), ev('tab_visible', 14), ev('blur', 14.1)]), 1);
+  });
+  test('sự kiện không phải vi phạm không được đếm', () => {
+    assert.equal(countIncidents([ev('join', 1), ev('context_menu', 5), ev('finish', 9)]), 0);
+  });
+  test('nhận diện điện thoại, máy tính bảng, máy tính', () => {
+    assert.equal(deviceOf('Mozilla/5.0 (Linux; Android 14; SM-A546E) AppleWebKit/537.36 Chrome/129.0 Mobile Safari/537.36'), 'mobile');
+    assert.equal(deviceOf('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'), 'mobile');
+    assert.equal(deviceOf('Mozilla/5.0 (Linux; Android 13; SM-X200) AppleWebKit/537.36 Chrome/129.0 Safari/537.36'), 'tablet');
+    assert.equal(deviceOf('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36'), 'desktop');
   });
 });
 
@@ -187,7 +209,8 @@ describe('Cuộc thi', () => {
     const me = mon.data.participants.find((p) => p.username === 'sv_mot');
     assert.equal(me.online, true);
     assert.equal(me.fullscreen, true);
-    assert.equal(me.violations, 2, 'vào phòng bằng máy nhiều màn hình + 1 lần rời tab');
+    /* nhiều màn hình + rời tab: 1 hoặc 2 lần tùy khoảng cách thời gian thực (logic gộp đã test riêng ở trên) */
+    assert.ok(me.violations >= 1 && me.violations <= 2, `số lần vi phạm = ${me.violations}`);
     assert.equal(me.events.multi_screen, 1);
     assert.equal((await sv1(`/api/admin/contests/${cid}/monitor`)).status, 403);
 

@@ -13,7 +13,15 @@ const EVENT_TEXT = {
   tab_hidden: 'Rời trang thi', tab_visible: 'Quay lại trang thi', blur: 'Chuyển cửa sổ khác', multi_screen: 'Nhiều màn hình',
   second_tab: 'Mở tab thứ hai', paste_blocked: 'Dán code từ ngoài', devtools_key: 'Phím DevTools', context_menu: 'Chuột phải', finish: 'Nộp bài kết thúc',
 };
-const VIOLATION_COLS = [['fullscreen_exit', 'Thoát FS'], ['tab_hidden', 'Rời tab'], ['blur', 'Đổi cửa sổ'], ['paste_blocked', 'Dán'], ['second_tab', 'Tab 2'], ['multi_screen', '2 màn hình']];
+const VIOLATION_COLS = [
+  ['fullscreen_exit', 'Thoát toàn màn hình', 'Số lần thoát chế độ toàn màn hình'],
+  ['tab_hidden', 'Chuyển tab', 'Số lần chuyển tab, thu nhỏ hoặc tải lại trang thi'],
+  ['blur', 'Đổi cửa sổ', 'Số lần chuyển sang cửa sổ / ứng dụng khác quá 1,5 giây'],
+  ['paste_blocked', 'Dán code ngoài', 'Số lần dán code mang từ bên ngoài vào (đã bị chặn)'],
+  ['second_tab', 'Mở 2 tab', 'Số lần mở bài thi ở tab thứ hai'],
+  ['multi_screen', 'Nhiều màn hình', 'Số lần bị phát hiện nối nhiều màn hình'],
+];
+const DEVICE_TEXT = { desktop: 'Máy tính', mobile: 'Điện thoại', tablet: 'Máy tính bảng' };
 
 const pad = (n) => String(n).padStart(2, '0');
 const toLocal = (ms) => {
@@ -110,7 +118,7 @@ async function editor(ctx, summary, problems, onSaved) {
   const start = Date.now() + 3_600_000;
   const f = full
     ? { ...full, settings: { ...full.settings }, problems: full.problems.map((p) => ({ problemId: p.problemId, subtasks: p.subtasks.map((s) => ({ ...s })) })) }
-    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true }, problems: [] };
+    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true }, problems: [] };
   let errors = {};
   const pmap = new Map(problems.map((p) => [p.id, p]));
 
@@ -186,6 +194,7 @@ async function editor(ctx, summary, problems, onSaved) {
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="blockMultiScreen" ${f.settings.blockMultiScreen !== false ? 'checked' : ''} />Chặn máy nối nhiều màn hình</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="beepOnLeave" ${f.settings.beepOnLeave !== false ? 'checked' : ''} />Phát 3 tiếng bíp khi thí sinh rời bài thi</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="blockPaste" ${f.settings.blockPaste !== false ? 'checked' : ''} />Chặn dán code từ bên ngoài phòng thi (copy/paste trong phòng thi vẫn dùng được)</label>
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="desktopOnly" ${f.settings.desktopOnly !== false ? 'checked' : ''} />Chỉ cho vào thi bằng máy tính (chặn điện thoại, máy tính bảng)</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="boardAfterFinish" ${f.settings.boardAfterFinish !== false ? 'checked' : ''} />Thí sinh hoàn tất bài làm được xem bảng xếp hạng trực tiếp</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="publishResults" ${f.settings.publishResults ? 'checked' : ''} />Công bố bảng kết quả cho mọi người (sau giờ thi)</label>
     </div>
@@ -417,7 +426,7 @@ async function detail(ctx, id, tab) {
       </div>
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
-          <thead><tr><th>Thí sinh</th><th>Trạng thái</th>${VIOLATION_COLS.map(([, l]) => `<th class="num">${l}</th>`).join('')}<th class="num">Điểm</th><th>IP</th><th></th></tr></thead>
+          <thead><tr><th>Thí sinh</th><th>Trạng thái</th><th class="num" title="Mỗi lần rời bài tính 1 lần, dù trình duyệt báo nhiều tín hiệu cùng lúc">Số lần vi phạm</th>${VIOLATION_COLS.map(([, l, tip]) => `<th class="num vcol" title="${tip}">${l}</th>`).join('')}<th class="num">Điểm</th><th>Thiết bị · IP</th><th></th></tr></thead>
           <tbody>${ps
             .sort((a, b) => b.violations - a.violations || a.username.localeCompare(b.username))
             .map((p) => {
@@ -425,9 +434,10 @@ async function detail(ctx, id, tab) {
               return `<tr>
                 <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${esc(p.username)}" title="Lọc nhật ký của thí sinh này">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
                 <td>${st}${p.extended ? ' ' + pill('2 màn hình', 'var(--wa)') : ''}</td>
-                ${VIOLATION_COLS.map(([k]) => `<td class="num" style="color:${p.events[k] ? 'var(--wa)' : 'var(--fg3)'}">${p.events[k] || 0}</td>`).join('')}
+                <td class="num"><b class="vtotal ${p.violations >= 5 ? 'hi' : p.violations ? 'mid' : ''}">${p.violations}</b></td>
+                ${VIOLATION_COLS.map(([k]) => `<td class="num vcol" style="color:${p.events[k] ? 'var(--wa)' : 'var(--fg3)'}">${p.events[k] || '·'}</td>`).join('')}
                 <td class="num">${num(p.total)}</td>
-                <td class="mono faint" style="font-size:12.5px">${esc(p.ip || '')}</td>
+                <td style="font-size:12.5px"><span style="${p.device && p.device !== 'desktop' ? 'color:var(--wa);font-weight:600' : ''}">${esc(DEVICE_TEXT[p.device] || '—')}</span><div class="mono faint">${esc(p.ip || '')}</div></td>
                 <td><button class="btn-line" style="height:28px;font-size:12.5px" data-unlock="${p.userId}" data-name="${esc(p.username)}" title="Cho vào lại từ máy/tab khác">Mở khóa</button></td>
               </tr>`;
             })
