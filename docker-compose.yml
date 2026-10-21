@@ -50,9 +50,10 @@ services:
 
   tunnel:
     image: cloudflare/cloudflared:latest
+    # http2 (TCP) ổn định hơn QUIC (UDP) trên mạng hay rớt gói UDP.
     # Mặc định: Quick Tunnel (link *.trycloudflare.com, đổi mỗi lần khởi động lại).
-    # Có tên miền riêng: đặt TUNNEL_COMMAND="tunnel --no-autoupdate run" và TUNNEL_TOKEN trong file env.
-    command: ${TUNNEL_COMMAND:-tunnel --no-autoupdate --url http://web:3000}
+    # Có tên miền riêng: đặt TUNNEL_COMMAND="tunnel --no-autoupdate --protocol http2 run" và TUNNEL_TOKEN trong file env.
+    command: ${TUNNEL_COMMAND:-tunnel --no-autoupdate --protocol http2 --url http://web:3000}
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     networks: [public]
