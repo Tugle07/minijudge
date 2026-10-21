@@ -168,7 +168,7 @@ async function editor(ctx, summary, problems, onSaved) {
       <span class="help">Nháp: thí sinh chưa thấy. Xuất bản: hiện trong mục Cuộc thi, vào được khi đến giờ.</span></div>
     <div class="afield">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:500">Bài thi</span><span class="faint" style="font-size:13px">${f.problems.length} bài · tổng ${f.problems.reduce((s, p) => s + p.subtasks.reduce((a, x) => a + (Number(x.points) || 0), 0), 0)} điểm</span></div>
-      <div style="position:relative"><input class="input" data-addq placeholder="Tìm bài để thêm (mã hoặc tên)" autocomplete="off" /><div class="suggest" data-suggest hidden></div></div>
+      <div style="position:relative"><input class="input" data-addq placeholder="Bấm để chọn bài, gõ mã (vd. P01) hoặc tên để lọc" autocomplete="off" /><div class="suggest" data-suggest hidden></div></div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">${f.problems.map(problemCard).join('') || '<span class="faint" style="font-size:13.5px">Chưa có bài nào.</span>'}</div>
       ${errors.problems ? `<span class="err-text" style="color:var(--wa);font-size:13px">${esc(errors.problems)}</span>` : ''}
     </div>`;
@@ -196,13 +196,27 @@ async function editor(ctx, summary, problems, onSaved) {
       const [i, k, key] = t.dataset.st.split(':');
       f.problems[i].subtasks[k][key] = key === 'points' ? Number(t.value) : t.value;
     }
-    if (t.dataset.addq !== undefined) {
-      const qv = t.value.trim().toLowerCase();
+    if (t.dataset.addq !== undefined) suggest(t);
+  });
+  /* Bấm vào ô là hiện ngay danh sách bài (chưa gõ gì), gõ để lọc theo mã hoặc tên. */
+  function suggest(input) {
+    const qv = input.value.trim().toLowerCase();
+    const box = host.querySelector('[data-suggest]');
+    const hits = problems
+      .filter((p) => !f.problems.some((x) => x.problemId === p.id) && (!qv || p.id.toLowerCase().includes(qv) || p.title.toLowerCase().includes(qv)))
+      .slice(0, 12);
+    box.hidden = !hits.length;
+    box.innerHTML = hits.map((p) => `<button type="button" data-add="${esc(p.id)}"><span class="mono">${esc(p.id)}</span> ${esc(p.title)} <span class="faint">· ${p.tests} test${p.status === 'pub' ? '' : ' · nháp'}</span></button>`).join('');
+  }
+  host.addEventListener('focusin', (e) => {
+    if (e.target.dataset.addq !== undefined) suggest(e.target);
+  });
+  host.addEventListener('focusout', (e) => {
+    if (e.target.dataset.addq === undefined) return;
+    setTimeout(() => {
       const box = host.querySelector('[data-suggest]');
-      const hits = qv ? problems.filter((p) => !f.problems.some((x) => x.problemId === p.id) && (p.id.toLowerCase().includes(qv) || p.title.toLowerCase().includes(qv))).slice(0, 8) : [];
-      box.hidden = !hits.length;
-      box.innerHTML = hits.map((p) => `<button type="button" data-add="${esc(p.id)}"><span class="mono">${esc(p.id)}</span> ${esc(p.title)} <span class="faint">· ${p.tests} test${p.status === 'pub' ? '' : ' · nháp'}</span></button>`).join('');
-    }
+      if (box && !box.contains(document.activeElement)) box.hidden = true;
+    }, 150);
   });
   host.addEventListener('change', (e) => {
     if (e.target.dataset.b) f.settings[e.target.dataset.b] = e.target.checked;
@@ -243,6 +257,12 @@ async function editor(ctx, summary, problems, onSaved) {
   let contestId = full?.id ?? null;
   el.querySelector('[data-save]').addEventListener('click', async () => {
     errors = {};
+    if (f.status === 'published' && !f.problems.length) {
+      errors.problems = 'Cuộc thi cần ít nhất 1 bài mới xuất bản được. Thêm bài ở ô phía trên, hoặc chọn "Nháp" để lưu trước.';
+      redraw();
+      host.querySelector('[data-addq]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     const payload = { title: f.title, description: f.description, startAt: f.startAt, endAt: f.endAt, settings: f.settings };
     try {
       let saved = contestId

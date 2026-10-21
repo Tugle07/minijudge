@@ -118,7 +118,7 @@
 .grip { height: 30px; width: 24px; border: 0; background: none; color: var(--fg3); cursor: grab; font-size: 15px; letter-spacing: -2px; }
 .icon-x { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--fg3); font-size: 16px; }
 .icon-x:hover { background: var(--bg3); color: var(--wa); }
-.suggest { position: absolute; left: 0; right: 0; top: 42px; z-index: 5; padding: 4px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg2); box-shadow: var(--shadow); }
+.suggest { position: absolute; left: 0; right: 0; top: 46px; z-index: 5; max-height: 320px; overflow: auto; padding: 4px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--bg2); box-shadow: var(--shadow); }
 .suggest button { width: 100%; display: flex; gap: 10px; align-items: center; height: 34px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font-size: 14px; text-align: left; }
 .suggest button:hover { background: var(--bg3); }
 .dialog-wrap { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / .5); display: grid; place-items: center; padding: 20px; }
@@ -126,7 +126,7 @@
 .dialog p { margin: 0; color: var(--fg2); font-size: 14.5px; text-wrap: pretty; }
 .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 .btn-danger { height: 36px; padding: 0 16px; border: 0; border-radius: var(--r-sm); background: var(--wa); color: var(--bg); font-size: 14px; font-weight: 600; }
-.admin-toast { left: auto; right: 24px; transform: none; display: flex; align-items: center; gap: 10px; }
+.admin-toast { left: auto; right: 24px; top: 20px; bottom: auto; transform: none; z-index: 70; display: flex; align-items: center; gap: 10px; }
 .switch { width: 44px; height: 26px; flex: none; padding: 3px; border: 0; border-radius: 99px; background: var(--line2); display: flex; justify-content: flex-start; }
 .switch.on { background: var(--accent); justify-content: flex-end; }
 .switch span { width: 20px; height: 20px; border-radius: 50%; background: var(--bg2); }
