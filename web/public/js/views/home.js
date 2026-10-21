@@ -64,6 +64,20 @@ export async function render(ctx) {
       <div data-grid></div>
     </main>`;
 
+  /* Số liệu tổng quan đếm dần lên khi mở trang. */
+  ctx.view.querySelectorAll('.ov-stat b').forEach((el) => {
+    const m = el.textContent.match(/^(\d+)(%?)$/);
+    if (!m || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const end = Number(m[1]);
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 700);
+      el.textContent = `${Math.round(end * (1 - (1 - k) ** 3))}${m[2]}`;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+
   const grid = ctx.view.querySelector('[data-grid]');
 
   function card(s) {
