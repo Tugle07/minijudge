@@ -14,7 +14,7 @@ export async function render(ctx) {
       <tbody data-rows></tbody></table><div data-empty></div></div>`;
 
   function draw() {
-    const list = users.filter((u) => !q || u.username.toLowerCase().includes(q));
+    const list = users.filter((u) => !q || u.username.toLowerCase().includes(q) || (u.fullName || '').toLowerCase().includes(q));
     ctx.page.querySelector('[data-count]').textContent = `${list.length} người dùng`;
     ctx.page.querySelector('[data-rows]').innerHTML = list
       .map((u) => {
@@ -22,7 +22,7 @@ export async function render(ctx) {
         const me = u.username === ctx.me.username;
         const stColor = u.locked ? 'var(--wa)' : 'var(--ac)';
         return `<tr>
-          <td><span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:28px;height:28px;font-size:11.5px;background:${avatarColor(u.username)}">${esc(initials(u.username))}</span><span class="mono" style="font-weight:500">${esc(u.username)}</span>${me ? '<span class="me-tag">Bạn</span>' : ''}</span></td>
+          <td><span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:28px;height:28px;font-size:11.5px;background:${avatarColor(u.username)}">${esc(initials(u.username))}</span><span style="display:flex;flex-direction:column"><span class="mono" style="font-weight:500">${esc(u.username)}</span>${u.fullName ? `<span class="faint" style="font-size:12.5px">${esc(u.fullName)}</span>` : ''}</span>${me ? '<span class="me-tag">Bạn</span>' : ''}</span></td>
           <td><span style="padding:2px 9px;border-radius:6px;border:1px solid ${admin ? 'color-mix(in oklch, var(--re) 45%, transparent)' : 'var(--line2)'};color:${admin ? 'var(--re)' : 'var(--fg2)'};font-size:12.5px;font-weight:600">${admin ? 'Admin' : 'Sinh viên'}</span></td>
           <td class="num">${u.solved}</td>
           <td class="muted">${fmtAgo(u.last_seen)}</td>

@@ -193,7 +193,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
   r.get('/users', (_req, res) => {
     const rows = db
       .prepare(
-        `SELECT u.id, u.username, u.role, u.locked, u.last_seen, u.created_at,
+        `SELECT u.id, u.username, u.full_name AS fullName, u.role, u.locked, u.last_seen, u.created_at,
            (SELECT COUNT(DISTINCT problem_id) FROM submissions s WHERE s.user_id = u.id AND s.verdict = 'AC') AS solved
          FROM users u ORDER BY u.username COLLATE NOCASE`,
       )

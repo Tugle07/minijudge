@@ -176,8 +176,8 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     const { problems, rows } = contests.scoreboard(c.id);
     const violations = new Map(contests.monitor(c.id).map((m) => [m.userId, m.violations]));
     const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const head = ['Hạng', 'Tài khoản', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Số vi phạm'];
-    const lines = [head, ...rows.map((r) => [r.rank, r.username, ...r.cells.map((x) => x.score ?? 0), r.total, violations.get(r.userId) ?? 0])];
+    const head = ['Hạng', 'Tài khoản', 'Họ tên', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Số vi phạm'];
+    const lines = [head, ...rows.map((r) => [r.rank, r.username, r.fullName, ...r.cells.map((x) => x.score ?? 0), r.total, violations.get(r.userId) ?? 0])];
     const name = `ket-qua-cuoc-thi-${c.id}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);

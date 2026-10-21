@@ -311,7 +311,7 @@ async function detail(ctx, id, tab) {
             .map((p) => {
               const st = p.finishedAt ? pill('Đã nộp', 'var(--fg3)') : !p.online ? pill('Mất kết nối', 'var(--tle)') : !p.fullscreen || !p.visible ? pill('Rời bài thi', 'var(--wa)') : pill('Đang làm', 'var(--ac)');
               return `<tr>
-                <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${p.userId}" data-name="${esc(p.username)}">${esc(p.username)}</button></td>
+                <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${p.userId}" data-name="${esc(p.username)}">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
                 <td>${st}${p.extended ? ' ' + pill('2 màn hình', 'var(--wa)') : ''}</td>
                 ${VIOLATION_COLS.map(([k]) => `<td class="num" style="color:${p.events[k] ? 'var(--wa)' : 'var(--fg3)'}">${p.events[k] || 0}</td>`).join('')}
                 <td class="num">${num(p.total)}</td>
@@ -337,7 +337,7 @@ async function detail(ctx, id, tab) {
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
           <thead><tr><th class="num" style="width:50px">#</th><th>Thí sinh</th>${b.problems.map((p) => `<th class="num" title="${esc(p.title)}">${esc(p.label)} <span class="faint">/${p.points}</span></th>`).join('')}<th class="num">Tổng</th></tr></thead>
-          <tbody>${b.rows.map((r) => `<tr><td class="num">${r.rank}</td><td class="mono">${esc(r.username)}</td>${r.cells.map((x) => `<td class="num" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}<td class="num" style="font-weight:600">${num(r.total)}</td></tr>`).join('')}</tbody>
+          <tbody>${b.rows.map((r) => `<tr><td class="num">${r.rank}</td><td class="mono">${esc(r.username)}${r.fullName ? ` <span class="faint" style="font-family:var(--font-ui)">${esc(r.fullName)}</span>` : ''}</td>${r.cells.map((x) => `<td class="num" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}<td class="num" style="font-weight:600">${num(r.total)}</td></tr>`).join('')}</tbody>
         </table>
         ${b.rows.length ? '' : '<div class="empty">Chưa có thí sinh.</div>'}
       </div>

@@ -77,7 +77,7 @@ export function createContests(db, catalog) {
     problems: db.prepare('SELECT * FROM contest_problems WHERE contest_id = ? ORDER BY position'),
     participant: db.prepare('SELECT * FROM contest_participants WHERE contest_id = ? AND user_id = ?'),
     participants: db.prepare(
-      `SELECT p.*, u.username FROM contest_participants p JOIN users u ON u.id = p.user_id WHERE p.contest_id = ? ORDER BY u.username`,
+      `SELECT p.*, u.username, u.full_name FROM contest_participants p JOIN users u ON u.id = p.user_id WHERE p.contest_id = ? ORDER BY u.username`,
     ),
     lockedProblems: db.prepare(
       `SELECT DISTINCT cp.problem_id FROM contest_problems cp JOIN contests c ON c.id = cp.contest_id
@@ -166,7 +166,7 @@ export function createContests(db, catalog) {
         }
         return { label: p.label, score, tries: b?.tries ?? 0 };
       });
-      return { userId: u.user_id, username: u.username, total, lastAt: last ? last - (c?.startAt ?? 0) : null, cells };
+      return { userId: u.user_id, username: u.username, fullName: u.full_name || '', total, lastAt: last ? last - (c?.startAt ?? 0) : null, cells };
     });
     rows.sort((a, b) => b.total - a.total || (a.lastAt ?? Infinity) - (b.lastAt ?? Infinity) || a.username.localeCompare(b.username));
     let rank = 0;
@@ -192,6 +192,7 @@ export function createContests(db, catalog) {
       return {
         userId: p.user_id,
         username: p.username,
+        fullName: p.full_name || '',
         joinedAt: p.joined_at,
         finishedAt: p.finished_at,
         ip: p.ip,
