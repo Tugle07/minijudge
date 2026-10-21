@@ -17,6 +17,39 @@ const PASTE_LIMIT = 30;
 const readDraft = (cid, label) => draftGet(`exam-${cid}-${label}`);
 const saveDraft = (cid, label, code) => draftSet(`exam-${cid}-${label}`, code);
 const isFullscreen = () => Boolean(document.fullscreenElement);
+
+/* 3 tiếng bíp khi thí sinh rời bài thi (Web Audio, không cần file âm thanh).
+ * Trình duyệt chỉ cho phát âm thanh sau một lần bấm của người dùng: mở khóa ở nút "Vào phòng thi". */
+let audioCtx = null;
+const unlockAudio = () => {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch {}
+};
+let lastBeep = 0;
+function beep3() {
+  if (!audioCtx || Date.now() - lastBeep < 1500) return;
+  lastBeep = Date.now();
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t0 = audioCtx.currentTime + 0.02;
+    for (let i = 0; i < 3; i++) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const t = t0 + i * 0.32;
+      osc.type = 'square';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.22, t + 0.01);
+      gain.gain.setValueAtTime(0.22, t + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.22);
+    }
+  } catch {}
+}
 const isExtended = () => window.screen?.isExtended === true;
 
 /* Một số trình duyệt nhúng không bao giờ trả lời requestFullscreen: chờ tối đa 2 giây để nút không bị treo. */
@@ -79,6 +112,7 @@ export async function render(ctx) {
               <li>Chỉ mở bài thi ở <b>một tab, một máy</b>. Mở ở tab/máy thứ hai sẽ bị chặn.</li>
               <li>Không dán code từ bên ngoài vào trình soạn thảo. Phần luyện tập bị khóa trong giờ thi.</li>
               <li>Mỗi bài chia nhiều subtask (nhóm test). Subtask chỉ được điểm khi <b>đúng tất cả</b> test trong nhóm; sai 1 test thì nhóm đó 0 điểm. Ví dụ subtask 1 gồm test 1–5 (40 điểm): đúng 5/5 được 40, đúng 4/5 được 0. Điểm bài là tổng các subtask đạt được, lấy lần nộp cao điểm nhất.</li>
+              ${contest.beepOnLeave !== false ? '<li>Khi bạn rời bài thi (chuyển tab, đổi cửa sổ, thoát toàn màn hình), máy sẽ <b>phát 3 tiếng bíp</b>. Hãy bật loa ở mức vừa nghe.</li>' : ''}
               <li>Sau giờ thi, hệ thống so sánh code giữa các thí sinh để phát hiện bài giống nhau.</li>
             </ul>
           </div>
@@ -122,6 +156,7 @@ export async function render(ctx) {
       e.preventDefault();
       showError('');
       if (contest.blockMultiScreen && isExtended()) return showError('Máy đang nối nhiều màn hình. Rút màn hình phụ rồi vào lại.');
+      unlockAudio();
       const fs = await enterFullscreen();
       try {
         await api(`/api/contests/${cid}/join`, { method: 'POST', body: { code: box.querySelector('[data-code]')?.value ?? '', extended: isExtended() } });
@@ -180,6 +215,9 @@ export async function render(ctx) {
 
     /* Báo cho thí sinh biết ngay khi hệ thống ghi nhận vi phạm: nói rõ chuyện gì, lần thứ mấy, và cách xử lý nếu là nhầm lẫn. */
     state.vcount = state.info.myViolations || 0;
+    const beepOn = contest.beepOnLeave !== false;
+    const leaveBeep = () => beepOn && !state.ending && !state.unloading && beep3();
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
     const drawVcount = () => {
       const el = $('[data-vcount]');
       if (!el) return;
@@ -412,7 +450,10 @@ export async function render(ctx) {
       } else overlay.hidden = true;
     }
     const onFs = () => {
-      if (!isFullscreen() && !state.ending) violation('fullscreen_exit', '', 'bạn đã thoát chế độ toàn màn hình');
+      if (!isFullscreen() && !state.ending) {
+        violation('fullscreen_exit', '', 'bạn đã thoát chế độ toàn màn hình');
+        leaveBeep();
+      }
       else if (isFullscreen()) report('fullscreen_enter', '');
       guardState();
     };
@@ -428,7 +469,10 @@ export async function render(ctx) {
             body: JSON.stringify({ type: 'tab_hidden', detail: 'Tải lại hoặc đóng trang thi' }),
           }).catch(() => {});
         }
-        else if (!state.ending) violation('tab_hidden', 'Rời trang thi', 'bạn đã rời khỏi trang thi');
+        else if (!state.ending) {
+          violation('tab_hidden', 'Rời trang thi', 'bạn đã rời khỏi trang thi');
+          leaveBeep();
+        }
       } else if (hiddenAt) {
         const sec = Math.round((Date.now() - hiddenAt) / 1000);
         report('tab_visible', `Quay lại sau ${sec} giây`);
@@ -438,10 +482,16 @@ export async function render(ctx) {
       }
       guardState();
     };
+    let blurBeepTimer = null;
     const onBlur = () => {
-      if (!document.hidden) blurAt = Date.now();
+      if (document.hidden) return;
+      blurAt = Date.now();
+      /* Chỉ bíp khi rời cửa sổ quá 1,5 giây, tránh kêu oan vì thông báo hệ thống thoáng qua. */
+      clearTimeout(blurBeepTimer);
+      blurBeepTimer = setTimeout(() => blurAt && !document.hasFocus() && leaveBeep(), 1500);
     };
     const onFocus = () => {
+      clearTimeout(blurBeepTimer);
       if (blurAt && Date.now() - blurAt > 1500 && !state.ending) {
         const sec = Math.round((Date.now() - blurAt) / 1000);
         violation('blur', `Chuyển sang cửa sổ khác ${sec} giây`, `bạn đã chuyển sang cửa sổ khác trong ${sec} giây`);

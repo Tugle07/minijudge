@@ -64,6 +64,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     phase: contests.phase(c),
     needCode: Boolean(c.settings.code),
     blockMultiScreen: c.settings.blockMultiScreen !== false,
+    beepOnLeave: c.settings.beepOnLeave !== false,
     allowed: allowed(c, user),
     joined: Boolean(me),
     finished: Boolean(me?.finished_at),

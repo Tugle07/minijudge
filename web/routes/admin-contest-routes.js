@@ -23,6 +23,7 @@ function readSettings(b) {
     publishResults: Boolean(b.publishResults),
     boardAfterFinish: b.boardAfterFinish !== false,
     blockMultiScreen: b.blockMultiScreen !== false,
+    beepOnLeave: b.beepOnLeave !== false,
   };
 }
 

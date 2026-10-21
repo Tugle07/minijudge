@@ -110,7 +110,7 @@ async function editor(ctx, summary, problems, onSaved) {
   const start = Date.now() + 3_600_000;
   const f = full
     ? { ...full, settings: { ...full.settings }, problems: full.problems.map((p) => ({ problemId: p.problemId, subtasks: p.subtasks.map((s) => ({ ...s })) })) }
-    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true }, problems: [] };
+    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true }, problems: [] };
   let errors = {};
   const pmap = new Map(problems.map((p) => [p.id, p]));
 
@@ -184,6 +184,7 @@ async function editor(ctx, summary, problems, onSaved) {
     <label class="afield"><span>Danh sách thí sinh (tài khoản, cách nhau dấu phẩy/xuống dòng)</span><textarea class="input mono" data-s="allowUsers" style="height:64px;padding:8px" placeholder="Để trống = mọi tài khoản đã đăng ký">${esc(f.settings.allowUsers.join('\n'))}</textarea></label>
     <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:14.5px">
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="blockMultiScreen" ${f.settings.blockMultiScreen !== false ? 'checked' : ''} />Chặn máy nối nhiều màn hình</label>
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="beepOnLeave" ${f.settings.beepOnLeave !== false ? 'checked' : ''} />Phát 3 tiếng bíp khi thí sinh rời bài thi</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="boardAfterFinish" ${f.settings.boardAfterFinish !== false ? 'checked' : ''} />Thí sinh hoàn tất bài làm được xem bảng xếp hạng trực tiếp</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="publishResults" ${f.settings.publishResults ? 'checked' : ''} />Công bố bảng kết quả cho mọi người (sau giờ thi)</label>
     </div>
