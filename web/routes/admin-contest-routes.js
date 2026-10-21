@@ -24,6 +24,7 @@ function readSettings(b) {
     boardAfterFinish: b.boardAfterFinish !== false,
     blockMultiScreen: b.blockMultiScreen !== false,
     beepOnLeave: b.beepOnLeave !== false,
+    blockPaste: b.blockPaste !== false,
   };
 }
 

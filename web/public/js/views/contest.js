@@ -110,7 +110,7 @@ export async function render(ctx) {
             <ul>
               <li>Bài làm ở chế độ <b>toàn màn hình</b>. Thoát toàn màn hình, chuyển tab hay chuyển sang ứng dụng khác đều được <b>ghi lại và báo giám thị</b>.</li>
               <li>Chỉ mở bài thi ở <b>một tab, một máy</b>. Mở ở tab/máy thứ hai sẽ bị chặn.</li>
-              <li>Không dán code từ bên ngoài vào trình soạn thảo. Phần luyện tập bị khóa trong giờ thi.</li>
+              <li>${contest.blockPaste !== false ? 'Copy/paste trong phòng thi dùng bình thường (code của bạn, đề bài, ví dụ); <b>dán code mang từ bên ngoài vào sẽ bị chặn</b> và ghi lại.' : 'Được copy/paste tự do.'} Phần luyện tập bị khóa trong giờ thi.</li>
               <li>Mỗi bài chia nhiều subtask (nhóm test). Subtask chỉ được điểm khi <b>đúng tất cả</b> test trong nhóm; sai 1 test thì nhóm đó 0 điểm. Ví dụ subtask 1 gồm test 1–5 (40 điểm): đúng 5/5 được 40, đúng 4/5 được 0. Điểm bài là tổng các subtask đạt được, lấy lần nộp cao điểm nhất.</li>
               ${contest.beepOnLeave !== false ? '<li>Khi bạn rời bài thi (chuyển tab, đổi cửa sổ, thoát toàn màn hình), máy sẽ <b>phát 3 tiếng bíp</b>. Hãy bật loa ở mức vừa nghe.</li>' : ''}
               <li>Sau giờ thi, hệ thống so sánh code giữa các thí sinh để phát hiện bài giống nhau.</li>
@@ -246,22 +246,35 @@ export async function render(ctx) {
     };
     drawVcount();
 
-    /* --- Trình soạn code: chặn dán code từ ngoài (chỉ cho dán đoạn đã sao chép ngay trong phòng thi) --- */
+    /* --- Trình soạn code: chỉ chặn dán code mang từ ngoài vào. Copy/paste trong phòng thi dùng bình thường:
+     * đoạn vừa copy/cut trong trang, code đang viết ở mọi bài, đề bài và ví dụ đều được dán. --- */
+    const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim();
     const internalCopies = new Set();
-    const rememberCopy = () => {
-      const text = String(window.getSelection?.() || '').trim();
-      if (text) internalCopies.add(text);
+    /* Bắt ở pha bubble để lấy đúng nội dung CodeMirror đã đặt vào clipboard (kể cả dòng ngoài màn hình). */
+    const rememberCopy = (e) => {
+      const text = e.clipboardData?.getData('text/plain') || String(window.getSelection?.() || '');
+      if (norm(text)) internalCopies.add(norm(text));
     };
-    document.addEventListener('copy', rememberCopy, true);
-    document.addEventListener('cut', rememberCopy, true);
+    document.addEventListener('copy', rememberCopy);
+    document.addEventListener('cut', rememberCopy);
     cleanups.push(() => {
-      document.removeEventListener('copy', rememberCopy, true);
-      document.removeEventListener('cut', rememberCopy, true);
+      document.removeEventListener('copy', rememberCopy);
+      document.removeEventListener('cut', rememberCopy);
     });
+    const insideExam = (t) => {
+      const haystack = [
+        (() => { try { return editor.value; } catch { return ''; } })(),
+        ...(state.info.problems || []).map((p) => readDraft(cid, p.label)),
+        state.problem?.statement,
+        ...(state.problem?.samples || []).flatMap((s) => [s.input, s.output]),
+      ].map(norm).join('\n');
+      return internalCopies.has(t) || haystack.includes(t);
+    };
     const editorHost = $('[data-editor]');
     const blockPaste = (e) => {
+      if (contest.blockPaste === false) return;
       const text = (e.clipboardData || e.dataTransfer)?.getData('text') ?? '';
-      if (text.trim().length <= PASTE_LIMIT || internalCopies.has(text.trim())) return;
+      if (text.trim().length <= PASTE_LIMIT || insideExam(norm(text))) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       violation('paste_blocked', `${text.length} ký tự`, `bạn vừa dán ${text.length} ký tự từ bên ngoài vào bài thi (đã bị chặn)`);
