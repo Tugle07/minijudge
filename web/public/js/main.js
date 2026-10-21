@@ -1,4 +1,5 @@
 import { api } from './api.js';
+import { clearDrafts, setDraftOwner } from './drafts.js';
 import { avatarColor, currentTheme, esc, go, initials, themeButton, themeText } from './ui.js';
 import * as authView from './views/auth.js';
 import * as contestView from './views/contest.js';
@@ -87,6 +88,8 @@ document.addEventListener('click', async (e) => {
   }
   if (act === 'logout') {
     await api('/api/logout', { method: 'POST' });
+    clearDrafts(app.user?.username);
+    setDraftOwner('');
     app.user = null;
     go('#/login');
   }
@@ -94,6 +97,7 @@ document.addEventListener('click', async (e) => {
 
 function onLoggedIn(username, role = 'student') {
   app.user = { username, role };
+  setDraftOwner(username);
   go('#/home');
 }
 
@@ -117,6 +121,7 @@ async function router() {
   } catch (err) {
     if (err.status === 401) {
       app.user = null;
+      setDraftOwner('');
       return go('#/login');
     }
     /* Đang trong giờ thi: mọi trang luyện tập chuyển về phòng thi. */
@@ -129,6 +134,7 @@ window.addEventListener('hashchange', router);
 api('/api/me')
   .then(({ user }) => {
     app.user = user;
+    setDraftOwner(user?.username);
   })
   .catch(() => {})
   .finally(router);

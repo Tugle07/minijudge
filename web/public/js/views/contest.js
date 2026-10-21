@@ -1,4 +1,5 @@
 import { api } from '../api.js';
+import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
 import { badge, esc, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
 import { compileErrorsHtml, runResultHtml } from './problem-result.js';
@@ -13,19 +14,8 @@ const HEARTBEAT_MS = 10_000;
 const POLL_MS = 800;
 const PASTE_LIMIT = 30;
 
-const draftKey = (cid, label) => `mj-exam-${cid}-${label}`;
-const readDraft = (cid, label) => {
-  try {
-    return localStorage.getItem(draftKey(cid, label));
-  } catch {
-    return null;
-  }
-};
-const saveDraft = (cid, label, code) => {
-  try {
-    localStorage.setItem(draftKey(cid, label), code);
-  } catch {}
-};
+const readDraft = (cid, label) => draftGet(`exam-${cid}-${label}`);
+const saveDraft = (cid, label, code) => draftSet(`exam-${cid}-${label}`, code);
 const isFullscreen = () => Boolean(document.fullscreenElement);
 const isExtended = () => window.screen?.isExtended === true;
 

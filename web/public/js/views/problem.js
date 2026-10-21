@@ -1,4 +1,5 @@
 import { api } from '../api.js';
+import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
 import { highlightC } from '../highlight.js';
 import { badge, diffMeter, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
@@ -7,19 +8,8 @@ import { compileErrorsHtml, resultHtml, runResultHtml } from './problem-result.j
 const TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
 const SPINNER_SM = '<span class="spin-sm" aria-hidden="true"></span>';
 const POLL_MS = 800;
-const draftKey = (id) => `mj-code-${id}`;
-const readDraft = (id) => {
-  try {
-    return localStorage.getItem(draftKey(id));
-  } catch {
-    return null;
-  }
-};
-const saveDraft = (id, code) => {
-  try {
-    localStorage.setItem(draftKey(id), code);
-  } catch {}
-};
+const readDraft = (id) => draftGet(`code-${id}`);
+const saveDraft = (id, code) => draftSet(`code-${id}`, code);
 
 const MY_LABEL = { ac: ['Bạn đã AC bài này', 'var(--ac)'], tried: ['Bạn đã nộp, chưa AC', 'var(--wa)'] };
 
