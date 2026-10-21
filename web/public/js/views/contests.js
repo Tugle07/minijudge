@@ -44,12 +44,12 @@ export async function render(ctx) {
       return `
         <button class="contest-card ${c.phase}" data-go="#/contest/${c.id}">
           <div class="contest-card-top">
-            <span class="pill" style="color:${color};background:color-mix(in oklch, ${color} 14%, transparent)">${label}</span>
+            <span class="pill" style="color:${color}">${label}</span>
             <span class="faint" style="font-size:13px">${c.problemCount} bài · ${fmtDuration(c.endAt - c.startAt)}</span>
           </div>
           <b class="contest-card-title">${esc(c.title)}</b>
-          <span class="muted" style="font-size:14px">${fmtTime(c.startAt)} → ${fmtTime(c.endAt)}</span>
-          <div class="contest-card-foot"><span style="font-size:14px">${when}</span><span class="btn">${cta} ›</span></div>
+          <span class="muted" style="font-size:14px">${fmtTime(c.startAt)} – ${fmtTime(c.endAt)}</span>
+          <div class="contest-card-foot"><span style="font-size:14px">${when}</span><span class="btn ${c.phase === 'running' && !c.finished ? 'btn-go' : ''}">${cta}</span></div>
           ${c.allowed ? '' : '<span class="faint" style="font-size:13px">Bạn không có trong danh sách thí sinh của cuộc thi này.</span>'}
         </button>`;
     };

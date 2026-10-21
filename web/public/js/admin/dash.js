@@ -94,8 +94,8 @@ export async function render(ctx) {
 
   function head() {
     ctx.setHead({
-      crumb: 'Dashboard',
-      title: 'Dashboard',
+      crumb: 'Tổng quan',
+      title: 'Tổng quan',
       actions: `<div class="seg" role="radiogroup" aria-label="Khoảng thời gian">${RANGES.map(
         ([k, l]) => `<button role="radio" aria-checked="${k === range}" class="${k === range ? 'on' : ''}" data-range="${k}">${l}</button>`,
       ).join('')}</div>`,

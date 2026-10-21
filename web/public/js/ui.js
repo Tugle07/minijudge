@@ -19,8 +19,13 @@ export const badge = (v) => `<b class="vbadge" style="--v:${verdictVar(v)}">${es
 export const verdictText = (v, label = verdictLabel(v)) =>
   `<span class="vtext" style="--v:${verdictVar(v)}">${badge(v)}<span class="ellipsis">${esc(label)}</span></span>`;
 
-export const DIFF_COLOR = { 'Dễ': 'var(--ac)', 'Trung bình': 'var(--tle)', 'Khó': 'var(--wa)' };
-export const diffColor = (d) => DIFF_COLOR[d] || 'var(--fg2)';
+/* Độ khó hiển thị bằng thước 3 vạch, không dùng màu verdict để tránh nhầm với kết quả chấm. */
+const DIFF_LEVEL = { 'Dễ': 1, 'Trung bình': 2, 'Khó': 3 };
+export const diffColor = () => 'var(--fg2)';
+export const diffMeter = (d) => {
+  const n = DIFF_LEVEL[d] || 0;
+  return `<span class="diff" title="Độ khó: ${esc(d || '—')}"><i aria-hidden="true">${[1, 2, 3].map((k) => `<b class="${k <= n ? 'on' : ''}"></b>`).join('')}</i>${esc(d || '—')}</span>`;
+};
 
 export const SPINNER = '<span class="spinner" aria-hidden="true"></span>';
 export const SHIMMER = '<div class="shimmer-track"><div></div></div>';
@@ -36,7 +41,7 @@ export function setStatus(set) {
   if (set.openAt && Date.now() - Date.parse(set.openAt) < NEW_FOR_MS) return ['Mới', 'var(--ce)'];
   return ['Đang mở', 'var(--ac)'];
 }
-export const pillStyle = (color) => `color:${color};background:color-mix(in oklch, ${color} 14%, transparent)`;
+export const pillStyle = (color) => `color:${color}`;
 
 const pad = (n) => String(n).padStart(2, '0');
 /* "Vừa xong", "Hôm nay 21:40", "Hôm qua 20:58", "21:20, 08/10" */
@@ -57,12 +62,8 @@ export const statLine = (s) =>
     ? '—'
     : `${s.verdict === 'TLE' ? '> ' : ''}${s.time_ms ?? s.timeMs ?? 0} ms · ${s.memory_kb ?? s.memoryKb ?? 0} KB`;
 
-const AVATAR_HUES = [200, 247, 294, 341, 28, 75, 122, 169];
-export function avatarColor(name) {
-  let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return `oklch(0.6 0.11 ${AVATAR_HUES[h % AVATAR_HUES.length]})`;
-}
+/* Avatar trung tính: chữ viết tắt là đủ phân biệt, không cần mỗi người một màu. */
+export const avatarColor = () => 'var(--bg3)';
 export const initials = (name) => name.slice(0, 2).toUpperCase();
 
 /* Markdown + công thức $...$ (KaTeX). Tách công thức ra trước để marked không phá dấu _ và \. */
@@ -93,6 +94,7 @@ export function go(hash) {
   else location.hash = hash;
 }
 
-export const currentTheme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+export const currentTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 export const themeButton = () =>
-  `<button class="btn-ghost" data-act="theme" aria-label="Đổi giao diện sáng/tối">◐ ${currentTheme() === 'dark' ? 'Tối' : 'Sáng'}</button>`;
+  `<button class="btn-ghost" data-act="theme" aria-label="Đổi nền sáng/tối">${themeText()}</button>`;
+export const themeText = () => (currentTheme() === 'dark' ? 'Nền tối' : 'Nền sáng');

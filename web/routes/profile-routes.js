@@ -13,7 +13,7 @@ export function profileRoutes({ db, catalog, stats, auth, authLimit }) {
 
   r.get('/me/profile', (req, res) => {
     const uid = req.user.id;
-    const user = db.prepare('SELECT username, role, created_at FROM users WHERE id = ?').get(uid);
+    const user = db.prepare('SELECT username, full_name, role, created_at FROM users WHERE id = ?').get(uid);
     const mine = stats.myProblemStatus(uid);
     const subs = db
       .prepare("SELECT verdict, created_at FROM submissions WHERE user_id = ? AND verdict NOT IN ('PENDING', 'IE')")
@@ -32,6 +32,7 @@ export function profileRoutes({ db, catalog, stats, auth, authLimit }) {
 
     res.json({
       username: user.username,
+      fullName: user.full_name || '',
       role: user.role,
       createdAt: user.created_at,
       solved: [...mine.values()].filter((v) => v === 'ac').length,

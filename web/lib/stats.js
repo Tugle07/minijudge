@@ -19,7 +19,7 @@ export function createStats(db, catalog) {
      FROM submissions s JOIN users u ON u.id = s.user_id
      WHERE s.verdict = 'AC' AND s.contest_id IS NULL GROUP BY s.user_id, s.problem_id`,
   );
-  const allUsers = db.prepare('SELECT username FROM users ORDER BY id');
+  const allUsers = db.prepare('SELECT username, full_name FROM users ORDER BY id');
   const myDays = db.prepare(`SELECT created_at FROM submissions WHERE user_id = ? AND contest_id IS NULL AND ${JUDGED}`);
 
   function myProblemStatus(userId) {
@@ -36,7 +36,7 @@ export function createStats(db, catalog) {
 
   function leaderboard() {
     const rows = new Map(
-      allUsers.all().map(({ username }) => [username, { username, total: 0, perSet: {}, lastAcAt: 0, setLastAcAt: {}, solved: new Set() }]),
+      allUsers.all().map(({ username, full_name }) => [username, { username, fullName: full_name || '', total: 0, perSet: {}, lastAcAt: 0, setLastAcAt: {}, solved: new Set() }]),
     );
     for (const { username, problem_id, at } of firstAcs.all()) {
       const row = rows.get(username);

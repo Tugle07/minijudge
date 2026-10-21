@@ -68,7 +68,7 @@ function warningsHtml(log) {
   if (!n) return '';
   return `
     <details class="warn-box">
-      <summary>⚠ ${n} cảnh báo biên dịch <span class="faint">(-Wall) — nên sửa để code sạch hơn</span></summary>
+      <summary>${n} cảnh báo biên dịch <span class="faint">(gcc -Wall)</span></summary>
       ${compileErrorsHtml(log, 'Cảnh báo')}
     </details>`;
 }

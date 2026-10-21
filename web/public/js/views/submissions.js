@@ -11,6 +11,15 @@ const FILTERS = [
   ['CE', 'CE'],
 ];
 
+/* Thanh phân bố kết quả: mỗi đoạn rộng theo số bài nộp của verdict đó. */
+function distHtml(counts, total) {
+  const list = FILTERS.slice(1).filter(([k]) => counts[k]);
+  return `<div class="vdist">
+    <div class="vdist-bar" role="img" aria-label="Phân bố kết quả bài nộp">${list.map(([k]) => `<span style="--v:${verdictVar(k)};flex-grow:${counts[k]}" title="${k}: ${counts[k]}"></span>`).join('')}</div>
+    <div class="vdist-legend">${list.map(([k]) => `<span style="--v:${verdictVar(k)}"><i></i>${esc(verdictLabel(k))} <b>${counts[k]}</b> · ${Math.round((counts[k] / total) * 100)}%</span>`).join('')}</div>
+  </div>`;
+}
+
 export async function render(ctx) {
   const subs = await api('/api/submissions');
   const counts = { all: subs.length };
@@ -21,8 +30,9 @@ export async function render(ctx) {
     <main class="page" style="max-width:1100px">
       <div style="display:flex;flex-direction:column;gap:6px">
         <h1 class="page-title">Bài nộp của tôi</h1>
-        <p class="muted" style="margin:0">${subs.length} bài nộp · ${counts.AC || 0} Accepted</p>
+        <p class="page-sub">${subs.length} bài nộp · ${counts.AC || 0} Accepted${subs.length ? ` · ${Math.round(((counts.AC || 0) / subs.length) * 100)}% AC` : ''}</p>
       </div>
+      ${subs.length ? distHtml(counts, subs.length) : ''}
       <div class="chip-row" role="group" aria-label="Lọc theo kết quả" data-chips></div>
       <div class="table" role="table" data-table></div>
     </main>`;
@@ -49,7 +59,7 @@ export async function render(ctx) {
         <span class="wide-only">Kết quả</span><span class="right wide-only">Thời gian · Bộ nhớ</span>
         <span class="right narrow-only">KQ</span>
       </div>
-      ${list.map(row).join('') || `<div class="empty">${subs.length ? 'Không có bài nộp nào với kết quả này.' : 'Bạn chưa nộp bài nào. Vào mục Bài tập để bắt đầu nhé!'}</div>`}`;
+      ${list.map(row).join('') || `<div class="empty">${subs.length ? 'Không có bài nộp nào với kết quả này.' : 'Chưa có bài nộp nào. Bài nộp ở mục Luyện tập sẽ hiện ở đây.'}</div>`}`;
   }
 
   ctx.view.querySelector('[data-chips]').addEventListener('click', (e) => {

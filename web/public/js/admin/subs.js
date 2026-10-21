@@ -25,7 +25,7 @@ export async function render(ctx) {
   let timer;
 
   const head = () =>
-    ctx.setHead({ crumb: 'Bài nộp', title: 'Bài nộp', actions: `<button class="btn-dark" data-rejudge ${sel.size ? '' : 'disabled'}>↻ Chấm lại ${sel.size ? `(${sel.size})` : ''}</button>` });
+    ctx.setHead({ crumb: 'Bài nộp', title: 'Bài nộp', actions: `<button class="btn-dark" data-rejudge ${sel.size ? '' : 'disabled'}>Chấm lại ${sel.size ? `(${sel.size})` : ''}</button>` });
 
   ctx.page.innerHTML = `
     <div class="filters">
@@ -105,7 +105,7 @@ export async function render(ctx) {
         ${tests || s.compileLog ? `<div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">${tests}${s.compileLog ? `<pre class="celog" style="border:0;border-radius:0;max-height:160px">${esc(s.compileLog)}</pre>` : ''}</div>` : ''}
         <span style="font-size:12.5px;font-weight:600;color:var(--fg3);text-transform:uppercase;letter-spacing:.04em">Mã nguồn</span>
         <pre class="sub-code" tabindex="0" style="background:var(--bg2);max-height:none">${highlightC(s.source).html}</pre>`,
-      footer: '<button class="btn-dark" data-rejudge-one>↻ Chấm lại</button>',
+      footer: '<button class="btn-dark" data-rejudge-one>Chấm lại</button>',
     });
     drawer.el.addEventListener('click', async (e) => {
       if (!e.target.closest('[data-rejudge-one]')) return;

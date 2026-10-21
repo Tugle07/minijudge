@@ -1,5 +1,5 @@
 import { api } from './api.js';
-import { avatarColor, currentTheme, esc, go, initials, themeButton } from './ui.js';
+import { avatarColor, currentTheme, esc, go, initials, themeButton, themeText } from './ui.js';
 import * as authView from './views/auth.js';
 import * as contestView from './views/contest.js';
 import * as contestsView from './views/contests.js';
@@ -39,7 +39,7 @@ function toggleTheme() {
   try {
     localStorage.setItem('mj-theme', next);
   } catch {}
-  document.querySelectorAll('[data-act="theme"]').forEach((b) => (b.textContent = `◐ ${next === 'dark' ? 'Tối' : 'Sáng'}`));
+  document.querySelectorAll('[data-act="theme"]').forEach((b) => (b.textContent = themeText()));
 }
 
 function renderTopbar(active) {

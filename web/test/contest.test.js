@@ -11,7 +11,7 @@ import { parseTests, scoreTests, similarity } from '../lib/contests.js';
 /* Test tích hợp chế độ thi: tạo cuộc thi + subtask → thí sinh vào phòng bằng mã → nộp bài chấm đủ test →
  * điểm subtask, khóa luyện tập trong giờ thi, chỉ một phiên/thiết bị, giám sát, bảng điểm, so code giống nhau. */
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 4900 + Math.floor(Math.random() * 500);
+const PORT = 4900 + Math.floor(Math.random() * 150); /* tránh 5060/5061: fetch chặn cổng SIP */
 const BASE = `http://127.0.0.1:${PORT}`;
 const AC_P01 = '#include <stdio.h>\nint main(void){long long a,b;scanf("%lld %lld",&a,&b);printf("%lld\\n",a+b);return 0;}\n';
 /* Sai đúng test 1 (a = 1), đúng test 2 và 3. */

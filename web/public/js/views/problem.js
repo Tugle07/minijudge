@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { mountEditor } from '../editor.js';
 import { highlightC } from '../highlight.js';
-import { badge, diffColor, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
+import { badge, diffMeter, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
 import { compileErrorsHtml, resultHtml, runResultHtml } from './problem-result.js';
 
 const TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
@@ -21,7 +21,7 @@ const saveDraft = (id, code) => {
   } catch {}
 };
 
-const MY_LABEL = { ac: ['✓ Đã AC', 'var(--ac)'], tried: ['Đã thử, chưa AC', 'var(--wa)'] };
+const MY_LABEL = { ac: ['Bạn đã AC bài này', 'var(--ac)'], tried: ['Bạn đã nộp, chưa AC', 'var(--wa)'] };
 
 /* Điều hướng trong khối: bài trước / sau và dải các bài có màu theo trạng thái của mình. */
 function setNavHtml(p, set) {
@@ -44,7 +44,7 @@ function setNavHtml(p, set) {
 }
 
 function statementHtml(p, set) {
-  const chip = (html) => `<span class="info-chip">${html}</span>`;
+  const fact = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
   const nav = setNavHtml(p, set);
   const me = set?.problems.find((x) => x.id === p.id);
   const mine = MY_LABEL[p.my];
@@ -68,16 +68,16 @@ function statementHtml(p, set) {
     </div>
     <div class="prob-head">
       <h1 class="prob-title">${esc(p.title)} <span class="prob-id mono">${esc(p.id)}</span></h1>
-      ${mine ? `<span class="pill" style="color:${mine[1]};background:color-mix(in oklch, ${mine[1]} 14%, transparent)">${mine[0]}</span>` : ''}
+      ${mine ? `<span class="pill" style="color:${mine[1]}">${mine[0]}</span>` : ''}
     </div>
-    <div class="info-chips">
-      ${chip(`Thời gian <b>${p.timeMs} ms</b>`)}${chip(`Bộ nhớ <b>${p.memoryMb} MB</b>`)}${chip(`<b>${p.tests}</b> test`)}
-      <span class="info-chip" style="color:${diffColor(p.difficulty)}">● ${esc(p.difficulty)}</span>
-      ${me ? chip(`<b>${me.solved}</b> bạn đã AC · ${me.acRate}% lớp`) : ''}
-    </div>
+    <dl class="prob-facts">
+      ${fact('Thời gian', `<span class="num">${p.timeMs} ms</span>`)}${fact('Bộ nhớ', `<span class="num">${p.memoryMb} MB</span>`)}${fact('Số test', `<span class="num">${p.tests}</span>`)}
+      ${fact('Độ khó', diffMeter(p.difficulty))}
+      ${me ? fact('Lớp đã AC', `<span class="num">${me.solved}</span> bạn · <span class="num">${me.acRate}%</span>`) : ''}
+    </dl>
     <article class="statement">${renderMarkdown(p.statement)}</article>
     ${samples ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${samples}</div>` : ''}
-    ${p.hint ? `<div class="hint"><button data-hint aria-expanded="false"><span>💡 Gợi ý</span><span>Xem gợi ý</span></button><div class="hint-body" hidden>${renderMarkdown(p.hint)}</div></div>` : ''}
+    ${p.hint ? `<div class="hint"><button data-hint aria-expanded="false"><span>Gợi ý</span><span>Xem gợi ý</span></button><div class="hint-body" hidden>${renderMarkdown(p.hint)}</div></div>` : ''}
     ${nav.strip}`;
 }
 
@@ -116,10 +116,10 @@ export async function render(ctx) {
             <div class="zoom" role="group" aria-label="Cỡ chữ"><button data-zoom="-1" title="Chữ nhỏ hơn">A−</button><button data-zoom="1" title="Chữ lớn hơn">A+</button></div>
             <label class="assist-toggle" title="Gợi ý từ khóa, hàm thư viện và khung mẫu (for, main, printf…) khi gõ. Người mới nên tắt để tự nhớ cú pháp."><input type="checkbox" data-assist role="switch" /><span class="sw" aria-hidden="true"></span>Gợi ý code</label>
             <div class="spacer"></div>
-            <button class="file-btn" data-reset title="Xóa code, quay về khung mẫu">↺ Mẫu</button>
-            <label class="file-btn">↑ Tải file .c<input type="file" accept=".c,text/x-c,text/plain" data-file /></label>
-            <button class="file-btn" data-run-go title="Ctrl + '">▷ Chạy thử</button>
-            <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">⌃↵</span></button>
+            <button class="file-btn" data-reset title="Xóa code, quay về khung mẫu">Khung mẫu</button>
+            <label class="file-btn">Tải file .c<input type="file" accept=".c,text/x-c,text/plain" data-file /></label>
+            <button class="file-btn" data-run-go title="Ctrl + '">Chạy thử</button>
+            <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
           </div>
           <div class="editor" data-editor><div class="editor-loading">Đang tải trình soạn code…</div></div>
           <div class="editor-status">
@@ -140,7 +140,7 @@ export async function render(ctx) {
               <div class="run-box">
                 <textarea data-run-input spellcheck="false" placeholder="Nhập input để chạy thử…" aria-label="Input chạy thử"></textarea>
                 <div class="run-actions">
-                  <button class="btn" data-run-go>▷ Chạy</button>
+                  <button class="btn" data-run-go>Chạy</button>
                   ${p.samples.map((_, i) => `<button class="btn" data-fill="${i}">Dùng ví dụ ${i + 1}</button>`).join('')}
                   <span class="faint" style="font-size:12.5px">Không tính vào bài nộp</span>
                 </div>
@@ -161,7 +161,7 @@ export async function render(ctx) {
     onChange: (code) => {
       saveDraft(p.id, code);
       const el = $('[data-saved]');
-      el.textContent = 'Đã lưu nháp ✓';
+      el.textContent = 'Đã lưu nháp';
       clearTimeout(savedTimer);
       savedTimer = setTimeout(() => (el.textContent = 'Nháp tự lưu trên máy này'), 1500);
     },
@@ -184,16 +184,16 @@ export async function render(ctx) {
         : s.offline
           ? ''
           : s.errors
-            ? `✗ ${s.errors} lỗi cú pháp${s.warnings ? `, ${s.warnings} cảnh báo` : ''} — rê chuột vào dấu đỏ để xem`
+            ? `${s.errors} lỗi cú pháp${s.warnings ? `, ${s.warnings} cảnh báo` : ''} — rê chuột vào dấu đỏ để xem`
             : s.warnings
-              ? `⚠ ${s.warnings} cảnh báo`
-              : '✓ Không có lỗi cú pháp';
+              ? `${s.warnings} cảnh báo`
+              : 'Không có lỗi cú pháp';
     },
   });
   $('[data-assist]').checked = editor.assist;
   $('[data-assist]').addEventListener('change', (e) => {
     editor.setAssist(e.target.checked);
-    toast(e.target.checked ? 'Đã bật gợi ý code' : 'Đã tắt gợi ý code — tự gõ để nhớ cú pháp nhé');
+    toast(e.target.checked ? 'Đã bật gợi ý code' : 'Đã tắt gợi ý code');
   });
   const runInput = $('[data-run-input]');
   runInput.value = p.samples[0]?.input ?? '';
@@ -219,7 +219,7 @@ export async function render(ctx) {
     };
     return `
       <div class="samples-panel">
-        <div class="run-actions"><button class="btn-run-all" data-run-samples ${running ? 'disabled' : ''}>▷ Chạy ${state.samples.length} test ví dụ</button>${summary}</div>
+        <div class="run-actions"><button class="btn-run-all" data-run-samples ${running ? 'disabled' : ''}>Chạy ${state.samples.length} test ví dụ</button>${summary}</div>
         ${state.samplesCE != null ? compileErrorsHtml(state.samplesCE) : `<div class="sample-runs">${state.samples.map(card).join('')}</div>`}
       </div>`;
   }
@@ -300,7 +300,7 @@ export async function render(ctx) {
           <div class="sub-detail-head">
             <button class="link-btn" data-back-history>‹ Tất cả bài nộp</button>
             <span class="mono faint" style="font-size:13px">#${s.id} · ${fmtWhen(s.createdAt)}</span>
-            <button class="btn" data-load-code style="height:30px;font-size:13px">↺ Nạp code này vào trình soạn</button>
+            <button class="btn" data-load-code style="height:30px;font-size:13px">Nạp code này vào trình soạn</button>
           </div>
           <div class="result" style="max-height:none;border:1px solid var(--line);border-radius:var(--r-md)">${resultHtml({ phase: s.verdict === 'PENDING' ? 'judging' : 'done', sub: s }, p.tests)}</div>
           <pre class="sub-code">${highlightC(s.source).html}</pre>

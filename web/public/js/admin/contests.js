@@ -283,7 +283,7 @@ async function detail(ctx, id, tab) {
   const shell = (inner) => `
     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
       ${pill(...PHASE[c.phase])}
-      <span class="muted mono" style="font-size:13.5px">${fmtDateTime(c.startAt)} → ${fmtDateTime(c.endAt)}</span>
+      <span class="muted mono" style="font-size:13.5px">${fmtDateTime(c.startAt)} – ${fmtDateTime(c.endAt)}</span>
       <span class="muted" style="font-size:13.5px">· Mã phòng: <b class="mono" style="color:var(--fg)">${esc(c.settings.code || '(không)')}</b></span>
       <div style="flex:1"></div>
       <div class="seg">${TABS.map(([k, l]) => `<button class="${k === tab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>

@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { diffColor, esc, pillStyle, setStatus } from '../ui.js';
+import { diffMeter, esc, pillStyle, setStatus } from '../ui.js';
 
 const MY = {
   ac: ['✓', 'ac', 'Đã Accepted'],
@@ -19,7 +19,7 @@ export async function render(ctx) {
         <span class="my-icon ${cls}" title="${title}">${icon}</span>
         <span class="mono muted">${esc(p.id)}</span>
         <span class="ellipsis" style="font-weight:500">${esc(p.title)}</span>
-        <span style="color:${diffColor(p.difficulty)}">${esc(p.difficulty)}</span>
+        <span>${diffMeter(p.difficulty)}</span>
         <span class="ac-rate wide-only"><span class="bar"><span style="width:${p.acRate}%"></span></span>${p.acRate}%</span>
         <span class="right mono muted wide-only">${p.solved}</span>
       </button>`;
@@ -32,15 +32,15 @@ export async function render(ctx) {
       </nav>
       <div class="set-head">
         <div style="display:flex;flex-direction:column;gap:10px;max-width:640px">
-          <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;gap:14px;align-items:center">
             <span class="pill" style="${pillStyle(color)}">${esc(label)}</span>
-            <span style="font-size:13px;color:${diffColor(set.difficulty)}">● ${esc(set.difficulty)}</span>
+            ${diffMeter(set.difficulty)}
           </div>
           <h1 class="page-title">${esc(set.title)}</h1>
           <p class="muted" style="margin:0">${esc(set.desc)}</p>
         </div>
         <div class="set-progress">
-          <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">Tiến độ của tôi</span><b style="font-weight:600">${set.ac}/${set.count} bài</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">Tiến độ của tôi</span><b class="num" style="font-weight:650">${set.ac}/${set.count} bài</b></div>
           <div class="progress ${set.count && set.ac === set.count ? 'done' : ''}"><div style="width:${pct}%"></div></div>
         </div>
       </div>
@@ -51,6 +51,6 @@ export async function render(ctx) {
         </div>
         ${problems.map(row).join('') || '<div class="empty">Khối này chưa có bài nào.</div>'}
       </div>
-      <p class="faint" style="margin:0;font-size:13px">✓ đã Accepted · ✗ đã thử, chưa đúng · Tỉ lệ AC tính trên toàn lớp (${set.classSize} sinh viên)</p>
+      <p class="faint" style="margin:0;font-size:13px"><span style="color:var(--ac)">✓</span> đã AC · <span style="color:var(--wa)">✗</span> đã thử, chưa đúng · Tỉ lệ AC và số bạn đã giải tính trên ${set.classSize} sinh viên</p>
     </main>`;
 }

@@ -10,18 +10,18 @@ import * as subsPage from './subs.js';
 import * as usersPage from './users.js';
 
 const PAGES = [
-  ['dash', 'Dashboard', '⌂', dashPage],
-  ['sets', 'Khối bài tập', '▦', setsPage],
-  ['probs', 'Bài tập', '≡', probsPage],
-  ['contests', 'Cuộc thi', '⚑', contestsPage],
-  ['subs', 'Bài nộp', '↗', subsPage],
-  ['users', 'Người dùng', '◎', usersPage],
-  ['settings', 'Cài đặt', '⚙', settingsPage],
+  ['dash', 'Tổng quan', dashPage],
+  ['sets', 'Khối bài tập', setsPage],
+  ['probs', 'Bài tập', probsPage],
+  ['contests', 'Cuộc thi', contestsPage],
+  ['subs', 'Bài nộp', subsPage],
+  ['users', 'Người dùng', usersPage],
+  ['settings', 'Cài đặt', settingsPage],
 ];
 const root = document.getElementById('admin');
 const state = { me: null, cleanup: null, judgeDown: false };
 const isWide = () => window.matchMedia('(min-width: 900px)').matches;
-const themeLabel = () => (currentTheme() === 'dark' ? 'Tối' : 'Sáng');
+const themeLabel = () => (currentTheme() === 'dark' ? 'Nền tối' : 'Nền sáng');
 
 function shell(active) {
   const me = state.me.username;
@@ -29,14 +29,14 @@ function shell(active) {
     <aside class="side" data-wide-only>
       <div class="side-brand"><span class="logo-mark">mj</span><span style="font-weight:600;font-size:16px">MiniJudge</span><span class="tag-admin">Admin</span></div>
       ${PAGES.map(
-        ([k, label, key]) =>
-          `<a class="side-nav ${k === active ? 'on' : ''}" href="#/${k}" ${k === active ? 'aria-current="page"' : ''}><span class="key">${key}</span>${label}${
+        ([k, label]) =>
+          `<a class="side-nav ${k === active ? 'on' : ''}" href="#/${k}" ${k === active ? 'aria-current="page"' : ''}>${label}${
             k === 'dash' && state.judgeDown ? '<span class="badge">!</span>' : ''
           }</a>`,
       ).join('')}
       <div style="flex:1"></div>
-      <a class="side-nav" href="/#/home">← Về trang sinh viên</a>
-      <button class="side-nav" data-theme-toggle>◐ Giao diện: <span data-theme-label>${themeLabel()}</span></button>
+      <a class="side-nav" href="/#/home">Trang sinh viên</a>
+      <button class="side-nav" data-theme-toggle><span data-theme-label>${themeLabel()}</span></button>
       <div class="side-user">
         <span class="avatar" style="background:${avatarColor(me)}">${esc(initials(me))}</span>
         <div style="display:flex;flex-direction:column;min-width:0"><span class="mono" style="font-weight:500;font-size:13.5px">${esc(me)}</span><span class="faint" style="font-size:12.5px">Admin</span></div>
@@ -45,8 +45,8 @@ function shell(active) {
     <div class="admin-body">
       <header class="admin-mobile-head" data-narrow-only>
         <div style="display:flex;align-items:center;gap:10px"><span class="logo-mark" style="width:24px;height:24px;font-size:10px">mj</span><b style="font-weight:600">MiniJudge Admin</b>
-          <button class="btn-ghost" style="margin-left:auto" data-theme-toggle>◐ <span data-theme-label>${themeLabel()}</span></button></div>
-        <p class="faint" style="margin:0;font-size:13px">Trên điện thoại chỉ xem Dashboard. Mở trên máy tính để quản lý khối, bài và người dùng.</p>
+          <button class="btn-ghost" style="margin-left:auto" data-theme-toggle><span data-theme-label>${themeLabel()}</span></button></div>
+        <p class="faint" style="margin:0;font-size:13px">Trên điện thoại chỉ xem Tổng quan. Mở trên máy tính để quản lý khối, bài và người dùng.</p>
       </header>
       <div data-alert></div>
       <main class="admin-main">
@@ -88,7 +88,7 @@ async function route() {
     setJudgeDown,
   };
   try {
-    state.cleanup = (await (PAGES.find(([k]) => k === key)[3]).render(ctx)) || null;
+    state.cleanup = (await (PAGES.find(([k]) => k === key)[2]).render(ctx)) || null;
   } catch (err) {
     ctx.page.innerHTML = `<div class="panel pad"><b>Có lỗi xảy ra</b><span class="muted">${esc(err.message)}</span></div>`;
   }

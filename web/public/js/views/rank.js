@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { avatarColor, esc, fmtWhen, initials } from '../ui.js';
+import { esc, fmtWhen } from '../ui.js';
 
 const GROUP_SHORT = { 'Bài tập theo tuần': 'Theo tuần', 'Lộ trình Kỹ thuật lập trình': 'Lộ trình KTLT' };
 const groupLabel = (g) => GROUP_SHORT[g] || g.replace(/\s*—.*$/, '') || 'Khác';
@@ -25,6 +25,7 @@ export async function render(ctx) {
     const meIdx = data.rows.findIndex((r) => r.username === ctx.user.username);
     const me = data.rows[meIdx];
     const cols = set ? data.problems.length : groups.length;
+    const best = Math.max(1, ...data.rows.map(score));
     const tabs = [{ id: null, label: 'Tổng' }, ...data.sets.map((s) => ({ id: s.id, label: s.short, open: s.status === 'open' }))];
 
     const head = set
@@ -43,13 +44,12 @@ export async function render(ctx) {
 
     const row = (r, i) => `
       <div class="trow rank-cols ${r.username === ctx.user.username ? 'me' : ''}" role="row">
-        <span class="mono" style="font-weight:600;color:${ranks[i] && ranks[i] <= 3 ? 'var(--fg)' : 'var(--fg3)'}">${ranks[i] ?? '—'}</span>
+        <span class="rank-pos ${ranks[i] && ranks[i] <= 3 ? 'top' : ''}">${ranks[i] ?? '—'}</span>
         <span class="rank-user">
-          <span class="avatar" style="width:28px;height:28px;font-size:11.5px;background:${avatarColor(r.username)}">${esc(initials(r.username))}</span>
-          <span class="mono ellipsis" style="font-weight:500">${esc(r.username)}</span>
-          ${r.username === ctx.user.username ? '<span class="me-tag">Bạn</span>' : ''}
+          <span class="ellipsis" style="font-weight:550">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span>
+          ${r.fullName ? `<small class="mono">${esc(r.username)}</small>` : ''}
         </span>
-        <b class="right mono" style="font-size:15px">${score(r)}</b>
+        <span class="rank-score"><b class="right mono" style="font-size:15px">${score(r)}</b><span class="progress"><span style="width:${Math.round((score(r) / best) * 100)}%"></span></span></span>
         ${cells(r)}
         <span class="right faint wide-only" style="font-size:13.5px;white-space:nowrap">${r.lastAcAt ? fmtWhen(r.lastAcAt) : '—'}</span>
       </div>`;
@@ -58,9 +58,9 @@ export async function render(ctx) {
       <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px">
         <div style="display:flex;flex-direction:column;gap:6px">
           <h1 class="page-title">Bảng xếp hạng</h1>
-          <p class="muted" style="margin:0">${data.rows.length} thành viên · ${set ? `khối ${esc(set.short)}, ${set.count} bài` : 'tính trên toàn bộ đề'} · bằng điểm thì ai AC trước xếp trên</p>
+          <p class="muted" style="margin:0">${data.rows.length} thành viên · ${set ? `khối ${esc(set.short)}, ${set.count} bài` : 'tính trên toàn bộ đề'} · bằng số bài thì ai AC trước xếp trên</p>
         </div>
-        <div class="me-card">Hạng của bạn <b>${me && ranks[meIdx] ? ranks[meIdx] : '—'}<span style="font-size:14px;color:var(--fg3)">/${data.rows.length}</span></b> · ${me ? score(me) : 0} bài</div>
+        <div class="me-card">Hạng của bạn <b>${me && ranks[meIdx] ? ranks[meIdx] : '—'}</b><span>/ ${data.rows.length} · ${me ? score(me) : 0} bài</span></div>
       </div>
       <div class="underline-tabs" role="tablist">
         ${tabs.map((t) => `<button role="tab" class="${t.id === setId ? 'on' : ''}" data-set="${t.id ?? ''}">${t.open ? '<span class="tab-dot" title="Đang mở"></span>' : ''}${esc(t.label)}</button>`).join('')}
@@ -68,7 +68,7 @@ export async function render(ctx) {
       <div class="rank-scroll">
         <div class="table rank-table" role="table" style="--cols:${Math.max(1, cols)}">
           <div class="trow thead rank-cols" role="row">
-            <span>#</span><span>Người dùng</span><span class="right">${set ? 'Đã giải' : 'Tổng'}</span>
+            <span>#</span><span>Sinh viên</span><span>${set ? 'Đã giải' : 'Tổng số bài'}</span>
             ${head}
             <span class="right wide-only">AC gần nhất</span>
           </div>

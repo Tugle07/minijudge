@@ -19,7 +19,7 @@ export async function render(ctx) {
             <span style="flex:1 1 200px;height:40px;display:flex;align-items:center;padding:0 14px;border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--bg);font:600 16px var(--font-code);letter-spacing:.12em">${esc(shown)}</span>
             <button class="btn-line" style="height:40px" data-reveal>${reveal ? 'Ẩn' : 'Hiện'}</button>
             <button class="btn-line" style="height:40px" data-copy>Sao chép</button>
-            <button class="btn-line" style="height:40px" data-regen>↻ Tạo mã mới</button>
+            <button class="btn-line" style="height:40px" data-regen> Tạo mã mới</button>
           </div>
         </div>
         <div class="panel pad" style="padding:20px;flex-direction:row;align-items:center;gap:16px">

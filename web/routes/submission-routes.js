@@ -120,6 +120,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
       problems: problems.map((pid) => ({ id: pid, title: catalog.problemMap.get(pid)?.title || pid })),
       rows: sorted.map((r) => ({
         username: r.username,
+        fullName: r.fullName,
         total: r.total,
         perSet: r.perSet,
         solved: problems.filter((pid) => r.solved.has(pid)),

@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { avatarColor, esc, initials, toast, verdictAbbr, verdictLabel, verdictVar } from '../ui.js';
+import { esc, toast, verdictAbbr, verdictLabel, verdictVar } from '../ui.js';
 
 const DAY = 86_400_000;
 const VERDICTS = ['AC', 'WA', 'TLE', 'MLE', 'RE', 'CE'];
@@ -29,19 +29,16 @@ export async function render(ctx) {
 
   ctx.view.innerHTML = `
     <main class="page" style="max-width:1000px;gap:24px">
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:18px">
-        <span class="avatar" style="width:64px;height:64px;font-size:22px;background:${avatarColor(p.username)}">${esc(initials(p.username))}</span>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <h1 class="page-title mono" style="font-size:24px">${esc(p.username)}</h1>
-          <span class="muted" style="font-size:14px">${p.role === 'admin' ? 'Admin' : 'Sinh viên'} · tham gia ${dmy(p.createdAt)}</span>
-        </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 class="page-title">${esc(p.fullName || p.username)}</h1>
+        <span class="muted" style="font-size:14px"><span class="mono">${esc(p.username)}</span> · ${p.role === 'admin' ? 'Admin' : 'Sinh viên'} · tham gia ${dmy(p.createdAt)}</span>
       </div>
-      <div class="chip-row" style="gap:8px">
-        <span class="stat-pill">Đã giải <b>${p.solved}</b> bài</span>
-        <span class="stat-pill">Đã thử <b>${p.tried}</b> bài</span>
-        <span class="stat-pill">Hạng <b>${p.rank || '—'}</b>/${p.classSize}</span>
-        <span class="stat-pill">Chuỗi <b>${p.streak}</b> ngày</span>
-        <span class="stat-pill">${p.submissions} bài nộp · <b>${p.acRate}%</b> AC</span>
+      <div class="profile-stats">
+        <div class="ov-stat"><span>Đã giải</span><b class="num">${p.solved}</b><small>bài</small></div>
+        <div class="ov-stat"><span>Đã thử, chưa AC</span><b class="num">${Math.max(0, p.tried - p.solved)}</b><small>bài</small></div>
+        <div class="ov-stat"><span>Hạng</span><b class="num">${p.rank || '—'}</b><small>/ ${p.classSize}</small></div>
+        <div class="ov-stat"><span>Chuỗi nộp bài</span><b class="num">${p.streak}</b><small>ngày</small></div>
+        <div class="ov-stat"><span>Tỉ lệ AC</span><b class="num">${p.acRate}%</b><small>${p.submissions} bài nộp</small></div>
       </div>
 
       <section class="card-box">

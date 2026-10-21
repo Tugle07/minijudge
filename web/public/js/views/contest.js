@@ -79,7 +79,7 @@ export async function render(ctx) {
       <main class="page exam-lobby">
         <button class="link-btn" data-go="#/contests" style="align-self:flex-start">‹ Danh sách cuộc thi</button>
         <div class="exam-lobby-card">
-          <span class="faint" style="font-size:13px">${fmtTime(contest.startAt)} → ${fmtTime(contest.endAt)} · ${fmtDuration(contest.endAt - contest.startAt)} · ${contest.problemCount} bài</span>
+          <span class="faint" style="font-size:13px">${fmtTime(contest.startAt)} – ${fmtTime(contest.endAt)} · ${fmtDuration(contest.endAt - contest.startAt)} · ${contest.problemCount} bài</span>
           <h1 class="page-title">${esc(contest.title)}</h1>
           ${contest.description ? `<div class="statement" style="font-size:15px">${renderMarkdown(contest.description)}</div>` : ''}
           <div class="exam-rules">
@@ -166,8 +166,8 @@ export async function render(ctx) {
               <span class="lang-chip">C11 · gcc -O2</span>
               <span class="faint" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
               <div class="spacer"></div>
-              <button class="file-btn" data-run title="Chạy với input bên dưới, không tính điểm">▷ Chạy thử</button>
-              <button class="btn-submit" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">⌃↵</span></button>
+              <button class="file-btn" data-run title="Chạy với input bên dưới, không tính điểm">Chạy thử</button>
+              <button class="btn-submit" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
             </div>
             <div class="editor" data-editor><div class="editor-loading">Đang tải trình soạn code…</div></div>
             <div class="editor-status"><span data-cursor>Dòng 1, cột 1</span><span data-lint class="lint-state"></span></div>
@@ -217,7 +217,7 @@ export async function render(ctx) {
         saveDraft(cid, state.label, code);
         const el = $('[data-saved]');
         if (!el) return;
-        el.textContent = 'Đã lưu nháp ✓';
+        el.textContent = 'Đã lưu nháp';
         clearTimeout(savedTimer);
         savedTimer = setTimeout(() => (el.textContent = 'Nháp tự lưu trên máy này'), 1500);
       },
@@ -238,7 +238,7 @@ export async function render(ctx) {
         const el = $('[data-lint]');
         if (!el) return;
         el.className = `lint-state ${s.checking ? '' : s.errors ? 'bad' : s.warnings ? 'warn' : s.offline ? '' : 'good'}`;
-        el.textContent = s.checking ? 'Đang kiểm tra cú pháp…' : s.offline ? '' : s.errors ? `✗ ${s.errors} lỗi cú pháp` : s.warnings ? `⚠ ${s.warnings} cảnh báo` : '✓ Không có lỗi cú pháp';
+        el.textContent = s.checking ? 'Đang kiểm tra cú pháp…' : s.offline ? '' : s.errors ? `${s.errors} lỗi cú pháp` : s.warnings ? `${s.warnings} cảnh báo` : 'Không có lỗi cú pháp';
       },
     });
     if (editor.assist) editor.setAssist?.(false);
@@ -260,10 +260,12 @@ export async function render(ctx) {
       $('[data-statement]').innerHTML = `
         <div class="pane-left-inner">
           <div class="prob-head"><h1 class="prob-title"><span class="mono">${esc(p.label)}.</span> ${esc(p.title)}</h1></div>
-          <div class="info-chips">
-            <span class="info-chip">⏱ ${p.timeMs} ms</span><span class="info-chip">▤ ${p.memoryMb} MB</span><span class="info-chip">★ ${p.points} điểm</span>
-          </div>
-          <div class="exam-subtasks"><b>Thang điểm</b>${p.subtasks.map((s, i) => `<div><span>Subtask ${i + 1}: ${esc(s.name)}</span><b class="mono">${s.points} điểm</b></div>`).join('')}</div>
+          <dl class="prob-facts">
+            <div><dt>Thời gian</dt><dd class="num">${p.timeMs} ms</dd></div><div><dt>Bộ nhớ</dt><dd class="num">${p.memoryMb} MB</dd></div><div><dt>Điểm tối đa</dt><dd class="num">${p.points}</dd></div>
+          </dl>
+          <div class="exam-subtasks"><b>Thang điểm</b>
+            <div class="st-bar" aria-hidden="true">${p.subtasks.map((s) => `<span style="flex-grow:${Math.max(1, s.points)}"></span>`).join('')}</div>
+            ${p.subtasks.map((s, i) => `<div><span>Subtask ${i + 1}: ${esc(s.name)}</span><b class="mono">${s.points} điểm</b></div>`).join('')}</div>
           <article class="statement">${renderMarkdown(p.statement)}</article>
           ${p.samples.length ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${p.samples.map((s, i) => `<div class="sample"><div><div class="sample-head">INPUT #${i + 1}</div><pre>${esc(s.input)}</pre></div><div><div class="sample-head">OUTPUT #${i + 1}</div><pre>${esc(s.output)}</pre></div></div>`).join('')}</div>` : ''}
         </div>`;
@@ -353,7 +355,7 @@ export async function render(ctx) {
       const guard = $('[data-guard]');
       if (guard) {
         guard.className = `exam-guard ${ok ? 'ok' : 'bad'}`;
-        guard.textContent = ok ? '● Đang giám sát' : '● Rời bài thi';
+        guard.textContent = ok ? 'Đang giám sát' : 'Rời bài thi';
       }
       const overlay = $('[data-overlay]');
       if (!overlay) return;
@@ -460,7 +462,7 @@ export async function render(ctx) {
       const left = contest.endAt - now();
       const el = $('[data-clock]');
       if (el) {
-        el.textContent = `⏳ ${fmtCountdown(left)}`;
+        el.textContent = fmtCountdown(left);
         el.classList.toggle('low', left < 5 * 60_000);
       }
       if (left <= 0) {
@@ -534,7 +536,7 @@ export async function render(ctx) {
           <h2 class="section-title">Bảng kết quả</h2>
           <div class="rank-scroll"><div class="table">
             <div class="trow thead" style="grid-template-columns:52px minmax(160px,1fr) repeat(${board.problems.length},64px) 80px"><span>#</span><span>Thí sinh</span>${board.problems.map((p) => `<span class="right">${esc(p.label)}</span>`).join('')}<span class="right">Tổng</span></div>
-            ${board.rows.map((r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:52px minmax(160px,1fr) repeat(${board.problems.length},64px) 80px"><b class="mono">${r.rank}</b><span class="mono ellipsis">${esc(r.username)}</span>${r.cells.map((c) => `<span class="right mono muted">${c.score == null ? '·' : Number(c.score.toFixed(2))}</span>`).join('')}<b class="right mono">${Number(r.total.toFixed(2))}</b></div>`).join('')}
+            ${board.rows.map((r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:52px minmax(160px,1fr) repeat(${board.problems.length},64px) 80px"><b class="mono">${r.rank}</b><span class="ellipsis">${esc(r.fullName || r.username)}</span>${r.cells.map((c) => `<span class="right mono muted">${c.score == null ? '·' : Number(c.score.toFixed(2))}</span>`).join('')}<b class="right mono">${Number(r.total.toFixed(2))}</b></div>`).join('')}
           </div></div>` : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Kết quả chung sẽ được công bố sau khi cuộc thi kết thúc.</p>'}
       </main>`;
   }

@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { diffColor, esc, pillStyle, setStatus } from '../ui.js';
+import { diffMeter, esc, pillStyle, setStatus } from '../ui.js';
 
 const ROADMAP_GROUP = /lộ trình/i;
 const DAY = 86_400_000;
@@ -13,13 +13,16 @@ function dueLabel(deadline) {
   return `Còn ${Math.ceil(left / DAY)} ngày`;
 }
 
-function ring(pct) {
-  const r = 34;
-  const c = 2 * Math.PI * r;
-  return `<svg class="ring" viewBox="0 0 80 80" role="img" aria-label="Hoàn thành ${pct}% lộ trình">
-    <circle cx="40" cy="40" r="${r}" class="ring-track" />
-    <circle cx="40" cy="40" r="${r}" class="ring-fill" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct / 100)}" />
-    <text x="40" y="45" text-anchor="middle">${pct}%</text></svg>`;
+/* Thanh lộ trình: mỗi đoạn là một khối, rộng theo số bài, phần tô = số bài đã AC. */
+function roadBar(roadmap) {
+  return `<div class="roadbar" role="list" aria-label="Tiến độ từng khối trong lộ trình">${roadmap
+    .map((s) => {
+      const pct = s.count ? Math.round((s.ac / s.count) * 100) : 0;
+      const done = s.count && s.ac === s.count;
+      return `<button role="listitem" class="road-seg ${done ? 'done' : ''}" style="flex-grow:${Math.max(1, s.count)}" data-go="#/set/${encodeURIComponent(s.id)}" title="${esc(s.title)}: ${s.ac}/${s.count} bài">
+        <span class="road-track"><span style="width:${pct}%"></span></span><span class="road-label mono">${esc(s.num)}</span></button>`;
+    })
+    .join('')}</div>`;
 }
 
 export async function render(ctx) {
@@ -29,26 +32,30 @@ export async function render(ctx) {
   const roadmap = sets.filter((s) => ROADMAP_GROUP.test(s.group));
   const rmAc = roadmap.reduce((t, s) => t + s.ac, 0);
   const rmCount = roadmap.reduce((t, s) => t + s.count, 0);
+  const total = sets.reduce((t, s) => t + s.count, 0);
   const next = roadmap.find((s) => s.count && s.ac < s.count) || sets.find((s) => s.count && s.ac < s.count);
+  const stat = (label, value, unit) => `<div class="ov-stat"><span>${label}</span><b class="num">${value}</b><small>${unit}</small></div>`;
 
   ctx.view.innerHTML = `
     <main class="page home">
-      <section class="hero">
-        <div class="hero-main">
-          <span class="hero-kicker">Kỹ thuật lập trình C</span>
-          <h1>Chào ${esc(ctx.user.username)}, hôm nay luyện gì?</h1>
-          ${next ? `<button class="hero-cta" data-go="#/set/${encodeURIComponent(next.id)}"><span>Học tiếp</span><b>${esc(next.title)}</b><span class="arrow">→</span></button>` : '<span class="muted">Bạn đã hoàn thành mọi khối. Quá đỉnh! 🎉</span>'}
+      <section class="overview">
+        <div class="ov-head">
+          <h1 class="page-title">Luyện tập</h1>
+          ${
+            next
+              ? `<button class="btn-primary ov-next" data-go="#/set/${encodeURIComponent(next.id)}"><span>Làm tiếp: ${esc(next.title)}</span><span class="num ov-next-n">${next.ac}/${next.count}</span></button>`
+              : '<span class="muted">Đã AC toàn bộ bài hiện có.</span>'
+          }
         </div>
-        <div class="hero-side">
-          ${rmCount ? `<div class="hero-ring">${ring(Math.round((rmAc / rmCount) * 100))}<span>Lộ trình<br /><b>${rmAc}/${rmCount}</b> bài</span></div>` : ''}
-          <div class="stat-tiles">
-            <div><b>${summary.solved}</b><span>bài đã giải</span></div>
-            <div><b>${summary.rank || '—'}</b><span>hạng / ${summary.classSize}</span></div>
-            <div><b>${summary.streak}</b><span>ngày liên tiếp 🔥</span></div>
-          </div>
+        <div class="ov-stats">
+          ${stat('Đã giải', summary.solved, `/ ${total} bài`)}
+          ${stat('Hạng', summary.rank || '—', `/ ${summary.classSize}`)}
+          ${stat('Chuỗi nộp bài', summary.streak, 'ngày liên tiếp')}
+          ${rmCount ? stat('Lộ trình', `${Math.round((rmAc / rmCount) * 100)}%`, `${rmAc}/${rmCount} bài`) : ''}
         </div>
+        ${roadmap.length ? roadBar(roadmap) : ''}
       </section>
-      ${banner ? `<div class="banner-preview" role="note"><b>i</b><span style="text-wrap:pretty">${esc(banner)}</span></div>` : ''}
+      ${banner ? `<div class="banner-preview" role="note"><span style="text-wrap:pretty">${esc(banner)}</span></div>` : ''}
       <div class="home-filters">
         <input class="search" data-q placeholder="Tìm khối hoặc chủ đề (vd. con trỏ, mảng)" aria-label="Tìm khối" />
         <select class="ctl" data-topic aria-label="Lọc theo chủ đề"><option value="">Mọi chủ đề</option>${topics.map((t) => `<option>${esc(t)}</option>`).join('')}</select>
@@ -62,23 +69,21 @@ export async function render(ctx) {
   function card(s) {
     const [label, color] = setStatus(s);
     const pct = s.count ? Math.round((s.ac / s.count) * 100) : 0;
-    const due = s.deadline && s.ac < s.count ? dueLabel(s.deadline) : '';
+    const done = s.count && s.ac === s.count;
+    const due = s.deadline && !done ? dueLabel(s.deadline) : '';
     return `
-      <button class="set-card" data-go="#/set/${encodeURIComponent(s.id)}" style="--h:${s.hue}">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <span class="set-num">${esc(s.num)}</span>
-          <span class="pill" style="${pillStyle(color)}">${esc(due || label)}</span>
+      <button class="set-card ${done ? 'done' : ''}" data-go="#/set/${encodeURIComponent(s.id)}">
+        <div class="set-card-top">
+          <span class="set-num mono">${esc(s.num)}</span>
+          <span class="pill" style="${pillStyle(due && due !== 'Đã hết hạn' ? 'var(--tle)' : due ? 'var(--pd)' : color)}">${esc(due || label)}</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <span class="title">${esc(s.title)}</span>
           <span class="muted" style="font-size:14px">${esc(s.desc)}</span>
         </div>
         <div class="foot">
-          <div class="foot-line">
-            <span>Đã AC <b style="color:var(--fg);font-weight:600">${s.ac}/${s.count}</b></span>
-            <span style="color:${diffColor(s.difficulty)}">● ${esc(s.difficulty)}</span>
-          </div>
-          <div class="progress ${s.count && s.ac === s.count ? 'done' : ''}"><div style="width:${pct}%"></div></div>
+          <div class="foot-line">${diffMeter(s.difficulty)}<span><b class="num">${s.ac}</b>/${s.count} bài</span></div>
+          <div class="progress ${done ? 'done' : ''}"><div style="width:${pct}%"></div></div>
         </div>
       </button>`;
   }
@@ -90,15 +95,15 @@ export async function render(ctx) {
     const pct = s.count ? Math.round((s.ac / s.count) * 100) : 0;
     const cls = done ? 'done' : current ? 'current' : s.ac ? 'started' : '';
     return `
-      <li class="step ${cls}" style="--h:${s.hue}">
+      <li class="step ${cls}">
         <span class="step-dot" aria-hidden="true">${done ? '✓' : esc(s.num)}</span>
         <button class="step-card" data-go="#/set/${encodeURIComponent(s.id)}">
           <span class="step-text">
-            <span class="step-title">${esc(s.title)}${current ? '<span class="step-badge">Đang học</span>' : ''}</span>
+            <span class="step-title">${esc(s.title)}${current ? '<span class="step-now">đang học</span>' : ''}</span>
             <span class="muted">${esc(s.desc)}</span>
           </span>
           <span class="step-meta">
-            <span><b>${s.ac}</b>/${s.count} bài</span>
+            <span><b class="num">${s.ac}</b>/${s.count} bài</span>
             <span class="progress ${done ? 'done' : ''}"><span style="width:${pct}%"></span></span>
           </span>
         </button>

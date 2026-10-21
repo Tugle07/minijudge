@@ -14,14 +14,18 @@ const hero = `
   <aside class="auth-hero wide-only">
     <div style="display:flex;align-items:center;gap:10px"><span class="logo-mark lg">mj</span><span class="logo-text" style="font-size:17px">MiniJudge</span></div>
     <div class="hero-body">
-      <h1>Luyện C mỗi ngày, chấm bài trong 1 giây</h1>
+      <h1>Nộp code C, nhận kết quả chấm từng test</h1>
       <div class="code-card">
-        <div class="code-card-head"><span>p01_tong_hai_so.c</span><b class="vbadge" style="--v:var(--ac);font-size:13px">✓ Accepted</b></div>
+        <div class="code-card-head"><span>p01_tong_hai_so.c</span><b class="vbadge" style="--v:var(--ac);font-size:13px">AC</b></div>
         <pre>${HERO_CODE}</pre>
         <div class="code-card-foot"><span>3/3 test</span><span>15 ms</span><span>1212 KB</span></div>
       </div>
+      <ul class="hero-facts">
+        <li><b>Luyện tập</b><span>Lộ trình theo chương và bài tập theo tuần, chạy thử với test ví dụ trước khi nộp.</span></li>
+        <li><b>Cuộc thi</b><span>Thi tập trung trên lớp, chấm điểm theo subtask, giám thị theo dõi trực tiếp.</span></li>
+      </ul>
     </div>
-    <div class="faint" style="font-size:13px">Kỹ thuật Lập trình C · K67 · Nhóm ICPC/OLP</div>
+    <div class="auth-foot">Kỹ thuật Lập trình C · K67</div>
   </aside>`;
 
 export async function render(ctx) {
@@ -47,8 +51,8 @@ export async function render(ctx) {
           </div>
           <div class="auth-center"><div class="auth-box">
             <div style="display:flex;flex-direction:column;gap:6px">
-              <h2>${isLogin ? 'Chào mừng trở lại' : 'Tạo tài khoản'}</h2>
-              <p class="muted" style="margin:0">${isLogin ? 'Đăng nhập để tiếp tục luyện bài.' : 'Dùng mã lớp để tham gia lớp K67.'}</p>
+              <h2>${isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}</h2>
+              <p class="muted" style="margin:0">${isLogin ? 'Tên đăng nhập là MSSV của bạn.' : 'Cần mã lớp do lớp trưởng cung cấp.'}</p>
             </div>
             ${
               allowRegister
@@ -60,7 +64,7 @@ export async function render(ctx) {
             }
             ${state.general ? `<div class="alert" role="alert"><b>!</b><span>${esc(state.general)}</span></div>` : ''}
             <form class="form" novalidate>
-              ${field('user', 'Tên đăng nhập', input('user', { html: 'autocomplete="username" placeholder="vd. congtuan07" autofocus' }), isLogin ? '' : '3–24 ký tự: chữ, số hoặc dấu _')}
+              ${field('user', 'Tên đăng nhập', input('user', { html: 'autocomplete="username" placeholder="vd. 6751071001" inputmode="text" autofocus' }), isLogin ? '' : '3–24 ký tự: chữ, số hoặc dấu _')}
               ${field('pw', 'Mật khẩu', `<div class="pw-wrap">${input('pw', { html: `type="${pwType}" autocomplete="${isLogin ? 'current-password' : 'new-password'}" placeholder="${isLogin ? '' : 'Ít nhất 6 ký tự'}"` })}<button type="button" class="pw-toggle" data-pw aria-label="Ẩn/hiện mật khẩu">${state.showPw ? 'Ẩn' : 'Hiện'}</button></div>`)}
               ${isLogin ? '' : field('pw2', 'Nhập lại mật khẩu', input('pw2', { html: `type="${pwType}" autocomplete="new-password"` }))}
               ${isLogin || !registerCodeRequired ? '' : field('code', 'Mã lớp', input('code', { cls: 'code', html: 'placeholder="vd. K67-XXXX" autocomplete="off"' }), 'Lấy mã từ lớp trưởng')}
