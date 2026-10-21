@@ -152,3 +152,4 @@
 .ed-foot .dirty { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--tle); }
 .ed-foot .dirty i { width: 8px; height: 8px; border-radius: 50%; background: var(--tle); }
 .notice { padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line2); background: var(--bg2); font-size: 14px; color: var(--fg2); }
+.atable .pill { white-space: nowrap; }

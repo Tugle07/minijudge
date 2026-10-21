@@ -1,6 +1,8 @@
 import { api } from './api.js';
 import { avatarColor, currentTheme, esc, go, initials, themeButton } from './ui.js';
 import * as authView from './views/auth.js';
+import * as contestView from './views/contest.js';
+import * as contestsView from './views/contests.js';
 import * as homeView from './views/home.js';
 import * as problemView from './views/problem.js';
 import * as profileView from './views/profile.js';
@@ -13,7 +15,9 @@ const view = document.getElementById('view');
 
 const ROUTES = {
   login: { view: authView, nav: null, title: 'Đăng nhập' },
-  home: { view: homeView, nav: 'home', title: 'Bài tập' },
+  home: { view: homeView, nav: 'home', title: 'Luyện tập' },
+  contests: { view: contestsView, nav: 'contests', title: 'Cuộc thi' },
+  contest: { view: contestView, nav: null, title: 'Phòng thi' },
   set: { view: setView, nav: 'home', title: 'Khối bài' },
   problem: { view: problemView, nav: 'home', title: 'Đề bài' },
   submissions: { view: submissionsView, nav: 'submissions', title: 'Bài nộp của tôi' },
@@ -21,7 +25,8 @@ const ROUTES = {
   profile: { view: profileView, nav: 'profile', title: 'Hồ sơ' },
 };
 const NAV = [
-  ['home', 'Bài tập'],
+  ['home', 'Luyện tập'],
+  ['contests', 'Cuộc thi'],
   ['submissions', 'Bài nộp'],
   ['rank', 'Bảng xếp hạng'],
 ];
@@ -114,6 +119,8 @@ async function router() {
       app.user = null;
       return go('#/login');
     }
+    /* Đang trong giờ thi: mọi trang luyện tập chuyển về phòng thi. */
+    if (err.status === 423 && err.data?.contestId) return go(`#/contest/${err.data.contestId}`);
     view.innerHTML = `<main class="page" style="max-width:720px"><div class="empty-box"><b>Có lỗi xảy ra</b><span class="muted">${esc(err.message)}</span><button class="btn" data-go="#/home">Về trang chủ</button></div></main>`;
   }
 }

@@ -31,7 +31,8 @@ static void json_string(const char *s, size_t limit) {
 static int usage(void) {
     fprintf(stderr,
             "Cach dung:\n"
-            "  judge-cli <problems_dir> <problem_id> <source.c> [work_dir]\n"
+            "  judge-cli [--all] <problems_dir> <problem_id> <source.c> [work_dir]\n"
+            "      --all: chay het moi test (cham diem theo subtask), mac dinh dung o test sai dau tien\n"
             "  judge-cli --run <source.c> <input.txt> <work_dir> [time_ms] [memory_mb]\n");
     return 2;
 }
@@ -61,6 +62,11 @@ static int run_custom(int argc, char **argv) {
 /* Cầu nối cho web server: chấm 1 bài và in kết quả dạng JSON ra stdout. */
 int main(int argc, char **argv) {
     if (argc >= 2 && strcmp(argv[1], "--run") == 0) return run_custom(argc, argv);
+    if (argc >= 2 && strcmp(argv[1], "--all") == 0) {
+        judge_run_all = 1;
+        argc--;
+        argv++;
+    }
     if (argc < 4) return usage();
     const char *root = argv[1], *id = argv[2], *source = argv[3];
     const char *work = argc > 4 ? argv[4] : "judge-work";

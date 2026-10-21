@@ -59,6 +59,52 @@ export function openDatabase(file) {
       solution   TEXT NOT NULL DEFAULT '',
       updated_at INTEGER
     );
+
+    /* Cuộc thi: settings là JSON (mã phòng, dải IP, danh sách thí sinh, công bố kết quả…). */
+    CREATE TABLE IF NOT EXISTS contests (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      title       TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      start_at    INTEGER NOT NULL,
+      end_at      INTEGER NOT NULL,
+      status      TEXT NOT NULL DEFAULT 'draft',
+      settings    TEXT NOT NULL DEFAULT '{}',
+      created_at  INTEGER NOT NULL
+    );
+
+    /* Bài trong cuộc thi; subtasks là JSON [{name, tests: "1-5,8", points}]. */
+    CREATE TABLE IF NOT EXISTS contest_problems (
+      contest_id INTEGER NOT NULL REFERENCES contests(id) ON DELETE CASCADE,
+      problem_id TEXT NOT NULL,
+      label      TEXT NOT NULL,
+      position   INTEGER NOT NULL,
+      subtasks   TEXT NOT NULL DEFAULT '[]',
+      PRIMARY KEY (contest_id, problem_id)
+    );
+
+    /* Thí sinh đã vào phòng; session_hash gắn bài thi với đúng một phiên đăng nhập (một thiết bị/tab). */
+    CREATE TABLE IF NOT EXISTS contest_participants (
+      contest_id   INTEGER NOT NULL REFERENCES contests(id) ON DELETE CASCADE,
+      user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      joined_at    INTEGER NOT NULL,
+      finished_at  INTEGER,
+      session_hash TEXT,
+      ip           TEXT,
+      last_seen    INTEGER,
+      state        TEXT NOT NULL DEFAULT '{}',
+      PRIMARY KEY (contest_id, user_id)
+    );
+
+    /* Nhật ký giám sát: thoát toàn màn hình, chuyển tab, dán code từ ngoài… */
+    CREATE TABLE IF NOT EXISTS contest_events (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      contest_id INTEGER NOT NULL REFERENCES contests(id) ON DELETE CASCADE,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type       TEXT NOT NULL,
+      detail     TEXT NOT NULL DEFAULT '',
+      at         INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_contest_events ON contest_events(contest_id, user_id);
   `);
   migrate(db);
   return db;
@@ -70,6 +116,10 @@ const columnsOf = (db, table) => new Set(db.prepare(`PRAGMA table_info(${table})
 function migrate(db) {
   const subs = columnsOf(db, 'submissions');
   if (!subs.has('fail_output')) db.exec('ALTER TABLE submissions ADD COLUMN fail_output TEXT');
+  if (!subs.has('contest_id')) db.exec('ALTER TABLE submissions ADD COLUMN contest_id INTEGER');
+  if (!subs.has('score')) db.exec('ALTER TABLE submissions ADD COLUMN score REAL');
+  if (!subs.has('subtasks_json')) db.exec('ALTER TABLE submissions ADD COLUMN subtasks_json TEXT');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_submissions_contest ON submissions(contest_id, user_id)');
   const users = columnsOf(db, 'users');
   if (!users.has('role')) db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'student'");
   if (!users.has('locked')) db.exec('ALTER TABLE users ADD COLUMN locked INTEGER NOT NULL DEFAULT 0');

@@ -3,7 +3,7 @@ import http from 'node:http';
 import { createRunner, ID_RE } from './judge-runner.js';
 
 /* Dịch vụ chấm bài chạy trong container riêng (không có database, không ra Internet).
- * POST /judge {problemId, source}      → kết quả chấm của judge-cli
+ * POST /judge {problemId, source, all} → kết quả chấm của judge-cli (all: chạy hết test)
  * POST /run   {source, input, timeMs}  → chạy thử với input tự nhập
  * POST /check {source}                 → chỉ kiểm tra cú pháp (gcc -fsyntax-only), không chạy code */
 const PORT = Number(process.env.PORT || 4000);
@@ -48,9 +48,9 @@ function send(res, status, body) {
 }
 
 const ROUTES = {
-  '/judge': ({ problemId, source, origin }) =>
+  '/judge': ({ problemId, source, origin, all }) =>
     typeof problemId === 'string' && ID_RE.test(problemId) && typeof source === 'string'
-      ? (slot) => runner.judge(problemId, source, { slot, origin: origin === 'custom' ? 'custom' : 'repo' })
+      ? (slot) => runner.judge(problemId, source, { slot, origin: origin === 'custom' ? 'custom' : 'repo', all: all === true })
       : null,
   '/run': ({ source, input, timeMs, memoryMb }) =>
     typeof source === 'string' && typeof input === 'string'

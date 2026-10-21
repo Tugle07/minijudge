@@ -41,7 +41,8 @@ export function createAuth(db, { secureCookie = false } = {}) {
   return {
     loadUser(req, _res, next) {
       const token = parseCookies(req.headers.cookie).sid;
-      req.user = token ? findSession.get(sha256(token), Date.now()) ?? null : null;
+      req.sessionHash = token ? sha256(token) : null;
+      req.user = token ? findSession.get(req.sessionHash, Date.now()) ?? null : null;
       if (req.user) {
         const now = Date.now();
         if (now - (lastTouch.get(req.user.id) || 0) > TOUCH_EVERY_MS) {

@@ -77,7 +77,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
     const rows = db
       .prepare(
         `SELECT id, problem_id, verdict, time_ms, memory_kb, tests_passed, test_count, created_at
-         FROM submissions WHERE user_id = ? ${problem ? 'AND problem_id = ?' : ''}
+         FROM submissions WHERE user_id = ? AND contest_id IS NULL ${problem ? 'AND problem_id = ?' : ''}
          ORDER BY id DESC LIMIT ${PAGE_SIZE}`,
       )
       .all(...(problem ? [req.user.id, problem] : [req.user.id]));
@@ -86,7 +86,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
 
   r.get('/submissions/:id', (req, res) => {
     const row = db
-      .prepare('SELECT * FROM submissions WHERE id = ? AND user_id = ?')
+      .prepare('SELECT * FROM submissions WHERE id = ? AND user_id = ? AND contest_id IS NULL')
       .get(Number(req.params.id), req.user.id);
     if (!row) return res.status(404).json({ error: 'Không tìm thấy bài nộp' });
     res.json({

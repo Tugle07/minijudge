@@ -10,6 +10,8 @@ static const char *NAMES[VERDICT_COUNT] = {
     "Accepted",        "Wrong Answer",      "Time Limit Exceeded", "Memory Limit Exceeded",
     "Runtime Error",   "Compilation Error", "Internal Error",      "Pending"};
 
+int judge_run_all = 0;
+
 const char *verdict_code(verdict_t v) {
     return (unsigned)v < VERDICT_COUNT ? CODES[v] : "IE";
 }
@@ -76,7 +78,7 @@ int judge_submission(const problem_t *p, const char *source, const char *work_di
             r->verdict = VERDICT_IE;
         } else if (r->verdict == VERDICT_AC && !judge_compare_files(ans, out)) {
             r->verdict = VERDICT_WA;
-            rep->fail_output = mj_read_prefix(out, JUDGE_OUTPUT_PREVIEW);
+            if (!rep->fail_output) rep->fail_output = mj_read_prefix(out, JUDGE_OUTPUT_PREVIEW);
         }
         remove(out);
 
@@ -84,8 +86,9 @@ int judge_submission(const problem_t *p, const char *source, const char *work_di
         if (r->time_ms > rep->max_time_ms) rep->max_time_ms = r->time_ms;
         if (r->memory_kb > rep->max_memory_kb) rep->max_memory_kb = r->memory_kb;
         if (r->verdict != VERDICT_AC) {
-            rep->verdict = r->verdict;
-            break;
+            if (rep->verdict == VERDICT_AC) rep->verdict = r->verdict;
+            if (!judge_run_all) break;
+            continue;
         }
         rep->tests_passed++;
     }

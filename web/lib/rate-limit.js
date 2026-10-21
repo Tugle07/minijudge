@@ -1,5 +1,10 @@
-/* Giới hạn số lần thử trong một khoảng thời gian (chống dò mật khẩu, spam tạo tài khoản). */
-export function createRateLimit({ windowMs, max, message }) {
+/* Giới hạn số lần thử trong một khoảng thời gian (chống dò mật khẩu, spam tạo tài khoản).
+ * keyOf mặc định tính theo IP + tài khoản: cả lớp ngồi chung wifi trường có chung một IP công khai,
+ * nếu chỉ tính theo IP thì một người nộp nhanh sẽ chặn luôn cả lớp. */
+export const byIpAndUser = (req) =>
+  `${req.clientIp}|${req.user?.id ?? String(req.body?.username ?? '').trim().toLowerCase()}`;
+
+export function createRateLimit({ windowMs, max, message, keyOf = byIpAndUser }) {
   const hits = new Map();
 
   setInterval(() => {
@@ -8,7 +13,7 @@ export function createRateLimit({ windowMs, max, message }) {
   }, windowMs).unref();
 
   return (req, res, next) => {
-    const key = req.clientIp;
+    const key = keyOf(req);
     const now = Date.now();
     let entry = hits.get(key);
     if (!entry || entry.resetAt <= now) {

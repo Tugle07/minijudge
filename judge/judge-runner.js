@@ -61,12 +61,13 @@ const slotEnv = (slot) => (slot == null ? {} : { MJ_SANDBOX_UID: String(60000 + 
 export function createRunner({ judgeBin, problemsDir, customDir, workRoot }) {
   fs.mkdirSync(workRoot, { recursive: true, mode: 0o755 });
   return {
-    judge: (problemId, source, { slot, origin } = {}) =>
+    /* all = true: chạy hết mọi test thay vì dừng ở test sai đầu tiên (chấm điểm theo subtask). */
+    judge: (problemId, source, { slot, origin, all } = {}) =>
       invoke(
         judgeBin,
         workRoot,
         { 'main.c': source },
-        (p, dir) => [origin === 'custom' && customDir ? customDir : problemsDir, problemId, p['main.c'], dir],
+        (p, dir) => [...(all ? ['--all'] : []), origin === 'custom' && customDir ? customDir : problemsDir, problemId, p['main.c'], dir],
         slotEnv(slot),
       ),
     health: async () => ({ ok: true }),

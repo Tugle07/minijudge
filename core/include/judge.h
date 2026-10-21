@@ -52,6 +52,9 @@ int judge_run(const char *exe, const char *in_path, const char *out_path,
 
 int judge_compare_files(const char *expected, const char *actual);
 
+/* 0 (mặc định): dừng ở test sai đầu tiên. 1: chạy hết mọi test (chấm điểm theo subtask). */
+extern int judge_run_all;
+
 int judge_submission(const problem_t *p, const char *source, const char *work_dir,
                      judge_report_t *rep);
 void judge_report_free(judge_report_t *rep);

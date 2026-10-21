@@ -1,6 +1,7 @@
 import { api } from '../api.js';
 import { avatarColor, currentTheme, esc, initials } from '../ui.js';
 import { SKELETON } from './kit.js';
+import * as contestsPage from './contests.js';
 import * as dashPage from './dash.js';
 import * as probsPage from './probs.js';
 import * as setsPage from './sets.js';
@@ -12,6 +13,7 @@ const PAGES = [
   ['dash', 'Dashboard', '⌂', dashPage],
   ['sets', 'Khối bài tập', '▦', setsPage],
   ['probs', 'Bài tập', '≡', probsPage],
+  ['contests', 'Cuộc thi', '⚑', contestsPage],
   ['subs', 'Bài nộp', '↗', subsPage],
   ['users', 'Người dùng', '◎', usersPage],
   ['settings', 'Cài đặt', '⚙', settingsPage],

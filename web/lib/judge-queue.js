@@ -16,7 +16,7 @@ export async function createJudgeClient({ judgeUrl, judgeBin, problemsDir, custo
       return res.json();
     };
     return {
-      judge: (problemId, source, { origin } = {}) => post('/judge', { problemId, source, origin }),
+      judge: (problemId, source, { origin, all } = {}) => post('/judge', { problemId, source, origin, all: Boolean(all) }),
       run: (source, input, timeMs, memoryMb) => post('/run', { source, input, timeMs, memoryMb }),
       check: (source) => post('/check', { source }),
       health: async () => {
@@ -31,11 +31,12 @@ export async function createJudgeClient({ judgeUrl, judgeBin, problemsDir, custo
 
 /* Hàng đợi chấm: chạy tối đa `concurrency` bài cùng lúc (mặc định 1). Thời gian đo là CPU time
  * nên chấm song song không làm sai kết quả, chỉ cần máy đủ nhân. */
-export function createJudgeQueue({ db, client, concurrency = 1, originOf = () => 'repo' }) {
+/* onJudged(id): gọi sau khi lưu kết quả (dùng để tính điểm subtask cho bài nộp trong cuộc thi). */
+export function createJudgeQueue({ db, client, concurrency = 1, originOf = () => 'repo', onJudged = () => {} }) {
   const queue = [];
   let running = 0;
 
-  const getSubmission = db.prepare('SELECT id, problem_id, source FROM submissions WHERE id = ?');
+  const getSubmission = db.prepare('SELECT id, problem_id, source, contest_id FROM submissions WHERE id = ?');
   const saveResult = db.prepare(`
     UPDATE submissions
     SET verdict = ?, time_ms = ?, memory_kb = ?, tests_passed = ?, test_count = ?, tests_json = ?, compile_log = ?, fail_output = ?
@@ -48,7 +49,7 @@ export function createJudgeQueue({ db, client, concurrency = 1, originOf = () =>
     try {
       const sub = getSubmission.get(id);
       if (sub) {
-        const r = await client.judge(sub.problem_id, sub.source, { origin: originOf(sub.problem_id) });
+        const r = await client.judge(sub.problem_id, sub.source, { origin: originOf(sub.problem_id), all: sub.contest_id != null });
         saveResult.run(
           r.verdict ?? 'IE',
           r.time_ms ?? 0,
@@ -65,6 +66,11 @@ export function createJudgeQueue({ db, client, concurrency = 1, originOf = () =>
       console.error(`Judge #${id} failed:`, e);
       saveResult.run('IE', 0, 0, 0, 0, '[]', String(e), null, id);
     } finally {
+      try {
+        onJudged(id);
+      } catch (e) {
+        console.error(`Scoring #${id} failed:`, e);
+      }
       running -= 1;
       processNext();
     }

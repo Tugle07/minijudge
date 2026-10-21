@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createAdminStats } from './lib/admin-stats.js';
 import { createAuth } from './lib/auth.js';
+import { createContests } from './lib/contests.js';
 import { scheduleBackups } from './lib/backup.js';
 import { openDatabase } from './lib/database.js';
 import { createJudgeClient, createJudgeQueue } from './lib/judge-queue.js';
@@ -14,10 +15,12 @@ import { clientIp, createRateLimit } from './lib/rate-limit.js';
 import { securityHeaders } from './lib/security.js';
 import { createSettings } from './lib/settings.js';
 import { createStats } from './lib/stats.js';
+import { adminContestRoutes } from './routes/admin-contest-routes.js';
 import { adminProblemRoutes } from './routes/admin-problem-routes.js';
 import { adminRoutes } from './routes/admin-routes.js';
 import { authRoutes } from './routes/auth-routes.js';
 import { catalogRoutes } from './routes/catalog-routes.js';
+import { contestRoutes } from './routes/contest-routes.js';
 import { profileRoutes } from './routes/profile-routes.js';
 import { submissionRoutes } from './routes/submission-routes.js';
 
@@ -54,6 +57,17 @@ for (const name of ADMIN_USERS) db.prepare("UPDATE users SET role = 'admin' WHER
 const settings = createSettings(db, { registerCode: process.env.REGISTER_CODE || '' });
 const store = createProblemStore(CUSTOM_PROBLEMS_DIR);
 const catalog = createCatalog({ db, repoDir: PROBLEMS_DIR, customDir: CUSTOM_PROBLEMS_DIR });
+const contests = createContests(db, catalog);
+/* Bài đang nằm trong cuộc thi chưa kết thúc thì ẩn khỏi phần luyện tập (không lộ đề trước giờ thi). */
+{
+  const visibleProblem = catalog.isProblemVisible;
+  const visibleOfSet = catalog.visibleProblems;
+  catalog.isProblemVisible = (p) => visibleProblem(p) && !contests.lockedProblemIds().has(p.id);
+  catalog.visibleProblems = (set) => {
+    const locked = contests.lockedProblemIds();
+    return visibleOfSet(set).filter((pid) => !locked.has(pid));
+  };
+}
 const stats = createStats(db, catalog);
 const adminStats = createAdminStats(db, catalog);
 const auth = createAuth(db, { secureCookie: process.env.COOKIE_SECURE === '1' });
@@ -69,6 +83,7 @@ const queue = createJudgeQueue({
   client: judge,
   concurrency: Math.max(1, Number(process.env.JUDGE_CONCURRENCY) || 1),
   originOf: (id) => catalog.problemMap.get(id)?.origin ?? 'repo',
+  onJudged: (id) => contests.scoreSubmission(id),
 });
 if (process.env.BACKUP !== '0') scheduleBackups(db, path.join(DATA_DIR, 'backups'));
 const authLimit = createRateLimit({ windowMs: 15 * 60_000, max: 20, message: 'Thử quá nhiều lần, đợi 15 phút rồi thử lại.' });
@@ -111,11 +126,22 @@ app.get('/api/health', async (_req, res) => {
   res.status(judgeOk ? 200 : 503).json({ ok: judgeOk, problems: catalog.problems.length, queue: queue.pending });
 });
 
+/* Đang trong giờ thi: khóa phần luyện tập (đề, lịch sử, bảng xếp hạng) với thí sinh đã vào phòng. */
+const PRACTICE_API = /^\/api\/(home|sets|problems|submissions|leaderboard|me\/profile)(\/|$|\?)/;
+app.use((req, res, next) => {
+  if (!req.user || req.user.role === 'admin' || !PRACTICE_API.test(req.path)) return next();
+  const active = contests.activeFor(req.user.id);
+  if (!active) return next();
+  res.status(423).json({ error: 'Bạn đang trong giờ thi — phần luyện tập tạm khóa', contestId: active.id });
+});
+
 app.use('/api', authRoutes({ db, auth, authLimit, settings, adminUsers: ADMIN_USERS }));
 app.use('/api', catalogRoutes({ catalog, stats, auth, settings }));
+app.use('/api', contestRoutes({ db, catalog, contests, auth, queue, submitLimit }));
 app.use('/api', submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit, checkLimit }));
 app.use('/api', profileRoutes({ db, catalog, stats, auth, authLimit }));
 app.use('/api/admin', adminRoutes({ db, catalog, auth, queue, judge, settings, adminStats }));
+app.use('/api/admin', adminContestRoutes({ db, catalog, contests, auth }));
 app.use('/api/admin', adminProblemRoutes({ db, catalog, auth, judge, store, adminStats }));
 app.use('/api', (_req, res) => res.status(404).json({ error: 'API không tồn tại' }));
 

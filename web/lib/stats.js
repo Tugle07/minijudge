@@ -9,18 +9,18 @@ const dayIndex = (ms) => Math.floor((ms + TZ_OFFSET_MS) / DAY_MS);
 export function createStats(db, catalog) {
   const countUsers = db.prepare('SELECT COUNT(*) AS n FROM users');
   const myStatus = db.prepare(
-    `SELECT problem_id, MAX(verdict = 'AC') AS ac FROM submissions WHERE user_id = ? AND ${JUDGED} GROUP BY problem_id`,
+    `SELECT problem_id, MAX(verdict = 'AC') AS ac FROM submissions WHERE user_id = ? AND contest_id IS NULL AND ${JUDGED} GROUP BY problem_id`,
   );
   const problemSolvers = db.prepare(
-    "SELECT problem_id, COUNT(DISTINCT user_id) AS solved FROM submissions WHERE verdict = 'AC' GROUP BY problem_id",
+    "SELECT problem_id, COUNT(DISTINCT user_id) AS solved FROM submissions WHERE verdict = 'AC' AND contest_id IS NULL GROUP BY problem_id",
   );
   const firstAcs = db.prepare(
     `SELECT u.username, s.problem_id, MIN(s.created_at) AS at
      FROM submissions s JOIN users u ON u.id = s.user_id
-     WHERE s.verdict = 'AC' GROUP BY s.user_id, s.problem_id`,
+     WHERE s.verdict = 'AC' AND s.contest_id IS NULL GROUP BY s.user_id, s.problem_id`,
   );
   const allUsers = db.prepare('SELECT username FROM users ORDER BY id');
-  const myDays = db.prepare(`SELECT created_at FROM submissions WHERE user_id = ? AND ${JUDGED}`);
+  const myDays = db.prepare(`SELECT created_at FROM submissions WHERE user_id = ? AND contest_id IS NULL AND ${JUDGED}`);
 
   function myProblemStatus(userId) {
     const map = new Map();
