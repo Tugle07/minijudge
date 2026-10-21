@@ -163,3 +163,4 @@
 .vtotal.hi { color: var(--wa); background: color-mix(in oklch, var(--wa) 12%, transparent); }
 .atable th.vcol { white-space: normal; max-width: 92px; line-height: 1.25; text-transform: none; letter-spacing: 0; font-size: 12px; }
 .st-warn { color: var(--wa); font-weight: 500; }
+.atable .btn-line { white-space: nowrap; }
