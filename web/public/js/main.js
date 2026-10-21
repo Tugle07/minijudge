@@ -37,7 +37,7 @@ function toggleTheme() {
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
   try {
-    localStorage.setItem('mj-theme', next);
+    localStorage.setItem('mj-theme-v2', next);
   } catch {}
   document.querySelectorAll('[data-act="theme"]').forEach((b) => (b.textContent = themeText()));
 }

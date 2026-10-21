@@ -99,7 +99,7 @@ document.addEventListener('click', (e) => {
   const next = currentTheme() === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
   try {
-    localStorage.setItem('mj-theme', next);
+    localStorage.setItem('mj-theme-v2', next);
   } catch {}
   document.querySelectorAll('[data-theme-label]').forEach((el) => (el.textContent = themeLabel()));
 });
