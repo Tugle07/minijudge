@@ -157,6 +157,8 @@ export async function render(ctx) {
       showError('');
       if (contest.blockMultiScreen && isExtended()) return showError('Máy đang nối nhiều màn hình. Rút màn hình phụ rồi vào lại.');
       unlockAudio();
+      /* Xóa clipboard khi bắt đầu làm bài: code copy sẵn từ trước không còn để dán. Cần lúc người dùng vừa bấm nút. */
+      navigator.clipboard?.writeText('').catch(() => {});
       const fs = await enterFullscreen();
       try {
         await api(`/api/contests/${cid}/join`, { method: 'POST', body: { code: box.querySelector('[data-code]')?.value ?? '', extended: isExtended() } });
@@ -252,6 +254,8 @@ export async function render(ctx) {
     const internalCopies = new Set();
     /* Bắt ở pha bubble để lấy đúng nội dung CodeMirror đã đặt vào clipboard (kể cả dòng ngoài màn hình). */
     const rememberCopy = (e) => {
+      /* Copy từ ô nhập input (vd. vừa dán code lạ vào đó) không được tính là "copy trong phòng thi". */
+      if (e.target?.closest?.('textarea, input')) return;
       const text = e.clipboardData?.getData('text/plain') || String(window.getSelection?.() || '');
       if (norm(text)) internalCopies.add(norm(text));
     };
