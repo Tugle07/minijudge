@@ -331,6 +331,60 @@ async function detail(ctx, id, tab) {
   });
   let timer = null;
   let threshold = 80;
+  /* Lọc nhật ký theo thí sinh: gõ MSSV hoặc tên (không cần dấu). Khớp đúng 1 người thì tải toàn bộ nhật ký của người đó. */
+  let logQ = '';
+  let lastM = null;
+  let fullLog = null;
+  const fold = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+  const matchPs = (ps) => {
+    const q = fold(logQ.trim());
+    return q ? ps.filter((p) => fold(`${p.username} ${p.fullName}`).includes(q)) : ps;
+  };
+  const evRow = (e) =>
+    `<tr><td class="mono faint" style="width:110px">${fmtDateTime(e.at).slice(0, 5)}</td><td style="width:240px"><span style="font-weight:550">${esc(e.fullName || e.username)}</span>${e.fullName ? `<br /><span class="mono faint" style="font-size:12px">${esc(e.username)}</span>` : ''}</td><td style="color:${['join', 'rejoin', 'fullscreen_enter', 'tab_visible', 'finish', 'context_menu'].includes(e.type) ? 'var(--fg2)' : 'var(--wa)'}">${esc(EVENT_TEXT[e.type] || e.type)}</td><td class="faint">${esc(e.detail)}</td></tr>`;
+  async function loadFullLog() {
+    const hits = lastM && logQ.trim() ? matchPs(lastM.participants) : [];
+    if (hits.length !== 1) return (fullLog = null);
+    const p = hits[0];
+    if (fullLog?.userId === p.userId && fullLog.at > Date.now() - 4000) return;
+    const ev = await api(`/api/admin/contests/${id}/events?user=${p.userId}`);
+    fullLog = { userId: p.userId, at: Date.now(), events: ev.map((x) => ({ ...x, username: p.username, fullName: p.fullName })).reverse() };
+  }
+  function logHtml() {
+    if (!lastM) return '';
+    const hits = matchPs(lastM.participants);
+    const q = logQ.trim();
+    let list = lastM.events;
+    let note = 'tự cập nhật mỗi 5 giây';
+    if (q && fullLog && hits.length === 1 && fullLog.userId === hits[0].userId) {
+      list = fullLog.events;
+      const bad = list.filter((e) => !['join', 'rejoin', 'fullscreen_enter', 'tab_visible', 'finish', 'context_menu'].includes(e.type)).length;
+      note = `Toàn bộ nhật ký của <b>${esc(hits[0].fullName || hits[0].username)}</b> · ${list.length} sự kiện, ${bad} vi phạm`;
+    } else if (q) {
+      const names = new Set(hits.map((p) => p.username));
+      list = lastM.events.filter((e) => names.has(e.username));
+      note = hits.length ? `${hits.length} thí sinh khớp · gõ cụ thể hơn để xem toàn bộ nhật ký của một người` : 'Không có thí sinh nào khớp';
+    }
+    return `
+      <div class="panel-head log-head"><b style="font-weight:600">Nhật ký${q ? '' : ' gần đây'}</b><span class="faint" style="font-size:13px">${note}</span>
+        <div style="flex:1"></div>
+        <input class="input log-search" data-logq value="${esc(logQ)}" placeholder="Lọc theo MSSV hoặc tên thí sinh" autocomplete="off" />
+        ${q ? '<button class="btn-line" style="height:34px" data-logclear>Bỏ lọc</button>' : ''}
+      </div>
+      <table class="atable" style="font-size:13.5px"><tbody>${list.map(evRow).join('') || '<tr><td class="faint" style="padding:18px">Chưa có sự kiện.</td></tr>'}</tbody></table>`;
+  }
+  function drawLog() {
+    const box = ctx.page.querySelector('[data-logbox]');
+    if (!box) return;
+    const had = document.activeElement?.dataset?.logq !== undefined;
+    const caret = had ? document.activeElement.selectionStart : null;
+    box.innerHTML = logHtml();
+    if (had) {
+      const inp = box.querySelector('[data-logq]');
+      inp.focus();
+      inp.setSelectionRange(caret, caret);
+    }
+  }
 
   const shell = (inner) => `
     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
@@ -344,6 +398,10 @@ async function detail(ctx, id, tab) {
 
   async function monitor() {
     const m = await api(`/api/admin/contests/${id}/monitor`);
+    lastM = m;
+    await loadFullLog().catch(() => (fullLog = null));
+    const focused = document.activeElement?.dataset?.logq !== undefined;
+    const caret = focused ? document.activeElement.selectionStart : null;
     c.phase = m.phase;
     const ps = m.participants;
     const online = ps.filter((p) => p.online).length;
@@ -363,7 +421,7 @@ async function detail(ctx, id, tab) {
             .map((p) => {
               const st = p.finishedAt ? pill('Đã nộp', 'var(--fg3)') : !p.online ? pill('Mất kết nối', 'var(--tle)') : !p.fullscreen || !p.visible ? pill('Rời bài thi', 'var(--wa)') : pill('Đang làm', 'var(--ac)');
               return `<tr>
-                <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${p.userId}" data-name="${esc(p.username)}">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
+                <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${esc(p.username)}" title="Lọc nhật ký của thí sinh này">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
                 <td>${st}${p.extended ? ' ' + pill('2 màn hình', 'var(--wa)') : ''}</td>
                 ${VIOLATION_COLS.map(([k]) => `<td class="num" style="color:${p.events[k] ? 'var(--wa)' : 'var(--fg3)'}">${p.events[k] || 0}</td>`).join('')}
                 <td class="num">${num(p.total)}</td>
@@ -375,12 +433,12 @@ async function detail(ctx, id, tab) {
         </table>
         ${ps.length ? '' : '<div class="empty">Chưa có thí sinh nào vào phòng.</div>'}
       </div>
-      <div class="panel">
-        <div class="panel-head"><b style="font-weight:600">Nhật ký gần đây</b><span class="faint" style="font-size:13px">tự cập nhật mỗi 5 giây</span></div>
-        <table class="atable" style="font-size:13.5px"><tbody>${m.events
-          .map((e) => `<tr><td class="mono faint" style="width:90px">${fmtDateTime(e.at).slice(0, 5)}</td><td class="mono" style="width:160px">${esc(e.username)}</td><td style="color:${['join', 'rejoin', 'fullscreen_enter', 'tab_visible', 'finish', 'context_menu'].includes(e.type) ? 'var(--fg2)' : 'var(--wa)'}">${esc(EVENT_TEXT[e.type] || e.type)}</td><td class="faint">${esc(e.detail)}</td></tr>`)
-          .join('')}</tbody></table>
-      </div>`);
+      <div class="panel" data-logbox>${logHtml()}</div>`);
+    if (focused) {
+      const inp = ctx.page.querySelector('[data-logq]');
+      inp.focus();
+      inp.setSelectionRange(caret, caret);
+    }
   }
 
   async function board() {
@@ -430,6 +488,17 @@ async function detail(ctx, id, tab) {
     if (tab === 'monitor') timer = setTimeout(draw, 5000);
   }
 
+  let logTimer = null;
+  ctx.page.addEventListener('input', (e) => {
+    if (e.target.dataset.logq === undefined) return;
+    logQ = e.target.value;
+    drawLog();
+    clearTimeout(logTimer);
+    logTimer = setTimeout(async () => {
+      await loadFullLog().catch(() => (fullLog = null));
+      drawLog();
+    }, 250);
+  });
   ctx.page.addEventListener('click', async (e) => {
     const t = e.target;
     const g = (k) => t.closest(`[data-${k}]`);
@@ -446,12 +515,16 @@ async function detail(ctx, id, tab) {
       return draw();
     }
     if (g('log')) {
-      const ev = await api(`/api/admin/contests/${id}/events?user=${g('log').dataset.log}`);
-      openDrawer({
-        title: `Nhật ký: ${g('log').dataset.name}`,
-        html: `<table class="atable" style="font-size:13.5px"><tbody>${ev.map((x) => `<tr><td class="mono faint">${fmtDateTime(x.at)}</td><td>${esc(EVENT_TEXT[x.type] || x.type)}</td><td class="faint">${esc(x.detail)}</td></tr>`).join('') || '<tr><td>Chưa có sự kiện.</td></tr>'}</tbody></table>`,
-      });
+      logQ = g('log').dataset.log;
+      await loadFullLog().catch(() => (fullLog = null));
+      drawLog();
+      ctx.page.querySelector('[data-logbox]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
+    }
+    if (g('logclear')) {
+      logQ = '';
+      fullLog = null;
+      return drawLog();
     }
     if (g('publish')) {
       c = await api(`/api/admin/contests/${id}`, { method: 'PUT', body: { settings: { ...c.settings, publishResults: !c.settings.publishResults } } });

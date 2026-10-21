@@ -139,7 +139,7 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     if (!c) return;
     const events = db
       .prepare(
-        `SELECT e.type, e.detail, e.at, u.username FROM contest_events e JOIN users u ON u.id = e.user_id
+        `SELECT e.type, e.detail, e.at, u.username, u.full_name AS fullName FROM contest_events e JOIN users u ON u.id = e.user_id
          WHERE e.contest_id = ? ORDER BY e.id DESC LIMIT 80`,
       )
       .all(c.id);
