@@ -145,10 +145,12 @@ export async function render(ctx) {
           <b class="exam-title ellipsis">${esc(contest.title)}</b>
           <div class="spacer"></div>
           <span class="exam-guard" data-guard title="Trạng thái giám sát"></span>
+          <span class="exam-vcount" data-vcount hidden></span>
           <span class="exam-clock mono" data-clock></span>
           <button class="btn exam-finish" data-finish>Nộp bài &amp; kết thúc</button>
         </header>
         <nav class="exam-rail" data-tabs aria-label="Danh sách bài thi"></nav>
+        <div class="exam-notice" data-notice role="alert" aria-live="assertive" hidden></div>
         <div class="exam-body">
           <section class="exam-left" data-statement><div class="editor-loading">Đang tải đề…</div></section>
           <section class="exam-right">
@@ -176,6 +178,35 @@ export async function render(ctx) {
     document.body.classList.add('exam-mode');
     const $ = (s) => ctx.view.querySelector(s);
 
+    /* Báo cho thí sinh biết ngay khi hệ thống ghi nhận vi phạm: nói rõ chuyện gì, lần thứ mấy, và cách xử lý nếu là nhầm lẫn. */
+    state.vcount = state.info.myViolations || 0;
+    const drawVcount = () => {
+      const el = $('[data-vcount]');
+      if (!el) return;
+      el.hidden = !state.vcount;
+      el.textContent = `Đã ghi nhận ${state.vcount} lần rời bài`;
+      el.title = 'Số lần hệ thống ghi nhận bạn rời bài thi (chuyển tab, đổi cửa sổ, thoát toàn màn hình, dán code từ ngoài…)';
+    };
+    const violation = (type, detail, what) => {
+      report(type, detail);
+      state.vcount += 1;
+      drawVcount();
+      const box = $('[data-notice]');
+      if (!box) return;
+      const nth = state.vcount === 1 ? 'Đây là lần đầu tiên' : `Đây là lần thứ ${state.vcount}`;
+      box.innerHTML = `
+        <div class="notice-text">
+          <b>Hệ thống vừa ghi nhận: ${esc(what)}</b>
+          <span>${nth} trong buổi thi, thông tin đã được gửi cho giám thị. Nếu do máy lỗi hoặc thông báo tự bật lên, hãy giơ tay báo giám thị để được ghi chú. Bạn cứ tiếp tục làm bài bình thường.</span>
+        </div>
+        <button class="btn" data-notice-ok>Đã hiểu</button>`;
+      box.hidden = false;
+      box.classList.remove('flash');
+      void box.offsetWidth;
+      box.classList.add('flash');
+    };
+    drawVcount();
+
     /* --- Trình soạn code: chặn dán code từ ngoài (chỉ cho dán đoạn đã sao chép ngay trong phòng thi) --- */
     const internalCopies = new Set();
     const rememberCopy = () => {
@@ -194,8 +225,7 @@ export async function render(ctx) {
       if (text.trim().length <= PASTE_LIMIT || internalCopies.has(text.trim())) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      toast('Không được dán code từ bên ngoài vào bài thi');
-      report('paste_blocked', `${text.length} ký tự`);
+      violation('paste_blocked', `${text.length} ký tự`, `bạn vừa dán ${text.length} ký tự từ bên ngoài vào bài thi (đã bị chặn)`);
     };
     editorHost.addEventListener('paste', blockPaste, true);
     editorHost.addEventListener('drop', blockPaste, true);
@@ -378,20 +408,32 @@ export async function render(ctx) {
         overlay.innerHTML = `<div class="exam-overlay-box"><b>${esc(state.blocked.title)}</b><p>${esc(state.blocked.body)}</p>${state.blocked.action || ''}</div>`;
       } else if (!fs) {
         overlay.hidden = false;
-        overlay.innerHTML = `<div class="exam-overlay-box"><b>Bạn đã thoát chế độ toàn màn hình</b><p>Việc này đã được ghi lại và báo cho giám thị. Bấm nút bên dưới để quay lại làm bài.</p><button class="btn-primary" data-refs>Quay lại bài thi</button></div>`;
+        overlay.innerHTML = `<div class="exam-overlay-box"><b>Bạn đã thoát chế độ toàn màn hình</b><p>Việc này đã được ghi lại và báo cho giám thị${state.vcount ? ` (đã ghi nhận ${state.vcount} lần rời bài)` : ''}. Bấm nút bên dưới để quay lại làm bài, thời gian làm bài vẫn đang chạy.</p><button class="btn-primary" data-refs>Quay lại bài thi</button></div>`;
       } else overlay.hidden = true;
     }
     const onFs = () => {
-      if (!isFullscreen() && !state.ending) report('fullscreen_exit', '');
+      if (!isFullscreen() && !state.ending) violation('fullscreen_exit', '', 'bạn đã thoát chế độ toàn màn hình');
       else if (isFullscreen()) report('fullscreen_enter', '');
       guardState();
     };
     const onVis = () => {
       if (document.hidden) {
         hiddenAt = Date.now();
-        report('tab_hidden', 'Rời trang thi');
+        state.hiddenCounted = false;
+        if (state.unloading) {
+          /* keepalive: yêu cầu vẫn được gửi xong dù trang đang đóng. */
+          fetch(`/api/contests/${cid}/events`, {
+            method: 'POST', keepalive: true, credentials: 'same-origin',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ type: 'tab_hidden', detail: 'Tải lại hoặc đóng trang thi' }),
+          }).catch(() => {});
+        }
+        else if (!state.ending) violation('tab_hidden', 'Rời trang thi', 'bạn đã rời khỏi trang thi');
       } else if (hiddenAt) {
-        report('tab_visible', `Quay lại sau ${Math.round((Date.now() - hiddenAt) / 1000)} giây`);
+        const sec = Math.round((Date.now() - hiddenAt) / 1000);
+        report('tab_visible', `Quay lại sau ${sec} giây`);
+        const box = $('[data-notice] .notice-text b');
+        if (box) box.textContent = `Hệ thống vừa ghi nhận: bạn đã rời khỏi trang thi trong ${sec} giây`;
         hiddenAt = 0;
       }
       guardState();
@@ -400,21 +442,29 @@ export async function render(ctx) {
       if (!document.hidden) blurAt = Date.now();
     };
     const onFocus = () => {
-      if (blurAt && Date.now() - blurAt > 1500) report('blur', `Chuyển sang cửa sổ khác ${Math.round((Date.now() - blurAt) / 1000)} giây`);
+      if (blurAt && Date.now() - blurAt > 1500 && !state.ending) {
+        const sec = Math.round((Date.now() - blurAt) / 1000);
+        violation('blur', `Chuyển sang cửa sổ khác ${sec} giây`, `bạn đã chuyển sang cửa sổ khác trong ${sec} giây`);
+      }
       blurAt = 0;
     };
     const onKey = (e) => {
       const k = e.key?.toLowerCase();
       if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(k)) || (e.ctrlKey && k === 'u')) {
         e.preventDefault();
-        report('devtools_key', e.key === 'F12' ? 'F12' : `Ctrl+${e.shiftKey ? 'Shift+' : ''}${e.key.toUpperCase()}`);
+        const combo = e.key === 'F12' ? 'F12' : `Ctrl+${e.shiftKey ? 'Shift+' : ''}${e.key.toUpperCase()}`;
+        violation('devtools_key', combo, `bạn vừa bấm phím ${combo} (mở công cụ trình duyệt, đã bị chặn)`);
       }
     };
     const onMenu = (e) => {
       e.preventDefault();
       report('context_menu', '');
+      toast('Chuột phải bị tắt trong giờ thi');
     };
     const onLeave = (e) => {
+      /* Chrome báo "ẩn trang" trước pagehide; đánh dấu từ beforeunload. Nếu học viên chọn ở lại thì gỡ cờ sau 1 giây. */
+      state.unloading = true;
+      setTimeout(() => (state.unloading = false), 1000);
       if (state.ending) return;
       e.preventDefault();
       e.returnValue = '';
@@ -445,7 +495,7 @@ export async function render(ctx) {
         if (e.data?.t === 'ping' && !state.blocked) channel.postMessage({ t: 'pong', from: tabId });
         if (e.data?.t === 'pong') {
           state.blocked = { title: 'Bài thi đã mở ở một tab khác', body: 'Chỉ được làm bài ở một tab. Hãy đóng tab này và quay về tab đang làm bài.' };
-          report('second_tab', 'Mở bài thi ở tab thứ hai');
+          violation('second_tab', 'Mở bài thi ở tab thứ hai', 'bài thi đang được mở ở một tab thứ hai');
           guardState();
         }
       };
@@ -500,6 +550,7 @@ export async function render(ctx) {
         await enterFullscreen();
         return guardState();
       }
+      if (t.closest('[data-notice-ok]')) return ($('[data-notice]').hidden = true);
       const box = $('[data-confirm]');
       if (t.closest('[data-cancel-finish]')) return (box.hidden = true);
       if (t.closest('[data-finish]')) {

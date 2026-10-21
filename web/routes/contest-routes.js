@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { CLIENT_EVENTS } from '../lib/contests.js';
+import { CLIENT_EVENTS, VIOLATIONS } from '../lib/contests.js';
 
 const MAX_SOURCE_BYTES = 64 * 1024;
 const STALE_SESSION_MS = 45_000;
@@ -103,6 +103,9 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
       }));
       out.total = out.problems.reduce((s, p) => s + (p.myScore || 0), 0);
       out.otherSession = Boolean(me.session_hash && me.session_hash !== req.sessionHash);
+      out.myViolations = db
+        .prepare(`SELECT COUNT(*) AS n FROM contest_events WHERE contest_id = ? AND user_id = ? AND type IN (${VIOLATIONS.map(() => '?').join(',')})`)
+        .get(c.id, req.user.id, ...VIOLATIONS).n;
     }
     res.json(out);
   });

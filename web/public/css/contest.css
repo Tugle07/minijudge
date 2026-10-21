@@ -44,6 +44,15 @@ body.exam-mode { overflow: hidden; }
 .exam-tab.full { border-color: var(--ac); color: var(--ac); }
 .exam-tab.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .exam-pos { font-size: 13px; font-weight: 600; color: var(--accent); }
+/* Thông báo vi phạm cho thí sinh: không chặn bài làm, lời lẽ nhẹ nhàng */
+.exam-notice { display: flex; align-items: center; gap: 14px; padding: 10px 16px; flex: none;
+  background: color-mix(in oklch, var(--tle) 16%, var(--bg2)); border-bottom: 1.5px solid var(--tle); font-size: 14px; }
+.exam-notice .notice-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.exam-notice b { color: var(--fg); }
+.exam-notice span { color: var(--fg2); line-height: 1.5; }
+.exam-notice.flash { animation: mjnotice .5s ease-out; }
+@keyframes mjnotice { 0% { background: color-mix(in oklch, var(--tle) 45%, var(--bg2)); } 100% { background: color-mix(in oklch, var(--tle) 16%, var(--bg2)); } }
+.exam-vcount { font-size: 12.5px; font-weight: 600; color: var(--tle); white-space: nowrap; }
 .exam-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 18px; margin-top: 8px; border-top: 1px solid var(--line); }
 .exam-next { height: 42px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 .exam-finish { border-color: color-mix(in oklch, var(--wa) 55%, var(--line2)); color: var(--wa); font-weight: 600; }
