@@ -8,6 +8,8 @@ export const EVENT_TYPES = [
   'multi_screen', 'second_tab', 'paste_blocked', 'devtools_key', 'context_menu', 'finish',
 ];
 /* Các sự kiện tính là vi phạm (đếm trên trang giám sát). */
+/* Sự kiện trình duyệt được phép tự báo. join / rejoin / finish / multi_screen do server ghi, client không gửi được. */
+export const CLIENT_EVENTS = ['fullscreen_exit', 'fullscreen_enter', 'tab_hidden', 'tab_visible', 'blur', 'second_tab', 'paste_blocked', 'devtools_key', 'context_menu'];
 export const VIOLATIONS = ['fullscreen_exit', 'tab_hidden', 'blur', 'multi_screen', 'second_tab', 'paste_blocked', 'devtools_key'];
 const ONLINE_MS = 25_000;
 const LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';

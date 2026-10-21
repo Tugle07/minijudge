@@ -179,6 +179,9 @@ describe('Cuộc thi', () => {
     assert.equal((await sv1(`/api/contests/${cid}/heartbeat`, { method: 'POST', body: { fullscreen: true, visible: true } })).status, 200);
     assert.equal((await sv1(`/api/contests/${cid}/events`, { method: 'POST', body: { type: 'tab_hidden', detail: '5 giây' } })).status, 204);
     assert.equal((await sv1(`/api/contests/${cid}/events`, { method: 'POST', body: { type: 'hack' } })).status, 400);
+    for (const type of ['finish', 'rejoin', 'join', 'multi_screen']) {
+      assert.equal((await sv1(`/api/contests/${cid}/events`, { method: 'POST', body: { type, detail: 'Giám thị admin mở khóa' } })).status, 400, `client không được tự ghi sự kiện ${type}`);
+    }
 
     const mon = await admin(`/api/admin/contests/${cid}/monitor`);
     const me = mon.data.participants.find((p) => p.username === 'sv_mot');

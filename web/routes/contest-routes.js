@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { EVENT_TYPES } from '../lib/contests.js';
+import { CLIENT_EVENTS } from '../lib/contests.js';
 
 const MAX_SOURCE_BYTES = 64 * 1024;
 const STALE_SESSION_MS = 45_000;
@@ -228,7 +228,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     const c = load(req, res);
     if (!c || !contests.participant(c.id, req.user.id)) return res.status(204).end();
     const { type, detail } = req.body ?? {};
-    if (!EVENT_TYPES.includes(type)) return res.status(400).json({ error: 'Sự kiện không hợp lệ' });
+    if (!CLIENT_EVENTS.includes(type)) return res.status(400).json({ error: 'Sự kiện không hợp lệ' });
     if (tooManyEvents(`${c.id}:${req.user.id}`)) return res.status(429).json({ error: 'Quá nhiều sự kiện' });
     contests.logEvent(c.id, req.user.id, type, detail ?? '');
     res.status(204).end();
