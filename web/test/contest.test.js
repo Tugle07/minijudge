@@ -193,6 +193,11 @@ describe('Cuộc thi', () => {
     const csv = await admin(`/api/admin/contests/${cid}/export.csv`);
     assert.match(csv.data, /sv_hai/);
     assert.match(csv.data, /Tổng điểm/);
+    assert.match(csv.data, /Chi tiết vi phạm/);
+    const csvLine = (name) => csv.data.split('\r\n').find((l) => l.includes(name));
+    assert.match(csvLine('sv_mot'), /Nhiều màn hình ×1: \d\d:\d\d:\d\d/);
+    assert.match(csvLine('sv_mot'), /Rời trang thi ×1/);
+    assert.match(csvLine('sv_hai'), /Không vi phạm/);
 
     const sim = await admin(`/api/admin/contests/${cid}/similarity?threshold=0.8`);
     assert.equal(sim.data.pairs.length, 1);

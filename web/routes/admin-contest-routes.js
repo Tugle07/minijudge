@@ -1,8 +1,14 @@
 import { Router } from 'express';
 
-import { defaultSubtasks, parseTests } from '../lib/contests.js';
+import { defaultSubtasks, parseTests, VIOLATIONS } from '../lib/contests.js';
 
 const MAX_PROBLEMS = 26;
+const VIOLATION_TEXT = {
+  fullscreen_exit: 'Thoát toàn màn hình', tab_hidden: 'Rời trang thi', blur: 'Chuyển cửa sổ khác', multi_screen: 'Nhiều màn hình',
+  second_tab: 'Mở tab thứ hai', paste_blocked: 'Dán code từ ngoài', devtools_key: 'Bấm phím DevTools',
+};
+/* Giờ Việt Nam (UTC+7) dạng HH:MM:SS, không phụ thuộc múi giờ của server/container. */
+const vnTime = (ms) => new Date(ms + 7 * 3_600_000).toISOString().slice(11, 19);
 
 function readSettings(b) {
   const list = (v) =>
@@ -176,9 +182,31 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     if (!c) return;
     const { problems, rows } = contests.scoreboard(c.id);
     const violations = new Map(contests.monitor(c.id).map((m) => [m.userId, m.violations]));
+    /* Cột cuối: liệt kê từng loại vi phạm, số lần, giờ xảy ra và chi tiết ghi nhận. */
+    const byUser = new Map();
+    const evs = db
+      .prepare(`SELECT user_id, type, detail, at FROM contest_events WHERE contest_id = ? AND type IN (${VIOLATIONS.map(() => '?').join(',')}) ORDER BY at`)
+      .all(c.id, ...VIOLATIONS);
+    for (const e of evs) {
+      const m = byUser.get(e.user_id) ?? new Map();
+      m.set(e.type, [...(m.get(e.type) ?? []), e]);
+      byUser.set(e.user_id, m);
+    }
+    const note = (userId) => {
+      const m = byUser.get(userId);
+      if (!m) return 'Không vi phạm';
+      return VIOLATIONS.filter((t) => m.has(t))
+        .map((t) => {
+          const list = m.get(t);
+          const label = VIOLATION_TEXT[t] || t;
+          const items = list.map((e) => `${vnTime(e.at)}${e.detail && e.detail !== label ? ` (${e.detail})` : ''}`);
+          return `${label} ×${list.length}: ${items.join('; ')}`;
+        })
+        .join(' | ');
+    };
     const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const head = ['Hạng', 'Tài khoản', 'Họ tên', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Số vi phạm'];
-    const lines = [head, ...rows.map((r) => [r.rank, r.username, r.fullName, ...r.cells.map((x) => x.score ?? 0), r.total, violations.get(r.userId) ?? 0])];
+    const head = ['Hạng', 'Tài khoản', 'Họ tên', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Số vi phạm', 'Chi tiết vi phạm'];
+    const lines = [head, ...rows.map((r) => [r.rank, r.username, r.fullName, ...r.cells.map((x) => x.score ?? 0), r.total, violations.get(r.userId) ?? 0, note(r.userId)])];
     const name = `ket-qua-cuoc-thi-${c.id}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
