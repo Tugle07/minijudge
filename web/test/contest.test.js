@@ -266,7 +266,11 @@ describe('Cuộc thi', () => {
     assert.equal(board.data.rows.find((r) => r.username === 'sv_hai')?.finished, true);
     assert.equal(board.data.rows.find((r) => r.username === 'sv_mot')?.finished, false);
     assert.ok(board.data.rows.every((r) => !('userId' in r)));
+    const mine = (await sv2('/api/me/profile')).data.contests.find((c) => c.id === cid);
+    assert.equal(mine.finished, true);
+    assert.equal(mine.rank, board.data.rows.find((r) => r.username === 'sv_hai').rank);
     assert.equal((await admin(`/api/admin/contests/${cid}`, { method: 'PUT', body: { settings: { boardAfterFinish: false } } })).status, 200);
     assert.equal((await sv2(`/api/contests/${cid}/results`)).status, 403, 'Admin tắt tùy chọn thì không xem được');
+    assert.equal((await sv2('/api/me/profile')).data.contests.find((c) => c.id === cid).rank, null, 'hồ sơ cũng ẩn hạng');
   });
 });

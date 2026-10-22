@@ -146,8 +146,13 @@ describe('MiniJudge API', () => {
     const p = await api('/api/me/profile');
     assert.equal(p.data.username, 'sv_test');
     assert.equal(p.data.solved, 1);
-    assert.equal(p.data.activity.length, 84);
-    assert.ok(p.data.activity[83] >= 2);
+    assert.equal(p.data.activity.length, 182);
+    assert.ok(p.data.activity[181] >= 2);
+    assert.equal(p.data.activeDays, 1);
+    assert.ok(p.data.bestDay.count >= 2);
+    assert.equal(p.data.recent[0].problemId, 'P01');
+    assert.ok(p.data.unsolved.every((s) => s.problemId !== 'P01'));
+    assert.deepEqual(p.data.contests, []);
     const wrong = await api('/api/me/password', { method: 'POST', body: { current: 'sai', next: 'matkhau-moi' } });
     assert.equal(wrong.data.fields.current, 'Mật khẩu hiện tại không đúng');
     const ok = await api('/api/me/password', { method: 'POST', body: { current: 'matkhau-test', next: 'matkhau-moi' } });

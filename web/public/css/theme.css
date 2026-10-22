@@ -169,3 +169,5 @@ body {
   -webkit-mask: url(../img/logo-mask.png) center / contain no-repeat; mask: url(../img/logo-mask.png) center / contain no-repeat;
 }
 @media (max-height: 760px) { .logo-art { width: 96px; } }
+
+.pf-dialog { border: var(--bw) solid var(--ink); box-shadow: var(--hard); }

@@ -46,14 +46,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     return p;
   }
 
-  /* Ai được xem bảng xếp hạng: Admin; thí sinh đã hoàn tất bài làm (bấm kết thúc hoặc hết giờ) nếu bật boardAfterFinish;
-   * mọi người sau giờ thi nếu Admin đã công bố kết quả. */
-  const canSeeBoard = (c, user, me) => {
-    if (user.role === 'admin') return true;
-    const ended = contests.phase(c) === 'ended';
-    if (ended && c.settings.publishResults) return true;
-    return Boolean(me && c.settings.boardAfterFinish !== false && (me.finished_at || ended));
-  };
+  const { canSeeBoard } = contests;
 
   const publicContest = (c, user, me) => ({
     id: c.id,
@@ -252,7 +245,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     res.json({ ok: true });
   });
 
-  /* Bảng xếp hạng: xem điều kiện ở canSeeBoard. Trong giờ thi là bảng trực tiếp, kèm trạng thái đang làm / đã kết thúc. */
+  /* Bảng xếp hạng: xem điều kiện ở contests.canSeeBoard. Trong giờ thi là bảng trực tiếp, kèm trạng thái đang làm / đã kết thúc. */
   r.get('/contests/:id/results', (req, res) => {
     const c = load(req, res);
     if (!c) return;

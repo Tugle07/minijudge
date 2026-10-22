@@ -303,11 +303,21 @@ export function createContests(db, catalog) {
     return parse(q.get.get(Number(id)));
   }
 
+  /* Ai được xem bảng xếp hạng: Admin; thí sinh đã hoàn tất bài làm (bấm kết thúc hoặc hết giờ) nếu bật boardAfterFinish;
+   * mọi người sau giờ thi nếu Admin đã công bố kết quả. */
+  function canSeeBoard(c, user, me) {
+    if (user.role === 'admin') return true;
+    const ended = phase(c) === 'ended';
+    if (ended && c.settings.publishResults) return true;
+    return Boolean(me && c.settings.boardAfterFinish !== false && (me.finished_at || ended));
+  }
+
   return {
     LABELS,
     list: () => q.all.all().map(parse),
     get,
     phase,
+    canSeeBoard,
     problemsOf,
     participant: (contestId, userId) => q.participant.get(contestId, userId),
     /* Cuộc thi đang diễn ra mà người này đã vào phòng và chưa nộp bài kết thúc. */
