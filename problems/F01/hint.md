@@ -1,0 +1,1 @@
+So sánh bằng `if/else`: `if (a >= b && a >= c) max = a; else if (b >= c) max = b; else max = c;`. Hoặc viết hàm `int max2(int x, int y)` rồi `max2(a, max2(b, c))`. Với $|a| \le 10^9$ dùng `int` là đủ, không cần `long long`. Chú ý: hai số bằng nhau vẫn tính là lớn nhất (dùng `>=` thay vì `>`).

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "3 số dương phân biệt, ≤ 10^4",
+    "tests": "3-12",
+    "points": 50,
+    "note": "if/else cơ bản với 3 số dương khác nhau"
+  },
+  {
+    "name": "Có số âm",
+    "tests": "13-17",
+    "points": 25,
+    "note": "Nhớ xử lý số âm — khởi tạo max = -10^9 chứ không phải 0"
+  },
+  {
+    "name": "Có số bằng nhau",
+    "tests": "18-20",
+    "points": 15,
+    "note": "Hai hoặc ba số bằng nhau — so sánh phải dùng >="
+  }
+]

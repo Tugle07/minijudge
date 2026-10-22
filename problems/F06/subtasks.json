@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Toạ độ dương nhỏ, tam giác hợp lệ",
+    "tests": "3-12",
+    "points": 50,
+    "note": "Toạ độ trong [1, 50], không thẳng hàng"
+  },
+  {
+    "name": "Toạ độ âm và lớn, tam giác tù/nhọn",
+    "tests": "13-17",
+    "points": 25,
+    "note": "|x|, |y| ≤ 10^4; diện tích có thể lẻ 0.5"
+  },
+  {
+    "name": "Thẳng hàng ngang/dọc/xiên, 2 cọc trùng",
+    "tests": "18-20",
+    "points": 15,
+    "note": "Phải phát hiện INVALID trước khi tính Heron (tránh NaN)"
+  }
+]

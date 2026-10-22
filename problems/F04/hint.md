@@ -1,0 +1,1 @@
+Viết hàm `int prime(int n)`: nếu `n < 2` trả về 0; sau đó duyệt `i` từ 2 tới khi `i*i > n`, nếu `n % i == 0` trả về 0. Trả về 1 ở cuối. Điều kiện vòng là `i * i <= n` (không viết `i <= sqrt(n)` vì sai số). Vòng chính: `for (int k = L; k <= R; k++) if (prime(k)) cnt++;`. Nhớ bỏ qua `k = 0, 1`.

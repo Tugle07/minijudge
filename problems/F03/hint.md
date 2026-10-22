@@ -1,0 +1,1 @@
+Vì có đủ các mệnh giá $500, 200, 100, 50, 20, 10, 5, 2, 1$ (có cả 1 và 2) nên **lúc nào cũng đổi được** và **tham lam từ lớn tới nhỏ** cho kết quả ít tờ nhất. Khai một mảng `long long m[9] = {500, 200, 100, 50, 20, 10, 5, 2, 1};`, duyệt từng mệnh giá: `cnt += N / m[i]; N %= m[i];`. $N$ tới $10^{15}$ nên **bắt buộc long long** và `%lld` — dùng `int` sẽ tràn số âm.

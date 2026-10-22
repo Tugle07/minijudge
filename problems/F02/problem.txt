@@ -1,0 +1,6 @@
+title=Kiểm tra số chính phương
+time_ms=1000
+memory_mb=256
+tests=20
+difficulty=Trung bình
+samples=1,2

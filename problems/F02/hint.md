@@ -1,0 +1,1 @@
+Nếu $N < 0$: in `NO` rồi dừng. Với $N$ nhỏ: duyệt `long long i = 0`, khi `i*i > N` thì dừng; nếu gặp `i*i == N` thì YES. Với $N$ lớn: dùng `long long r = (long long) sqrtl((long double) N);` rồi kiểm tra `r*r == N` ở các giá trị `r - 1, r, r + 1` (sai số `sqrt` có thể lệch ±1). Nhớ `#include <math.h>` và dùng `long long` + `%lld` ngay từ đầu để subtask lớn không tràn.

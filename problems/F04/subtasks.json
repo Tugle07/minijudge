@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "1 ≤ L ≤ R ≤ 1000",
+    "tests": "3-12",
+    "points": 50,
+    "note": "Vòng for L→R, hàm prime trâu O(n) vẫn kịp"
+  },
+  {
+    "name": "R ≤ 2·10^5, R − L ≤ 10^4",
+    "tests": "13-17",
+    "points": 25,
+    "note": "Hàm prime phải chạy tới √n (`i*i <= n`)"
+  },
+  {
+    "name": "L = 0 hoặc 1, không có nguyên tố, L = R là nguyên tố lớn",
+    "tests": "18-20",
+    "points": 15,
+    "note": "Bẫy: loại 0 và 1; đoạn không có số nào thì in 0"
+  }
+]
