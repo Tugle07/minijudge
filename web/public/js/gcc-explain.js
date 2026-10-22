@@ -10,7 +10,7 @@ const headerFor = (fn) => Object.keys(HEADER_OF).find((h) => HEADER_OF[h].split(
 const CPP_WORDS = ['string', 'vector', 'cin', 'cout', 'bool', 'class', 'namespace', 'endl', 'iostream'];
 
 const RULES = [
-  [/expected ';' before/, () => 'Thiếu dấu ; để kết thúc câu lệnh — xem cuối dòng này hoặc cuối dòng ngay phía trên.'],
+  [/expected (?:'[^']*' or )*';' before/, () => 'Thiếu dấu ; để kết thúc câu lệnh — xem cuối dòng này hoặc cuối dòng ngay phía trên.'],
   [/expected '\}' at end of input|expected declaration or statement at end of input/, () => 'Thiếu dấu } đóng khối: số dấu { và } chưa bằng nhau. Kiểm tra cuối hàm main và các vòng lặp, if.'],
   [/expected '\)' before|expected '\)'/, () => 'Thiếu dấu ) — kiểm tra các cặp ngoặc tròn trên dòng này.'],
   [/expected '\]'/, () => 'Thiếu dấu ] khi khai báo hoặc truy cập mảng.'],

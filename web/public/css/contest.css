@@ -22,7 +22,7 @@
 .exam-check.bad > span:first-child { color: var(--wa); }
 .exam-check small { display: block; }
 .exam-countdown { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px; border-radius: var(--r-md); background: var(--bg3); }
-.exam-countdown b { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+.exam-countdown b { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent-text); }
 .exam-join { display: flex; flex-direction: column; gap: 12px; }
 
 /* ---------- Phòng thi ---------- */
@@ -33,7 +33,7 @@ body.exam-mode { overflow: hidden; }
 /* Thanh chọn bài: hàng riêng dưới header, mỗi bài một ô lớn có tên + trạng thái */
 .exam-rail { display: flex; align-items: stretch; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--bg); overflow-x: auto; flex: none; }
 .rail-count { display: flex; flex-direction: column; justify-content: center; padding-right: 12px; margin-right: 4px; border-right: 1px solid var(--line); font-size: 14px; white-space: nowrap; }
-.rail-count b { font-size: 18px; color: var(--accent); }
+.rail-count b { font-size: 18px; color: var(--accent-text); }
 .rail-count small { font-size: 12px; color: var(--fg3); }
 .exam-tab {
   width: 44px; height: 44px; flex: none; border-radius: var(--r-md); border: 2px solid var(--line2);
@@ -43,7 +43,7 @@ body.exam-mode { overflow: hidden; }
 .exam-tab.part { border-color: var(--tle); }
 .exam-tab.full { border-color: var(--ac); color: var(--ac); }
 .exam-tab.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.exam-pos { font-size: 13px; font-weight: 600; color: var(--accent); }
+.exam-pos { font-size: 13px; font-weight: 600; color: var(--accent-text); }
 /* Thông báo vi phạm cho thí sinh: không chặn bài làm, lời lẽ nhẹ nhàng */
 .exam-notice { display: flex; align-items: center; gap: 14px; padding: 10px 16px; flex: none;
   background: color-mix(in oklch, var(--tle) 16%, var(--bg2)); border-bottom: 1.5px solid var(--tle); font-size: 14px; }
@@ -101,7 +101,7 @@ body.exam-mode { overflow: hidden; }
 .exam-overlay-box p { margin: 0; color: var(--fg2); }
 .exam-sum-cols { grid-template-columns: 60px minmax(0, 1fr) 110px 110px; }
 .board-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-top: 8px; }
-.board-live { margin-left: 6px; font-size: 12.5px; font-weight: 600; color: var(--accent); }
+.board-live { margin-left: 6px; font-size: 12.5px; font-weight: 600; color: var(--accent-text); }
 .board-live::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: 1px; animation: mjpulse 1.6s ease-in-out infinite; }
 .board-cell.full { color: var(--ac); font-weight: 700; }
 .board-cell.part { color: var(--tle); font-weight: 600; }
@@ -111,3 +111,10 @@ body.exam-mode { overflow: hidden; }
   .exam-left { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
   .exam-title { display: none; }
 }
+/* Thang điểm: điểm luôn trên một dòng, tên subtask tự xuống dòng */
+.exam-subtasks > div > span { flex: 1; min-width: 0; }
+.exam-subtasks > div > b { white-space: nowrap; }
+/* Màn hẹp: bỏ dòng "nháp tự lưu" để nút Nộp bài không bị đẩy xuống dòng */
+@media (max-width: 1199px) { .exam-right .toolbar [data-saved] { display: none; } }
+@media (max-width: 1199px) { .exam-right .btn-submit .kbd { display: none; } }
+@media (max-width: 900px) { .exam-right .toolbar .lang-chip { display: none; } }

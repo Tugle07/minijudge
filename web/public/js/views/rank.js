@@ -60,7 +60,7 @@ export async function render(ctx) {
           <h1 class="page-title">Bảng xếp hạng</h1>
           <p class="muted" style="margin:0">${data.rows.length} thành viên · ${set ? `khối ${esc(set.short)}, ${set.count} bài` : 'tính trên toàn bộ đề'} · bằng số bài thì ai AC trước xếp trên</p>
         </div>
-        <div class="me-card">Hạng của bạn <b>${me && ranks[meIdx] ? ranks[meIdx] : '—'}</b><span>/ ${data.rows.length} · ${me ? score(me) : 0} bài</span></div>
+        <div class="me-card">Hạng của bạn ${me && ranks[meIdx] ? `<b>${ranks[meIdx]}</b><span>/ ${data.rows.length} · ${score(me)} bài</span>` : '<span>chưa xếp hạng · AC 1 bài để có hạng</span>'}</div>
       </div>
       <div class="underline-tabs" role="tablist">
         ${tabs.map((t) => `<button role="tab" class="${t.id === setId ? 'on' : ''}" data-set="${t.id ?? ''}">${t.open ? '<span class="tab-dot" title="Đang mở"></span>' : ''}${esc(t.label)}</button>`).join('')}

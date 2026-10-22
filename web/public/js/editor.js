@@ -24,7 +24,8 @@ function gccDiagnostics(log, doc) {
       let from = Math.min(line.from + Math.max(0, e.col - 1), line.to);
       let to = Math.min(doc.length, from + ((line.text.slice(from - line.from).match(/^[\w.]+/) || [''])[0].length || 1));
       /* "expected ';' before X": gcc chỉ vào token sau, còn chỗ thiếu ; là cuối đoạn code phía trước. */
-      if (/expected ';' before/.test(e.message.replace(/[‘’]/g, "'"))) {
+      /* gcc có thể viết "expected ';' before" hoặc "expected ',' or ';' before". */
+      if (/expected (?:'[^']*' or )*';' before/.test(e.message.replace(/[‘’]/g, "'"))) {
         const before = doc.sliceString(0, from).replace(/\s+$/, '');
         if (before.length) (to = before.length), (from = before.length - 1);
       }
@@ -95,18 +96,29 @@ export async function mountEditor(container, { value, onChange, onSubmit, onRun,
     onLint?.({ errors: diags.filter((d) => d.severity === 'error').length, warnings: diags.filter((d) => d.severity === 'warning').length });
     return diags;
   };
-  /* Kiểm tra cú pháp trên server sau khi ngừng gõ ~1 giây. */
+  /* Kiểm tra cú pháp trên server sau khi ngừng gõ 2,5 giây. Lỗi ở dòng đang có con trỏ (đang gõ dở) tạm ẩn,
+   * rời dòng đó mới hiện. Di chuyển con trỏ chỉ lọc lại kết quả đã có, không gửi thêm yêu cầu lên server. */
+  let lastCheck = { src: null, log: null };
   const liveCheck = onCheck
     ? linter(
         async (view) => {
           const src = view.state.doc.toString();
           if (!src.trim()) return report([]);
-          onLint?.({ checking: true });
-          const log = await onCheck(src);
-          if (log == null) return (onLint?.({ offline: true }), []);
-          return report(gccDiagnostics(log, view.state.doc));
+          let log = lastCheck.src === src ? lastCheck.log : null;
+          if (log == null) {
+            onLint?.({ checking: true });
+            log = await onCheck(src);
+            if (log == null) return (onLint?.({ offline: true }), []);
+            lastCheck = { src, log };
+          }
+          if (view.state.doc.toString() !== src) return [];
+          const typingLine = view.state.doc.lineAt(view.state.selection.main.head).number;
+          const diags = gccDiagnostics(log, view.state.doc).filter(
+            (d) => !(d.severity === 'error' && view.state.doc.lineAt(d.from).number === typingLine),
+          );
+          return report(diags);
         },
-        { delay: 1000 },
+        { delay: 2500, needsRefresh: (update) => update.selectionSet && !update.docChanged },
       )
     : [];
 

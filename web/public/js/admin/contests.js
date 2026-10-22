@@ -152,18 +152,18 @@ async function editor(ctx, summary, problems, onSaved) {
           <span style="font-weight:500">${esc(p?.title ?? cp.problemId)}</span>
           <span class="mono faint" style="font-size:12.5px">${esc(cp.problemId)} · ${p?.tests ?? '?'} test · ${p?.status === 'pub' ? 'đã xuất bản' : 'nháp'}</span>
           <div style="flex:1"></div>
-          <b class="mono">${total} điểm</b>
+          <b class="mono" style="white-space:nowrap">${total} điểm</b>
           <button class="btn-line" style="height:30px" data-up="${i}" title="Lên">↑</button>
           <button class="btn-line" style="height:30px" data-rm="${i}" title="Bỏ bài">×</button>
         </div>
         <table class="atable" style="font-size:13.5px">
-          <thead><tr><th>Subtask</th><th>Các test (vd 1-5,8)</th><th class="num" style="width:90px">Điểm</th><th style="width:40px"></th></tr></thead>
+          <thead><tr><th>Subtask</th><th>Các test (vd 1-5,8)</th><th class="num" style="width:120px">Điểm</th><th style="width:40px"></th></tr></thead>
           <tbody>${cp.subtasks
             .map(
               (s, k) => `<tr>
                 <td><input class="input" style="height:32px" data-st="${i}:${k}:name" value="${esc(s.name)}" /></td>
                 <td><input class="input mono" style="height:32px" data-st="${i}:${k}:tests" value="${esc(s.tests)}" /></td>
-                <td><input class="input mono" style="height:32px;text-align:right" type="number" min="0" step="any" data-st="${i}:${k}:points" value="${esc(s.points)}" /></td>
+                <td><input class="input mono st-points" style="height:32px;text-align:right" type="number" min="0" step="any" data-st="${i}:${k}:points" value="${esc(s.points)}" /></td>
                 <td><button class="link-btn" data-strm="${i}:${k}" title="Xóa subtask">×</button></td></tr>`,
             )
             .join('')}</tbody>
@@ -426,7 +426,7 @@ async function detail(ctx, id, tab) {
       </div>
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
-          <thead><tr><th>Thí sinh</th><th>Trạng thái</th><th class="num" title="Mỗi lần rời bài tính 1 lần, dù trình duyệt báo nhiều tín hiệu cùng lúc">Số lần vi phạm</th>${VIOLATION_COLS.map(([, l, tip]) => `<th class="num vcol" title="${tip}">${l}</th>`).join('')}<th class="num">Điểm</th><th>Thiết bị · IP</th><th></th></tr></thead>
+          <thead><tr><th>Thí sinh</th><th>Trạng thái</th><th class="num" title="Mỗi lần rời bài tính 1 lần, dù trình duyệt báo nhiều tín hiệu cùng lúc">Số lần vi phạm</th><th title="Số tín hiệu từng loại mà trình duyệt ghi nhận">Chi tiết</th><th class="num">Điểm</th><th>Thiết bị · IP</th><th></th></tr></thead>
           <tbody>${ps
             .sort((a, b) => b.violations - a.violations || a.username.localeCompare(b.username))
             .map((p) => {
@@ -435,7 +435,7 @@ async function detail(ctx, id, tab) {
                 <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${esc(p.username)}" title="Lọc nhật ký của thí sinh này">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
                 <td>${st}${p.extended ? ' ' + pill('2 màn hình', 'var(--wa)') : ''}</td>
                 <td class="num"><b class="vtotal ${p.violations >= 5 ? 'hi' : p.violations ? 'mid' : ''}">${p.violations}</b></td>
-                ${VIOLATION_COLS.map(([k]) => `<td class="num vcol" style="color:${p.events[k] ? 'var(--wa)' : 'var(--fg3)'}">${p.events[k] || '·'}</td>`).join('')}
+                <td class="vdetail">${VIOLATION_COLS.filter(([k]) => p.events[k]).map(([k, l, tip]) => `<span title="${tip}">${l} <b>${p.events[k]}</b></span>`).join('') || '<span class="faint">Không có</span>'}</td>
                 <td class="num">${num(p.total)}</td>
                 <td style="font-size:12.5px"><span style="${p.device && p.device !== 'desktop' ? 'color:var(--wa);font-weight:600' : ''}">${esc(DEVICE_TEXT[p.device] || '—')}</span><div class="mono faint">${esc(p.ip || '')}</div></td>
                 <td><button class="btn-line" style="height:28px;font-size:12.5px" data-unlock="${p.userId}" data-name="${esc(p.username)}" title="Cho vào lại từ máy/tab khác">Mở khóa</button></td>
