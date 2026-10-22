@@ -1,6 +1,6 @@
 /* ---------- Đọc đề & nộp bài ---------- */
 .split { display: flex; height: calc(100vh - var(--h-header)); }
-.pane-left { width: var(--split, 50%); flex: none; overflow: auto; min-width: 0; }
+.pane-left { width: var(--left-w, var(--split, 46%)); flex: none; overflow: auto; min-width: 0; }
 .pane-left { background: var(--bg); }
 .pane-left-inner { max-width: 920px; margin: 0 auto; padding: 20px clamp(20px, 3vw, 44px) 56px; display: flex; flex-direction: column; gap: 20px; }
 .prob-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -69,7 +69,14 @@
 .divider:hover > span { background: var(--accent); }
 .divider > span { width: 1px; height: 100%; background: var(--line); }
 
-.pane-right { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg); }
+.pane-right {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+  padding: 10px 12px 16px; background: var(--bg); overflow-y: auto;
+}
+.pane-right .toolbar { border: 1px solid var(--line2); border-bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; background: var(--bg2); }
+.pane-right .editor { min-height: 260px; height: clamp(260px, 42vh, 500px); border: 1px solid var(--line2); border-top-color: var(--line); background: var(--bg2); }
+.pane-right .editor-status { border: 1px solid var(--line2); border-top: 0; border-radius: 0 0 var(--r-md) var(--r-md); }
+.pane-right .editor:focus-within { border-color: var(--accent); }
 .rtabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); height: 44px; align-items: flex-end; flex: none; }
 .rtabs button {
   height: 44px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: none;
@@ -138,7 +145,14 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent-text); 
 .zoom button + button { border-left: 1px solid var(--line2); }
 .zoom button:hover { background: var(--bg3); color: var(--fg); }
 
-.result { flex: none; height: clamp(220px, 38%, 460px); overflow: auto; border-top: 1px solid var(--line); background: var(--bg2); }
+.result {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--bg2); overflow: auto; min-height: 70px; max-height: 420px;
+}
+.history {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--bg2); overflow: auto; min-height: 70px; max-height: 420px; padding: 8px 16px;
+}
 .samples-panel { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 16px; }
 .btn-run-all { height: 34px; padding: 0 14px; border: 0; border-radius: var(--r-sm); background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 13.5px; }
 .btn-run-all:disabled { opacity: .55; }
@@ -235,3 +249,34 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent-text); 
 }
 .celog-wrap > .run-hint, .run-hint { display: block; padding: 8px 12px; border-left: 3px solid var(--tle); border-radius: var(--r-sm); background: color-mix(in oklch, var(--tle) 10%, transparent); color: var(--fg2); font-size: 13px; line-height: 1.5; text-transform: none; letter-spacing: 0; font-weight: 500; }
 .exam-run .run-actions { margin-bottom: 8px; }
+
+
+/* ------- Khung thi/luyện tập: thanh kéo, trạng thái cú pháp, inp.txt/out.txt ------- */
+.exam-sep { flex: none; width: 6px; cursor: col-resize; background: transparent; position: relative; }
+.exam-sep::before { content: ''; position: absolute; left: 2px; top: 0; bottom: 0; width: 2px; background: var(--line); transition: background .15s; }
+.exam-sep:hover::before, .exam-sep:focus-visible::before, .exam-sep.dragging::before { background: var(--accent); }
+
+.diag-pills { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.diag-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 1; }
+.diag-pill .diag-i { font-weight: 700; }
+.diag-pill b { font-family: var(--font-code); font-weight: 600; }
+.diag-pill.err { background: color-mix(in srgb, var(--wa) 15%, transparent); color: var(--wa); }
+.diag-pill.warn { background: color-mix(in srgb, var(--tle) 15%, transparent); color: var(--tle); }
+.diag-pill.ok { background: color-mix(in srgb, var(--ac) 15%, transparent); color: var(--ac); }
+.diag-pill.checking { color: var(--fg3); }
+
+.exam-io { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.io-col { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg2); overflow: hidden; }
+.io-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--bg); font-size: 12.5px; color: var(--fg2); }
+.io-head b { font-family: var(--font-code); font-size: 13px; color: var(--fg); font-weight: 600; }
+.io-tools { margin-left: auto; display: flex; gap: 6px; }
+.io-tools .chip { height: 22px; padding: 0 8px; font-size: 11.5px; border-radius: 999px; }
+.io-head .io-run { margin-left: auto; height: 26px; padding: 0 14px; font-size: 12.5px; font-weight: 600; }
+.io-col textarea { width: 100%; resize: vertical; min-height: 110px; padding: 8px 10px; font: 13px var(--font-code); border: 0; background: transparent; color: var(--fg); outline: none; }
+.io-output { min-height: 110px; max-height: 280px; padding: 8px 10px; overflow: auto; resize: vertical; }
+.io-output .result-empty { padding: 0; color: var(--fg3); font-size: 13px; }
+.io-output .celog-wrap { padding: 0; }
+.io-output pre { margin: 6px 0 0; max-height: none; }
+
+@media (max-width: 1199px) { .exam-io { grid-template-columns: 1fr; } }
+@media (max-width: 819px) { .exam-sep { display: none; } }

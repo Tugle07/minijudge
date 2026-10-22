@@ -77,7 +77,6 @@ export async function render(ctx) {
   const state = {
     samples: p.samples.map(() => ({ status: 'idle' })),
     tab: ctx.extra === 'history' ? 'history' : 'submit',
-    panel: p.samples.length ? 'samples' : 'result',
     result: { phase: 'idle' },
     run: null,
     history: [],
@@ -87,59 +86,65 @@ export async function render(ctx) {
   };
 
   ctx.view.innerHTML = `
-    <div class="split" data-split>
-      <section class="pane-left" aria-label="Đề bài"><div class="pane-left-inner">${statementHtml(p, set)}</div></section>
-      <div class="divider wide-only" role="separator" aria-orientation="vertical" aria-label="Kéo để đổi độ rộng" tabindex="0"><span></span></div>
-      <section class="pane-right" aria-label="Nộp bài">
+    <div class="split exam-body" data-split>
+      <section class="pane-left exam-left" aria-label="Đề bài"><div class="pane-left-inner">${statementHtml(p, set)}</div></section>
+      <div class="exam-sep" data-sep role="separator" aria-orientation="vertical" aria-label="Kéo để chỉnh độ rộng" tabindex="0"></div>
+      <section class="pane-right exam-right" aria-label="Soạn mã và nộp bài">
         <div class="mobile-head narrow-only">
           <button class="link-btn" data-close-editor style="color:var(--fg);height:36px">‹ Đề bài</button>
           <span class="mono muted" style="font-size:14px">${esc(p.id)}.c</span>
           <button class="btn-primary" data-submit style="height:36px;padding:0 14px;font-size:14px">Nộp bài</button>
         </div>
-        <div class="rtabs" role="tablist">
-          <button role="tab" data-rtab="submit">Nộp bài</button>
-          <button role="tab" data-rtab="history">Bài nộp của tôi <span class="count" data-hcount>0</span></button>
+        <header class="toolbar">
+          <span class="lang-chip">C11 · gcc -O2</span>
+          <div class="zoom" role="group" aria-label="Cỡ chữ"><button data-zoom="-1" title="Chữ nhỏ hơn">A−</button><button data-zoom="1" title="Chữ lớn hơn">A+</button></div>
+          <button class="file-btn" data-reset title="Xóa code, quay về khung mẫu">Khung mẫu</button>
+          <label class="file-btn">Tải file .c<input type="file" accept=".c,text/x-c,text/plain" data-file /></label>
+          <span class="faint wide-only" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
+          <div class="spacer"></div>
+          <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
+        </header>
+        <div class="editor" data-editor><div class="editor-loading">Đang tải trình soạn code…</div></div>
+        <div class="editor-status">
+          <span data-cursor>Dòng 1, cột 1</span>
+          <label class="assist-toggle wide-only" title="Gợi ý từ khóa và hàm C khi gõ"><input type="checkbox" data-assist role="switch" /><span class="sw" aria-hidden="true"></span><span>Gợi ý code</span></label>
+          <span class="diag-pills" aria-label="Kết quả kiểm tra cú pháp">
+            <span class="diag-pill checking" data-diag-check hidden>Đang kiểm tra…</span>
+            <span class="diag-pill ok" data-diag-ok hidden><span class="diag-i">✓</span>Cú pháp tốt</span>
+            <span class="diag-pill err" data-diag-err title="Số lỗi cú pháp" hidden><span class="diag-i">✕</span><b>0</b></span>
+            <span class="diag-pill warn" data-diag-warn title="Số cảnh báo" hidden><span class="diag-i">!</span><b>0</b></span>
+          </span>
+          <span class="keys wide-only" style="margin-left:auto;font-size:12px;color:var(--fg3)"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> nộp · <kbd>Ctrl</kbd>+<kbd>'</kbd> chạy</span>
         </div>
-        <div data-panel="submit" style="display:contents">
-          <div class="toolbar">
-            <span class="lang-chip">C11 · gcc -O2</span>
-            <div class="zoom" role="group" aria-label="Cỡ chữ"><button data-zoom="-1" title="Chữ nhỏ hơn">A−</button><button data-zoom="1" title="Chữ lớn hơn">A+</button></div>
-            <label class="assist-toggle" title="Gợi ý từ khóa, hàm thư viện và khung mẫu (for, main, printf…) khi gõ. Người mới nên tắt để tự nhớ cú pháp."><input type="checkbox" data-assist role="switch" /><span class="sw" aria-hidden="true"></span>Gợi ý code</label>
-            <div class="spacer"></div>
-            <button class="file-btn" data-reset title="Xóa code, quay về khung mẫu">Khung mẫu</button>
-            <label class="file-btn">Tải file .c<input type="file" accept=".c,text/x-c,text/plain" data-file /></label>
-            <button class="file-btn" data-run-go title="Ctrl + '">Chạy thử</button>
-            <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
-          </div>
-          <div class="editor" data-editor><div class="editor-loading">Đang tải trình soạn code…</div></div>
-          <div class="editor-status">
-            <span data-cursor>Dòng 1, cột 1</span>
-            <span data-saved>Nháp tự lưu trên máy này</span>
-            <span data-lint class="lint-state"></span>
-            <span class="keys wide-only"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> nộp · <kbd>Ctrl</kbd>+<kbd>'</kbd> chạy thử · <kbd>Ctrl</kbd>+<kbd>F</kbd> tìm · <kbd>Ctrl</kbd>+<kbd>Space</kbd> gợi ý</span>
-          </div>
-          <div class="result" aria-live="polite">
-            <div class="result-tabs" role="tablist">
-              ${p.samples.length ? '<button role="tab" data-ptab="samples">Test ví dụ</button>' : ''}
-              <button role="tab" data-ptab="run">Chạy thử</button>
-              <button role="tab" data-ptab="result">Kết quả chấm</button>
+        <div class="exam-io">
+          <div class="io-col">
+            <div class="io-head">
+              <b>inp.txt</b>
+              <span class="io-tools" data-fill-tools>
+                ${p.samples.map((_, i) => `<button class="chip" data-fill="${i}">Dùng ví dụ ${i + 1}</button>`).join('')}
+                <button class="chip" data-clear-input title="Xoá input">Xoá</button>
+              </span>
             </div>
-            <div data-samples hidden></div>
-            <div data-result></div>
-            <div data-run hidden>
-              <div class="run-box">
-                <textarea data-run-input spellcheck="false" placeholder="Nhập input để chạy thử…" aria-label="Input chạy thử"></textarea>
-                <div class="run-actions">
-                  <button class="btn" data-run-go>Chạy</button>
-                  ${p.samples.map((_, i) => `<button class="btn" data-fill="${i}">Dùng ví dụ ${i + 1}</button>`).join('')}
-                  <span class="faint" style="font-size:12.5px">Không tính vào bài nộp</span>
-                </div>
-              </div>
-              <div data-run-result></div>
+            <textarea data-run-input spellcheck="false" placeholder="Nhập dữ liệu rồi bấm Chạy thử"></textarea>
+          </div>
+          <div class="io-col">
+            <div class="io-head">
+              <b>out.txt</b>
+              <button class="btn-dark io-run" data-run-go title="Ctrl + '">Chạy thử</button>
             </div>
+            <div class="io-output" data-run-result></div>
           </div>
         </div>
-        <div class="history" data-panel="history"></div>
+        <div class="result-tabs" role="tablist" style="margin-top:12px">
+          <button class="on" role="tab" data-rtab="submit">Kết quả chấm</button>
+          ${p.samples.length > 1 ? '<button role="tab" data-rtab="samples">Chạy tất cả ví dụ</button>' : ''}
+          <button role="tab" data-rtab="history">Bài nộp của tôi (<span data-hcount>0</span>)</button>
+        </div>
+        <div data-tab-content="submit" class="exam-latest" style="margin-top:4px">
+          <div class="result" data-result></div>
+        </div>
+        ${p.samples.length > 1 ? '<div data-tab-content="samples" class="exam-latest" style="margin-top:4px" hidden><div class="result" data-samples></div></div>' : ''}
+        <div data-panel="history" class="history exam-latest" style="margin-top:4px" hidden></div>
       </section>
     </div>
     <div class="mobile-bar narrow-only"><span data-mobile-verdict></span><button class="btn-primary" data-open-editor>Viết code</button></div>`;
@@ -151,13 +156,18 @@ export async function render(ctx) {
     onChange: (code) => {
       saveDraft(p.id, code);
       const el = $('[data-saved]');
-      el.textContent = 'Đã lưu nháp';
+      if (el) el.textContent = 'Đã lưu nháp';
       clearTimeout(savedTimer);
-      savedTimer = setTimeout(() => (el.textContent = 'Nháp tự lưu trên máy này'), 1500);
+      savedTimer = setTimeout(() => {
+        if (el) el.textContent = 'Nháp tự lưu trên máy này';
+      }, 1500);
     },
     onSubmit: () => submit(),
     onRun: () => runCustom(),
-    onCursor: ({ line, col, lines }) => ($('[data-cursor]').textContent = `Dòng ${line}, cột ${col} · ${lines} dòng`),
+    onCursor: ({ line, col, lines }) => {
+      const cur = $('[data-cursor]');
+      if (cur) cur.textContent = `Dòng ${line}, cột ${col} · ${lines} dòng`;
+    },
     onCheck: async (source) => {
       try {
         return (await api('/api/check', { method: 'POST', body: { source } })).log;
@@ -166,27 +176,32 @@ export async function render(ctx) {
       }
     },
     onLint: (s) => {
-      const el = $('[data-lint]');
-      if (!el) return;
-      el.className = `lint-state ${s.checking ? '' : s.errors ? 'bad' : s.warnings ? 'warn' : s.offline ? '' : 'good'}`;
-      el.textContent = s.checking
-        ? 'Đang kiểm tra cú pháp…'
-        : s.offline
-          ? ''
-          : s.errors
-            ? `${s.errors} lỗi cú pháp${s.warnings ? `, ${s.warnings} cảnh báo` : ''} — rê chuột vào dấu đỏ để xem`
-            : s.warnings
-              ? `${s.warnings} cảnh báo`
-              : 'Không có lỗi cú pháp';
+      const show = (sel, on, n) => {
+        const el = $(sel);
+        if (!el) return;
+        el.hidden = !on;
+        if (on && n != null && el.querySelector('b')) el.querySelector('b').textContent = n;
+      };
+      show('[data-diag-check]', Boolean(s.checking));
+      show('[data-diag-err]', !s.checking && Number(s.errors) > 0, s.errors);
+      show('[data-diag-warn]', !s.checking && !s.errors && Number(s.warnings) > 0, s.warnings);
+      show('[data-diag-ok]', !s.checking && !s.offline && !s.errors && !s.warnings);
     },
   });
-  $('[data-assist]').checked = editor.assist;
-  $('[data-assist]').addEventListener('change', (e) => {
-    editor.setAssist(e.target.checked);
-    toast(e.target.checked ? 'Đã bật gợi ý code' : 'Đã tắt gợi ý code');
-  });
+
+  const assistCheck = $('[data-assist]');
+  if (assistCheck && editor.setAssist) {
+    assistCheck.checked = editor.assist;
+    assistCheck.addEventListener('change', (e) => {
+      editor.setAssist(e.target.checked);
+      toast(e.target.checked ? 'Đã bật gợi ý code' : 'Đã tắt gợi ý code');
+    });
+  }
+
   const runInput = $('[data-run-input]');
-  runInput.value = p.samples[0]?.input ?? '';
+  if (runInput && !runInput.value) runInput.value = p.samples[0]?.input ?? '';
+  const runOutput = $('[data-run-result]');
+  if (runOutput) runOutput.innerHTML = runResultHtml();
 
   const tokens = (s) => String(s ?? '').trim().split(/\s+/).join(' ');
   function samplesHtml() {
@@ -217,17 +232,16 @@ export async function render(ctx) {
   async function runSamples() {
     if (state.samples.some((s) => s.status === 'running')) return;
     if (!editor.value.trim()) return toast('Mã nguồn đang trống');
-    Object.assign(state, { tab: 'submit', panel: 'samples' });
+    state.tab = 'samples';
     state.samples = p.samples.map(() => ({ status: 'running' }));
     state.samplesCE = null;
     drawTabs();
-    drawPanel();
     for (let i = 0; i < p.samples.length && state.alive; i++) {
       try {
         const input = p.samples[i].input;
         const r = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input } });
         if (r.verdict === 'CE') {
-          editor.showDiagnostics(r.compile_log);
+          editor.showDiagnostics?.(r.compile_log);
           state.samples = state.samples.map(() => ({ status: 'error' }));
           state.samplesCE = r.compile_log || '';
           break;
@@ -238,66 +252,82 @@ export async function render(ctx) {
       } catch (err) {
         state.samples[i] = { status: 'error', message: err.message };
       }
-      if (state.alive) drawPanel();
+      if (state.alive && state.tab === 'samples') {
+        const el = $('[data-samples]');
+        if (el) el.innerHTML = samplesHtml();
+      }
     }
-    if (state.alive) drawPanel();
-  }
-
-  function drawPanel() {
-    ctx.view.querySelectorAll('[data-ptab]').forEach((b) => b.classList.toggle('on', b.dataset.ptab === state.panel));
-    $('[data-samples]').hidden = state.panel !== 'samples';
-    if (state.panel === 'samples') $('[data-samples]').innerHTML = samplesHtml();
-    $('[data-result]').hidden = state.panel !== 'result';
-    $('[data-run]').hidden = state.panel !== 'run';
-    $('[data-run-result]').innerHTML = runResultHtml(state.run);
-    ctx.view.querySelectorAll('[data-run-go]').forEach((b) => (b.disabled = Boolean(state.run?.loading)));
+    if (state.alive && state.tab === 'samples') {
+      const el = $('[data-samples]');
+      if (el) el.innerHTML = samplesHtml();
+    }
   }
 
   async function runCustom() {
     if (state.run?.loading) return;
     if (!editor.value.trim()) return toast('Mã nguồn đang trống');
-    Object.assign(state, { tab: 'submit', panel: 'run', run: { loading: true } });
-    drawTabs();
-    drawPanel();
+    state.run = { loading: true };
+    const out = $('[data-run-result]');
+    if (out) out.innerHTML = runResultHtml({ loading: true });
+    ctx.view.querySelectorAll('[data-run-go]').forEach((b) => (b.disabled = true));
     try {
       state.run = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input: runInput.value } });
-      if (state.alive) editor.showDiagnostics(state.run.compile_log);
+      if (state.alive && state.run.compile_log) {
+        editor.showDiagnostics?.(state.run.compile_log);
+      }
     } catch (err) {
       state.run = { error: err.message };
     }
-    if (state.alive) drawPanel();
+    ctx.view.querySelectorAll('[data-run-go]').forEach((b) => (b.disabled = false));
+    if (state.alive && out) out.innerHTML = runResultHtml(state.run);
   }
 
   function drawTabs() {
     ctx.view.querySelectorAll('[data-rtab]').forEach((b) => b.classList.toggle('on', b.dataset.rtab === state.tab));
-    $('[data-panel="submit"]').hidden = state.tab !== 'submit';
-    $('[data-panel="submit"]').style.display = state.tab === 'submit' ? 'contents' : 'none';
-    $('[data-panel="history"]').hidden = state.tab !== 'history';
+    const submitEl = $('[data-tab-content="submit"]');
+    if (submitEl) submitEl.hidden = state.tab !== 'submit';
+    const samplesEl = $('[data-tab-content="samples"]');
+    if (samplesEl) {
+      samplesEl.hidden = state.tab !== 'samples';
+      if (state.tab === 'samples') {
+        const sbox = $('[data-samples]');
+        if (sbox) sbox.innerHTML = samplesHtml();
+      }
+    }
+    const histEl = $('[data-panel="history"]');
+    if (histEl) histEl.hidden = state.tab !== 'history';
   }
+
   function drawResult() {
-    $('[data-result]').innerHTML = resultHtml(state.result, p.tests);
+    const rbox = $('[data-result]');
+    if (rbox) rbox.innerHTML = resultHtml(state.result, p.tests);
     const judging = state.result.phase === 'judging';
     ctx.view.querySelectorAll('[data-submit]').forEach((b) => (b.disabled = judging));
     const v = state.result.sub?.verdict;
-    $('[data-mobile-verdict]').innerHTML = state.result.phase === 'done' ? badge(v) : '';
+    const mv = $('[data-mobile-verdict]');
+    if (mv) mv.innerHTML = state.result.phase === 'done' ? badge(v) : '';
   }
+
   function drawHistory() {
-    $('[data-hcount]').textContent = state.history.length;
+    const hc = $('[data-hcount]');
+    if (hc) hc.textContent = state.history.length;
+    const panel = $('[data-panel="history"]');
+    if (!panel) return;
     if (state.detail) {
       const s = state.detail;
-      $('[data-panel="history"]').innerHTML = `
+      panel.innerHTML = `
         <div class="sub-detail">
           <div class="sub-detail-head">
             <button class="link-btn" data-back-history>‹ Tất cả bài nộp</button>
             <span class="mono faint" style="font-size:13px">#${s.id} · ${fmtWhen(s.createdAt)}</span>
             <button class="btn" data-load-code style="height:30px;font-size:13px">Nạp code này vào trình soạn</button>
           </div>
-          <div class="result" style="max-height:none;border:1px solid var(--line);border-radius:var(--r-md)">${resultHtml({ phase: s.verdict === 'PENDING' ? 'judging' : 'done', sub: s }, p.tests)}</div>
+          <div class="result" style="max-height:none">${resultHtml({ phase: s.verdict === 'PENDING' ? 'judging' : 'done', sub: s }, p.tests)}</div>
           <pre class="sub-code">${highlightC(s.source).html}</pre>
         </div>`;
       return;
     }
-    $('[data-panel="history"]').innerHTML = state.history.length
+    panel.innerHTML = state.history.length
       ? state.history
           .map(
             (h) => `
@@ -311,8 +341,9 @@ export async function render(ctx) {
           </div>`,
           )
           .join('')
-      : '<p class="faint" style="font-size:14px">Bạn chưa nộp bài này.</p>';
+      : '<p class="faint" style="font-size:14px;padding:8px">Bạn chưa nộp bài này.</p>';
   }
+
   async function loadHistory() {
     state.history = await api(`/api/submissions?problem=${encodeURIComponent(p.id)}`);
     if (state.alive) drawHistory();
@@ -328,7 +359,7 @@ export async function render(ctx) {
       }
       state.result = { phase: 'done', sub };
       drawResult();
-      editor.showDiagnostics(sub.compileLog);
+      editor.showDiagnostics?.(sub.compileLog);
       loadHistory();
     } catch (err) {
       state.result = { phase: 'idle' };
@@ -340,9 +371,8 @@ export async function render(ctx) {
   async function submit() {
     if (state.result.phase === 'judging') return;
     if (!editor.value.trim()) return toast('Mã nguồn đang trống');
-    Object.assign(state, { tab: 'submit', panel: 'result', result: { phase: 'judging' } });
+    Object.assign(state, { tab: 'submit', result: { phase: 'judging' } });
     drawTabs();
-    drawPanel();
     drawResult();
     try {
       const { id } = await api('/api/submissions', { method: 'POST', body: { problemId: p.id, source: editor.value } });
@@ -385,10 +415,19 @@ export async function render(ctx) {
     if (t.closest('[data-run-samples]')) return runSamples();
     if (t.closest('[data-submit]')) return submit();
     if (t.closest('[data-run-go]')) return runCustom();
-    const ptab = t.closest('[data-ptab]');
-    if (ptab) return (state.panel = ptab.dataset.ptab), drawPanel();
     const fill = t.closest('[data-fill]');
-    if (fill) return (runInput.value = p.samples[Number(fill.dataset.fill)].input), runInput.focus();
+    if (fill) {
+      const inp = $('[data-run-input]');
+      inp.value = p.samples[Number(fill.dataset.fill)]?.input ?? '';
+      $('[data-run-result]').innerHTML = runResultHtml();
+      return inp.focus();
+    }
+    if (t.closest('[data-clear-input]')) {
+      const inp = $('[data-run-input]');
+      inp.value = '';
+      $('[data-run-result]').innerHTML = runResultHtml();
+      return inp.focus();
+    }
     const tab = t.closest('[data-rtab]');
     if (tab) return (state.tab = tab.dataset.rtab), drawTabs();
     if (t.closest('[data-open-editor]')) return document.body.classList.add('editor-open'), editor.focus();
@@ -420,32 +459,46 @@ export async function render(ctx) {
     e.target.value = '';
   });
 
-  const split = $('[data-split]');
-  const left = $('.pane-left');
-  const setSplit = (pct) => left.style.setProperty('--split', `${Math.min(70, Math.max(30, pct))}%`);
-  const divider = $('.divider');
-  divider.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    const rect = split.getBoundingClientRect();
-    const move = (ev) => setSplit(((ev.clientX - rect.left) / rect.width) * 100);
-    const up = () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-      document.body.style.cursor = '';
+  const sep = $('[data-sep]');
+  const body = ctx.view.querySelector('[data-split]');
+  const initial = parseFloat(localStorage.getItem('mj-split-w') || localStorage.getItem('mj-exam-split')) || 46;
+  body.style.setProperty('--left-w', Math.max(25, Math.min(70, initial)) + '%');
+
+  sep.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    sep.setPointerCapture(ev.pointerId);
+    sep.classList.add('dragging');
+    const rect = body.getBoundingClientRect();
+    const onMove = (e) => {
+      const pct = Math.max(25, Math.min(70, ((e.clientX - rect.left) / rect.width) * 100));
+      body.style.setProperty('--left-w', pct.toFixed(2) + '%');
     };
-    document.body.style.cursor = 'col-resize';
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
+    const onUp = (e) => {
+      sep.removeEventListener('pointermove', onMove);
+      sep.removeEventListener('pointerup', onUp);
+      sep.classList.remove('dragging');
+      try {
+        sep.releasePointerCapture(e.pointerId);
+        const val = parseFloat(body.style.getPropertyValue('--left-w')) || 46;
+        localStorage.setItem('mj-split-w', val);
+        localStorage.setItem('mj-exam-split', val);
+      } catch {}
+    };
+    sep.addEventListener('pointermove', onMove);
+    sep.addEventListener('pointerup', onUp);
   });
-  divider.addEventListener('keydown', (e) => {
+
+  sep.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
-    const cur = parseFloat(left.style.getPropertyValue('--split')) || 50;
-    setSplit(cur + (e.key === 'ArrowLeft' ? -3 : 3));
+    const cur = parseFloat(body.style.getPropertyValue('--left-w')) || 46;
+    const next = Math.max(25, Math.min(70, cur + (e.key === 'ArrowLeft' ? -3 : 3)));
+    body.style.setProperty('--left-w', next.toFixed(2) + '%');
+    localStorage.setItem('mj-split-w', next);
+    localStorage.setItem('mj-exam-split', next);
   });
 
   drawTabs();
-  drawPanel();
   drawResult();
   drawHistory();
   loadHistory();
