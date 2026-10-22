@@ -148,11 +148,12 @@ body {
 /* Rãnh thanh tiến độ và ô trống biểu đồ: đậm hơn để thấy rõ trên khung trắng */
 .progress, .ac-rate .bar, .rank-score .progress { background: var(--line); }
 .heatmap { overflow-y: hidden; padding-bottom: 6px; }
-.hm-cell { background: var(--line); }
+/* Ô trống chỉ nhỉnh hơn nền một chút để lưới không lấn át; ô có bài nộp mới nổi màu. */
+.hm-cell { --hm0: color-mix(in srgb, var(--fg) 6%, var(--bg2)); background: var(--hm0); }
 .hm-cell.empty { background: transparent; }
-.hm-cell.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--line)); }
-.hm-cell.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--line)); }
-.hm-cell.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--line)); }
+.hm-cell.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--hm0)); }
+.hm-cell.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--hm0)); }
+.hm-cell.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--hm0)); }
 .hm-cell.l4 { background: var(--accent); }
 
 /* Logo: đầu robot đội mũ (cỡ nhỏ) và hình đầy đủ (trang đăng nhập). Dùng mặt nạ để màu theo giao diện. */
