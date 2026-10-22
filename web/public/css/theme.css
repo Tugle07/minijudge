@@ -154,3 +154,17 @@ body {
 .hm-cell.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--line)); }
 .hm-cell.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--line)); }
 .hm-cell.l4 { background: var(--accent); }
+
+/* Logo: đầu robot đội mũ (cỡ nhỏ) và hình đầy đủ (trang đăng nhập). Dùng mặt nạ để màu theo giao diện. */
+.logo-mark {
+  width: 34px; height: 34px; border: 0; border-radius: 0; box-shadow: none; font-size: 0; color: transparent;
+  background: var(--accent-text);
+  -webkit-mask: url(../img/logo-head-mask.png) center / contain no-repeat; mask: url(../img/logo-head-mask.png) center / contain no-repeat;
+}
+.logo-mark.lg { width: 40px; height: 40px; }
+.auth-hero .logo-mark { background: var(--on-accent); }
+.logo-art {
+  display: block; width: clamp(110px, 14vw, 170px); aspect-ratio: 1; background: var(--on-accent);
+  -webkit-mask: url(../img/logo-mask.png) center / contain no-repeat; mask: url(../img/logo-mask.png) center / contain no-repeat;
+}
+@media (max-height: 760px) { .logo-art { width: 96px; } }

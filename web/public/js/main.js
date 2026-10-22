@@ -46,7 +46,7 @@ function toggleTheme() {
 function renderTopbar(active) {
   const name = app.user.username;
   topbar.innerHTML = `
-    <button class="brand" data-go="#/home"><span class="logo-mark">mj</span><span class="logo-text">MiniJudge</span></button>
+    <button class="brand" data-go="#/home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-text">MiniJudge</span></button>
     <nav class="topnav wide-only">${NAV.map(([k, label]) => `<button class="${k === active ? 'on' : ''}" data-go="#/${k}">${label}</button>`).join('')}</nav>
     <div class="spacer"></div>
     ${themeButton()}

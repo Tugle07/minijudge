@@ -12,8 +12,9 @@ const HERO_CODE = `<span style="color:var(--sp)">#include &lt;stdio.h&gt;</span>
 
 const hero = `
   <aside class="auth-hero wide-only">
-    <div style="display:flex;align-items:center;gap:10px"><span class="logo-mark lg">mj</span><span class="logo-text" style="font-size:17px">MiniJudge</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><span class="logo-mark lg" aria-hidden="true"></span><span class="logo-text" style="font-size:17px">MiniJudge</span></div>
     <div class="hero-body">
+      <span class="logo-art" role="img" aria-label="Logo MiniJudge"></span>
       <h1>Nộp code C, nhận kết quả chấm từng test</h1>
       <div class="code-card">
         <div class="code-card-head"><span>p01_tong_hai_so.c</span><b class="vbadge" style="--v:var(--ac);font-size:13px">AC</b></div>
@@ -46,7 +47,7 @@ export async function render(ctx) {
       <div class="auth">${hero}
         <main class="auth-main">
           <div class="auth-top">
-            <span class="narrow-only" style="display:flex;align-items:center;gap:10px"><span class="logo-mark">mj</span><b style="font-weight:600">MiniJudge</b></span>
+            <span class="narrow-only" style="display:flex;align-items:center;gap:10px"><span class="logo-mark" aria-hidden="true"></span><b style="font-weight:600">MiniJudge</b></span>
             <span></span>${themeButton()}
           </div>
           <div class="auth-center"><div class="auth-box">

@@ -27,7 +27,7 @@ function shell(active) {
   const me = state.me.username;
   root.innerHTML = `
     <aside class="side" data-wide-only>
-      <div class="side-brand"><span class="logo-mark">mj</span><span style="font-weight:600;font-size:16px">MiniJudge</span><span class="tag-admin">Admin</span></div>
+      <div class="side-brand"><span class="logo-mark" aria-hidden="true"></span><span style="font-weight:600;font-size:16px">MiniJudge</span><span class="tag-admin">Admin</span></div>
       ${PAGES.map(
         ([k, label]) =>
           `<a class="side-nav ${k === active ? 'on' : ''}" href="#/${k}" ${k === active ? 'aria-current="page"' : ''}>${label}${
@@ -44,7 +44,7 @@ function shell(active) {
     </aside>
     <div class="admin-body">
       <header class="admin-mobile-head" data-narrow-only>
-        <div style="display:flex;align-items:center;gap:10px"><span class="logo-mark" style="width:24px;height:24px;font-size:10px">mj</span><b style="font-weight:600">MiniJudge Admin</b>
+        <div style="display:flex;align-items:center;gap:10px"><span class="logo-mark" aria-hidden="true"></span><b style="font-weight:600">MiniJudge Admin</b>
           <button class="btn-ghost" style="margin-left:auto" data-theme-toggle><span data-theme-label>${themeLabel()}</span></button></div>
         <p class="faint" style="margin:0;font-size:13px">Trên điện thoại chỉ xem Tổng quan. Mở trên máy tính để quản lý khối, bài và người dùng.</p>
       </header>
