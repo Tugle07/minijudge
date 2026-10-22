@@ -426,7 +426,7 @@ async function detail(ctx, id, tab) {
       </div>
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
-          <thead><tr><th>Thí sinh</th><th>Trạng thái</th><th class="num" title="Mỗi lần rời bài tính 1 lần, dù trình duyệt báo nhiều tín hiệu cùng lúc">Số lần vi phạm</th><th title="Số tín hiệu từng loại mà trình duyệt ghi nhận">Chi tiết</th><th class="num">Điểm</th><th>Thiết bị · IP</th><th></th></tr></thead>
+          <thead><tr><th>Thí sinh</th><th>Trạng thái</th><th class="vcount-col" title="Mỗi lần rời bài tính 1 lần, dù trình duyệt báo nhiều tín hiệu cùng lúc">Số lần vi phạm</th><th title="Số tín hiệu từng loại mà trình duyệt ghi nhận">Chi tiết</th><th class="num">Điểm</th><th>Thiết bị · IP</th><th></th></tr></thead>
           <tbody>${ps
             .sort((a, b) => b.violations - a.violations || a.username.localeCompare(b.username))
             .map((p) => {
@@ -434,7 +434,7 @@ async function detail(ctx, id, tab) {
               return `<tr>
                 <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${esc(p.username)}" title="Lọc nhật ký của thí sinh này">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
                 <td>${st}${p.extended ? ' ' + pill('2 màn hình', 'var(--wa)') : ''}</td>
-                <td class="num"><b class="vtotal ${p.violations >= 5 ? 'hi' : p.violations ? 'mid' : ''}">${p.violations}</b></td>
+                <td class="vcount-col"><b class="vtotal ${p.violations >= 5 ? 'hi' : p.violations ? 'mid' : ''}">${p.violations}</b></td>
                 <td class="vdetail">${VIOLATION_COLS.filter(([k]) => p.events[k]).map(([k, l, tip]) => `<span title="${tip}">${l} <b>${p.events[k]}</b></span>`).join('') || '<span class="faint">Không có</span>'}</td>
                 <td class="num">${num(p.total)}</td>
                 <td style="font-size:12.5px"><span style="${p.device && p.device !== 'desktop' ? 'color:var(--wa);font-weight:600' : ''}">${esc(DEVICE_TEXT[p.device] || '—')}</span><div class="mono faint">${esc(p.ip || '')}</div></td>
