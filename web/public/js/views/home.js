@@ -49,7 +49,7 @@ export async function render(ctx) {
         </div>
         <div class="ov-stats">
           ${stat('Đã giải', summary.solved, `/ ${total} bài`)}
-          ${stat('Hạng', summary.solved ? summary.rank || '—' : '—', summary.solved ? `/ ${summary.classSize}` : 'chưa giải bài nào')}
+          ${stat('Đã thử, chưa AC', Math.max(0, summary.tried - summary.solved), 'bài')}
           ${stat('Chuỗi nộp bài', summary.streak, 'ngày liên tiếp')}
           ${rmCount ? stat('Lộ trình', `${Math.round((rmAc / rmCount) * 100)}%`, `${rmAc}/${rmCount} bài`) : ''}
         </div>

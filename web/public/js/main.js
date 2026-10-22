@@ -7,9 +7,7 @@ import * as contestsView from './views/contests.js';
 import * as homeView from './views/home.js';
 import * as problemView from './views/problem.js';
 import * as profileView from './views/profile.js';
-import * as rankView from './views/rank.js';
 import * as setView from './views/set.js';
-import * as submissionsView from './views/submissions.js';
 
 const topbar = document.getElementById('topbar');
 const view = document.getElementById('view');
@@ -21,15 +19,11 @@ const ROUTES = {
   contest: { view: contestView, nav: null, title: 'Phòng thi' },
   set: { view: setView, nav: 'home', title: 'Khối bài' },
   problem: { view: problemView, nav: 'home', title: 'Đề bài' },
-  submissions: { view: submissionsView, nav: 'submissions', title: 'Bài nộp của tôi' },
-  rank: { view: rankView, nav: 'rank', title: 'Bảng xếp hạng' },
   profile: { view: profileView, nav: 'profile', title: 'Hồ sơ' },
 };
 const NAV = [
   ['home', 'Luyện tập'],
   ['contests', 'Cuộc thi'],
-  ['submissions', 'Bài nộp'],
-  ['rank', 'Bảng xếp hạng'],
 ];
 
 const app = { user: null, cleanup: null };

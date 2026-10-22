@@ -27,8 +27,6 @@ export function profileRoutes({ db, catalog, stats, auth, authLimit }) {
     }
     const verdicts = {};
     for (const s of subs) verdicts[s.verdict] = (verdicts[s.verdict] || 0) + 1;
-    const rows = stats.leaderboard();
-    const { rank } = stats.rankOf(rows, req.user.username);
 
     res.json({
       username: user.username,
@@ -39,8 +37,6 @@ export function profileRoutes({ db, catalog, stats, auth, authLimit }) {
       tried: mine.size,
       submissions: subs.length,
       acRate: subs.length ? Math.round(((verdicts.AC || 0) / subs.length) * 100) : 0,
-      rank,
-      classSize: rows.length,
       streak: stats.streak(uid),
       verdicts,
       activity,

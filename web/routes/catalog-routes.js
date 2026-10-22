@@ -11,11 +11,9 @@ export function catalogRoutes({ catalog, stats, auth, settings }) {
 
   r.get('/home', (req, res) => {
     const mine = stats.myProblemStatus(req.user.id);
-    const rows = stats.leaderboard();
-    const { rank } = stats.rankOf(rows, req.user.username);
     const solved = [...mine.values()].filter((v) => v === 'ac').length;
     res.json({
-      summary: { solved, rank, classSize: rows.length, streak: stats.streak(req.user.id) },
+      summary: { solved, tried: mine.size, streak: stats.streak(req.user.id) },
       banner: settings.banner,
       sets: catalog.visibleSets().map((s) => publicSet(s, catalog.visibleProblems(s), mine)),
     });

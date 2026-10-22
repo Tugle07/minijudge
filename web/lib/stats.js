@@ -4,7 +4,7 @@ const JUDGED = "verdict NOT IN ('PENDING', 'IE')";
 
 const dayIndex = (ms) => Math.floor((ms + TZ_OFFSET_MS) / DAY_MS);
 
-/* Thống kê cho giao diện: tiến độ của tôi, tỉ lệ AC cả lớp, bảng xếp hạng.
+/* Thống kê cho giao diện: tiến độ của tôi, tỉ lệ AC cả lớp, chuỗi ngày nộp bài.
  * Lớp vài chục người nên tính trực tiếp mỗi request là đủ nhanh. */
 export function createStats(db, catalog) {
   const countUsers = db.prepare('SELECT COUNT(*) AS n FROM users');
@@ -14,12 +14,6 @@ export function createStats(db, catalog) {
   const problemSolvers = db.prepare(
     "SELECT problem_id, COUNT(DISTINCT user_id) AS solved FROM submissions WHERE verdict = 'AC' AND contest_id IS NULL GROUP BY problem_id",
   );
-  const firstAcs = db.prepare(
-    `SELECT u.username, s.problem_id, MIN(s.created_at) AS at
-     FROM submissions s JOIN users u ON u.id = s.user_id
-     WHERE s.verdict = 'AC' AND s.contest_id IS NULL GROUP BY s.user_id, s.problem_id`,
-  );
-  const allUsers = db.prepare('SELECT username, full_name FROM users ORDER BY id');
   const myDays = db.prepare(`SELECT created_at FROM submissions WHERE user_id = ? AND contest_id IS NULL AND ${JUDGED}`);
 
   function myProblemStatus(userId) {
@@ -34,23 +28,6 @@ export function createStats(db, catalog) {
     return { classSize, solved };
   }
 
-  function leaderboard() {
-    const rows = new Map(
-      allUsers.all().map(({ username, full_name }) => [username, { username, fullName: full_name || '', total: 0, perSet: {}, lastAcAt: 0, setLastAcAt: {}, solved: new Set() }]),
-    );
-    for (const { username, problem_id, at } of firstAcs.all()) {
-      const row = rows.get(username);
-      const setId = catalog.problemMap.get(problem_id)?.setId;
-      if (!row || !setId) continue;
-      row.total += 1;
-      row.solved.add(problem_id);
-      row.lastAcAt = Math.max(row.lastAcAt, at);
-      row.perSet[setId] = (row.perSet[setId] || 0) + 1;
-      row.setLastAcAt[setId] = Math.max(row.setLastAcAt[setId] || 0, at);
-    }
-    return [...rows.values()];
-  }
-
   function streak(userId) {
     const days = new Set(myDays.all(userId).map((r) => dayIndex(r.created_at)));
     let day = dayIndex(Date.now());
@@ -63,13 +40,5 @@ export function createStats(db, catalog) {
     return n;
   }
 
-  /* Xếp hạng: nhiều bài AC hơn xếp trên; bằng nhau thì ai đạt điểm đó sớm hơn xếp trên. */
-  function rankOf(rows, username, setId) {
-    const score = (r) => (setId ? r.perSet[setId] || 0 : r.total);
-    const last = (r) => (setId ? r.setLastAcAt[setId] || 0 : r.lastAcAt) || Infinity;
-    const sorted = [...rows].sort((a, b) => score(b) - score(a) || last(a) - last(b) || a.username.localeCompare(b.username));
-    return { sorted, rank: sorted.findIndex((r) => r.username === username) + 1 };
-  }
-
-  return { myProblemStatus, classStats, leaderboard, streak, rankOf };
+  return { myProblemStatus, classStats, streak };
 }

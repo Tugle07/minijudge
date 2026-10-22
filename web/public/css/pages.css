@@ -178,7 +178,7 @@
 /* ---------- Hồ sơ ---------- */
 .card-box { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--bg2); min-width: 0; }
 .card-box > b:first-child, .box-title { font-weight: 650; }
-.profile-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.profile-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .profile-stats .ov-stat { padding: 14px 18px; }
 .profile-stats .ov-stat:first-child { padding-left: 0; }
 .profile-stats .ov-stat b { font-size: 26px; }

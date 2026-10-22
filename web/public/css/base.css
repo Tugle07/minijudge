@@ -68,7 +68,8 @@ button:disabled { cursor: default; }
   border-bottom: 1px solid var(--line); background: var(--bg2);
 }
 .brand { display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--fg); padding: 0; }
-.topnav { display: flex; gap: 4px; }
+/* Menu chính nằm giữa thanh, không phụ thuộc độ rộng logo và khối tài khoản. */
+.topnav { display: flex; gap: 4px; position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); }
 .topnav button {
   position: relative; padding: 0 12px; border: 0; background: transparent;
   color: var(--fg2); font-size: var(--text-sm); font-weight: 500;

@@ -36,7 +36,6 @@ export async function render(ctx) {
       <div class="profile-stats">
         <div class="ov-stat"><span>Đã giải</span><b class="num">${p.solved}</b><small>bài</small></div>
         <div class="ov-stat"><span>Đã thử, chưa AC</span><b class="num">${Math.max(0, p.tried - p.solved)}</b><small>bài</small></div>
-        <div class="ov-stat"><span>Hạng</span><b class="num">${p.rank || '—'}</b><small>/ ${p.classSize}</small></div>
         <div class="ov-stat"><span>Chuỗi nộp bài</span><b class="num">${p.streak}</b><small>ngày</small></div>
         <div class="ov-stat"><span>Tỉ lệ AC</span><b class="num">${p.acRate}%</b><small>${p.submissions} bài nộp</small></div>
       </div>

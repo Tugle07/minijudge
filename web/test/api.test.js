@@ -96,15 +96,14 @@ describe('MiniJudge API', () => {
     assert.equal((await api('/api/problems/..%2Fetc')).status, 404);
   });
 
-  test('nộp bài đúng được AC và lên bảng xếp hạng', async () => {
+  test('nộp bài đúng được AC và tính vào số bài đã giải', async () => {
     const { status, data } = await api('/api/submissions', { method: 'POST', body: { problemId: 'P01', source: AC_P01 } });
     assert.equal(status, 201);
     const sub = await waitVerdict(api, data.id);
     assert.equal(sub.verdict, 'AC');
     assert.equal(sub.testsPassed, sub.testCount);
-    const board = await api('/api/leaderboard');
-    assert.equal(board.data.rows[0].username, 'sv_test');
-    assert.equal(board.data.rows[0].total, 1);
+    const home = await api('/api/home');
+    assert.equal(home.data.summary.solved, 1);
   });
 
   test('sai ở test ví dụ thì thấy đáp án và output của mình', async () => {
