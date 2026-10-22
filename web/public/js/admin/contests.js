@@ -30,6 +30,65 @@ const toLocal = (ms) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 const minutes = (ms) => `${Math.round(ms / 60_000)} phút`;
+const DURATIONS = [45, 60, 90, 120, 150];
+const WEEKDAY = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+const dayStart = (ms) => {
+  const d = new Date(ms);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+};
+const hm = (ms) => {
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const longDate = (ms) => {
+  const d = new Date(ms);
+  return `${WEEKDAY[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+};
+
+/* Chọn giờ thi: ngày (Hôm nay / Ngày mai / lịch), giờ bắt đầu dạng 24h, thời lượng; giờ kết thúc tự tính. */
+function timePicker(f, error) {
+  const start = new Date(f.startAt);
+  const dur = Math.max(1, Math.round((f.endAt - f.startAt) / 60_000));
+  const today = dayStart(Date.now());
+  const day = dayStart(f.startAt);
+  const opt = (n, cur) => `<option value="${n}" ${n === cur ? 'selected' : ''}>${pad(n)}</option>`;
+  const mins = Array.from({ length: 12 }, (_, i) => i * 5);
+  if (!mins.includes(start.getMinutes())) mins.push(start.getMinutes()), mins.sort((a, b) => a - b);
+  const endsNextDay = dayStart(f.endAt) !== day;
+  return `
+    <div class="tp">
+      <div class="afield"><span>Ngày thi</span>
+        <div class="tp-row">
+          <div class="chip-row">
+            <button type="button" class="chip ${day === today ? 'on' : ''}" data-tday="0">Hôm nay</button>
+            <button type="button" class="chip ${day === today + 86_400_000 ? 'on' : ''}" data-tday="1">Ngày mai</button>
+          </div>
+          <input class="input tp-date" type="date" data-tdate value="${toLocal(f.startAt).slice(0, 10)}" aria-label="Chọn ngày khác" />
+        </div>
+      </div>
+      <div class="afield"><span>Giờ bắt đầu</span>
+        <div class="tp-row">
+          <span class="tp-clock">
+            <select class="input mono" data-thour aria-label="Giờ">${Array.from({ length: 24 }, (_, h) => opt(h, start.getHours())).join('')}</select>
+            <b>:</b>
+            <select class="input mono" data-tmin aria-label="Phút">${mins.map((m) => opt(m, start.getMinutes())).join('')}</select>
+          </span>
+          <button type="button" class="chip" data-tnow title="Bắt đầu sau 5 phút nữa — cho bài kiểm tra đột xuất">Sau 5 phút nữa</button>
+        </div>
+      </div>
+      <div class="afield"><span>Thời lượng</span>
+        <div class="tp-row">
+          <div class="chip-row">${DURATIONS.map((m) => `<button type="button" class="chip ${m === dur ? 'on' : ''}" data-dur="${m}">${m} phút</button>`).join('')}</div>
+          <label class="tp-dur"><input class="input mono" type="number" min="5" max="600" step="5" data-durin value="${dur}" aria-label="Số phút" /><span>phút</span></label>
+        </div>
+      </div>
+      <div class="tp-sum ${error ? 'err' : ''}">${
+        error
+          ? esc(error)
+          : `Thi <b>${hm(f.startAt)} – ${hm(f.endAt)}</b>${endsNextDay ? ' (hôm sau)' : ''}, ${longDate(f.startAt)} · ${dur} phút${f.startAt < Date.now() ? ' · <span class="tp-warn">giờ bắt đầu đã qua</span>' : ''}`
+      }</div>
+    </div>`;
+}
 const num = (x) => (x == null ? '·' : Number(Number(x).toFixed(2)));
 
 export async function render(ctx) {
@@ -182,12 +241,7 @@ async function editor(ctx, summary, problems, onSaved) {
   const body = () => `
     <label class="afield"><span>Tên cuộc thi</span><input class="input ${errors.title ? 'err' : ''}" data-f="title" value="${esc(f.title)}" placeholder="vd. Kiểm tra giữa kỳ KTLT" />${errors.title ? `<span class="err-text">${esc(errors.title)}</span>` : ''}</label>
     <label class="afield"><span>Mô tả / lời dặn (Markdown)</span><textarea class="input" data-f="description" style="height:80px;padding:8px">${esc(f.description)}</textarea></label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <label class="afield"><span>Bắt đầu</span><input class="input" type="datetime-local" data-time="startAt" value="${toLocal(f.startAt)}" /></label>
-      <label class="afield"><span>Kết thúc</span><input class="input ${errors.endAt ? 'err' : ''}" type="datetime-local" data-time="endAt" value="${toLocal(f.endAt)}" /></label>
-    </div>
-    ${errors.endAt ? `<span class="err-text" style="color:var(--wa);font-size:13px">${esc(errors.endAt)}</span>` : ''}
-    <span class="help faint" style="font-size:13px">Thời gian làm bài: ${minutes(f.endAt - f.startAt)}</span>
+    ${timePicker(f, errors.endAt)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <label class="afield"><span>Mã phòng thi</span><input class="input mono" data-s="code" value="${esc(f.settings.code)}" /><span class="help">Giám thị đọc mã này tại lớp. Để trống = không cần mã.</span></label>
       <label class="afield"><span>Chỉ nhận mạng (đầu IP)</span><input class="input mono" data-s="ipPrefixes" value="${esc(f.settings.ipPrefixes.join(', '))}" placeholder="vd. 113.161." /><span class="help">Để trống = mọi mạng. Sau Cloudflare đây là IP công khai của trường.</span></label>
@@ -227,7 +281,6 @@ async function editor(ctx, summary, problems, onSaved) {
   host.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset.f) f[t.dataset.f] = t.value;
-    if (t.dataset.time) f[t.dataset.time] = t.value ? new Date(t.value).getTime() : 0;
     if (t.dataset.s) f.settings[t.dataset.s] = t.dataset.s === 'code' ? t.value : t.value.split(/[\s,;]+/).filter(Boolean);
     if (t.dataset.st) {
       const [i, k, key] = t.dataset.st.split(':');
@@ -257,12 +310,36 @@ async function editor(ctx, summary, problems, onSaved) {
   });
   host.addEventListener('change', (e) => {
     if (e.target.dataset.b) f.settings[e.target.dataset.b] = e.target.checked;
-    if (e.target.dataset.time || e.target.dataset.st) redraw();
+    const t = e.target;
+    const dur = f.endAt - f.startAt;
+    const setStart = (ms) => ((f.startAt = ms), (f.endAt = ms + dur), redraw());
+    const at = (dayMs, h, m) => dayMs + (h * 60 + m) * 60_000;
+    const cur = new Date(f.startAt);
+    if (t.matches('[data-tdate]') && t.value) {
+      const [y, mo, dd] = t.value.split('-').map(Number);
+      setStart(at(new Date(y, mo - 1, dd).getTime(), cur.getHours(), cur.getMinutes()));
+    }
+    if (t.matches('[data-thour]')) setStart(at(dayStart(f.startAt), Number(t.value), cur.getMinutes()));
+    if (t.matches('[data-tmin]')) setStart(at(dayStart(f.startAt), cur.getHours(), Number(t.value)));
+    if (t.matches('[data-durin]')) {
+      f.endAt = f.startAt + Math.min(600, Math.max(5, Number(t.value) || 90)) * 60_000;
+      redraw();
+    }
+    if (t.dataset.st) redraw();
   });
   host.addEventListener('click', (e) => {
     const t = e.target;
     const d = (k) => t.closest(`[data-${k}]`)?.dataset[k];
-    if (d('status')) f.status = d('status');
+    const dur = f.endAt - f.startAt;
+    if (d('tday') != null) {
+      const cur = new Date(f.startAt);
+      f.startAt = dayStart(Date.now()) + Number(d('tday')) * 86_400_000 + (cur.getHours() * 60 + cur.getMinutes()) * 60_000;
+      f.endAt = f.startAt + dur;
+    } else if (t.closest('[data-tnow]')) {
+      f.startAt = Math.ceil((Date.now() + 5 * 60_000) / 60_000) * 60_000;
+      f.endAt = f.startAt + dur;
+    } else if (d('dur')) f.endAt = f.startAt + Number(d('dur')) * 60_000;
+    else if (d('status')) f.status = d('status');
     else if (d('add')) {
       const p = pmap.get(d('add'));
       /* Lấy bộ subtask mặc định của bài; Admin chỉnh thêm ở bảng bên dưới nếu muốn. */

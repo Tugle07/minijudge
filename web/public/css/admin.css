@@ -171,3 +171,16 @@
 .st-points { min-width: 96px; padding-right: 6px; }
 .atable .vcount-col { text-align: center; }
 .atable td.vcount-col .vtotal { font-family: var(--font-code); }
+
+/* Chọn giờ thi trong form cuộc thi: ngày · giờ bắt đầu (24h) · thời lượng, dòng tóm tắt bên dưới. */
+.tp { display: flex; flex-direction: column; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: var(--r-md, 10px); background: var(--bg); }
+.tp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.tp-date { width: 170px; height: 34px; }
+.tp-clock { display: inline-flex; align-items: center; gap: 6px; }
+.tp-clock select { width: 72px; height: 36px; font-size: 16px; text-align: center; padding: 0 8px; }
+.tp-dur { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--fg2); }
+.tp-dur input { width: 84px; height: 34px; }
+.tp-sum { padding-top: 12px; border-top: 1px solid var(--line); font-size: 14.5px; color: var(--fg2); }
+.tp-sum b { color: var(--fg); font-family: var(--font-code); font-size: 16px; }
+.tp-sum.err { color: var(--wa); }
+.tp-warn { color: var(--tle); font-weight: 600; }
