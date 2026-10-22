@@ -91,7 +91,7 @@ body.exam-mode { overflow: hidden; }
 .exam-subtasks { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r-md); background: var(--bg2); border: 1px solid var(--line); font-size: 14px; }
 .exam-subtasks > div { display: flex; justify-content: space-between; gap: 12px; }
 .exam-subtasks > .st-bar { display: flex; gap: 3px; height: 6px; margin: 4px 0 6px; }
-.st-bar span { flex: 1 1 0; border-radius: 2px; background: color-mix(in oklch, var(--accent) 55%, var(--bg3)); }
+.st-bar span { flex: 1 1 0; border-radius: 2px; background: color-mix(in srgb, var(--accent) 55%, var(--bg3)); }
 .st-bar span:nth-child(even) { background: var(--accent); }
 .st-note { margin: 6px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; color: var(--fg2); line-height: 1.55; }
 .st-note b { color: var(--fg); }

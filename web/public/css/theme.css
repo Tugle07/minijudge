@@ -84,7 +84,7 @@ body {
 .overview .ov-stat { border-left-color: color-mix(in oklch, var(--on-accent) 28%, transparent); }
 .overview .ov-stat b { font-size: 46px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }
 .ov-next { background: var(--on-accent); color: var(--accent); height: 46px; }
-.ov-next-n { border-left-color: color-mix(in oklch, var(--accent) 30%, transparent); }
+.ov-next-n { border-left-color: color-mix(in srgb, var(--accent) 30%, transparent); }
 .road-track { height: 12px; border-color: var(--ink); background: color-mix(in oklch, var(--on-accent) 22%, transparent); }
 .road-track > span { background: var(--on-accent); }
 .road-seg.done .road-track > span { background: var(--ac); }
@@ -139,8 +139,18 @@ body {
 .atable th, .thead, .thead > span, .test-row.head {
   color: var(--fg); font-weight: 700; font-size: 12.5px; letter-spacing: .04em;
 }
-.atable thead, .table .thead { background: color-mix(in oklch, var(--accent) 9%, var(--bg3)); }
+.atable thead, .table .thead { background: color-mix(in srgb, var(--accent) 9%, var(--bg3)); }
 .atable thead th { border-bottom: var(--bw) solid var(--ink); padding-top: 12px; padding-bottom: 12px; }
 .table .thead { border-bottom: var(--bw) solid var(--ink); }
 .atable th small, .thead small, .thead .faint { color: var(--fg2); font-weight: 600; }
 .atable th.num { font-family: var(--font-ui); }
+
+/* Rãnh thanh tiến độ và ô trống biểu đồ: đậm hơn để thấy rõ trên khung trắng */
+.progress, .ac-rate .bar, .rank-score .progress { background: var(--line); }
+.heatmap { overflow-y: hidden; padding-bottom: 6px; }
+.hm-cell { background: var(--line); }
+.hm-cell.empty { background: transparent; }
+.hm-cell.l1 { background: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.hm-cell.l2 { background: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.hm-cell.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--line)); }
+.hm-cell.l4 { background: var(--accent); }

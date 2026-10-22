@@ -14,7 +14,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
-::selection { background: color-mix(in oklch, var(--accent) 25%, transparent); }
+::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
 .mono { font-family: var(--font-code); }
 .muted { color: var(--fg2); }
 .faint { color: var(--fg3); }
