@@ -192,24 +192,35 @@ export async function render(ctx) {
         <div class="exam-notice" data-notice role="alert" aria-live="assertive" hidden></div>
         <div class="exam-body">
           <section class="exam-left" data-statement><div class="editor-loading">Đang tải đề…</div></section>
+          <div class="exam-sep" data-sep role="separator" aria-orientation="vertical" aria-label="Kéo để chỉnh độ rộng" tabindex="0"></div>
           <section class="exam-right">
             <div class="toolbar">
               <span class="lang-chip">C11 · gcc -O2</span>
               <span class="faint" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
               <div class="spacer"></div>
-              <button class="file-btn" data-run title="Chạy với input bên dưới, không tính điểm">Chạy thử</button>
               <button class="btn-submit" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
             </div>
             <div class="editor" data-editor><div class="editor-loading">Đang tải trình soạn code…</div></div>
-            <div class="editor-status"><span data-cursor>Dòng 1, cột 1</span><span data-lint class="lint-state"></span></div>
-            <div class="exam-panel">
-              <details class="exam-run" data-run-box><summary>Chạy thử với input tự nhập</summary>
-                <textarea data-run-input spellcheck="false" placeholder="Nhập input…"></textarea>
-                <div class="run-actions" data-run-fill></div>
-                <div data-run-result></div>
-              </details>
-              <div data-subs></div>
+            <div class="editor-status">
+              <span data-cursor>Dòng 1, cột 1</span>
+              <span class="diag-pills" aria-label="Kết quả kiểm tra cú pháp">
+                <span class="diag-pill checking" data-diag-check hidden>Đang kiểm tra…</span>
+                <span class="diag-pill ok" data-diag-ok hidden><span class="diag-i">✓</span>Cú pháp tốt</span>
+                <span class="diag-pill err" data-diag-err title="Số lỗi cú pháp" hidden><span class="diag-i">✕</span><b>0</b></span>
+                <span class="diag-pill warn" data-diag-warn title="Số cảnh báo" hidden><span class="diag-i">!</span><b>0</b></span>
+              </span>
             </div>
+            <div class="exam-io">
+              <div class="io-col">
+                <div class="io-head"><b>inp.txt</b><span class="io-tools" data-fill-tools></span></div>
+                <textarea data-run-input spellcheck="false" placeholder="Nhập dữ liệu rồi bấm Chạy thử"></textarea>
+              </div>
+              <div class="io-col">
+                <div class="io-head"><b>out.txt</b><button class="btn-dark io-run" data-run>Chạy thử</button></div>
+                <div class="io-output" data-run-result></div>
+              </div>
+            </div>
+            <div class="exam-latest" data-subs></div>
           </section>
         </div>
         <div class="exam-overlay" data-overlay hidden></div>
@@ -217,6 +228,30 @@ export async function render(ctx) {
       </div>`;
     document.body.classList.add('exam-mode');
     const $ = (s) => ctx.view.querySelector(s);
+
+    /* Kéo thanh giữa đề bài và trình soạn code để chia màn hình theo ý. Lưu lại cho lần sau. */
+    const sep = $('[data-sep]');
+    const body = ctx.view.querySelector('.exam-body');
+    const initial = parseFloat(localStorage.getItem('mj-exam-split')) || 46;
+    body.style.setProperty('--left-w', Math.max(25, Math.min(70, initial)) + '%');
+    sep.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      sep.setPointerCapture(ev.pointerId);
+      sep.classList.add('dragging');
+      const rect = body.getBoundingClientRect();
+      const onMove = (e) => {
+        const pct = Math.max(25, Math.min(70, ((e.clientX - rect.left) / rect.width) * 100));
+        body.style.setProperty('--left-w', pct.toFixed(2) + '%');
+      };
+      const onUp = () => {
+        sep.classList.remove('dragging');
+        sep.removeEventListener('pointermove', onMove);
+        sep.removeEventListener('pointerup', onUp);
+        try { localStorage.setItem('mj-exam-split', parseFloat(body.style.getPropertyValue('--left-w')) || 46); } catch {}
+      };
+      sep.addEventListener('pointermove', onMove);
+      sep.addEventListener('pointerup', onUp);
+    });
 
     /* Báo cho thí sinh biết ngay khi hệ thống ghi nhận vi phạm: nói rõ chuyện gì, lần thứ mấy, và cách xử lý nếu là nhầm lẫn. */
     state.vcount = state.info.myViolations || 0;
@@ -319,10 +354,16 @@ export async function render(ctx) {
         }
       },
       onLint: (s) => {
-        const el = $('[data-lint]');
-        if (!el) return;
-        el.className = `lint-state ${s.checking ? '' : s.errors ? 'bad' : s.warnings ? 'warn' : s.offline ? '' : 'good'}`;
-        el.textContent = s.checking ? 'Đang kiểm tra cú pháp…' : s.offline ? '' : s.errors ? `${s.errors} lỗi cú pháp` : s.warnings ? `${s.warnings} cảnh báo` : 'Không có lỗi cú pháp';
+        const show = (sel, on, n) => {
+          const el = $(sel);
+          if (!el) return;
+          el.hidden = !on;
+          if (on && n != null && el.querySelector('b')) el.querySelector('b').textContent = n;
+        };
+        show('[data-diag-check]', Boolean(s.checking));
+        show('[data-diag-err]', !s.checking && Number(s.errors) > 0, s.errors);
+        show('[data-diag-warn]', !s.checking && !s.errors && Number(s.warnings) > 0, s.warnings);
+        show('[data-diag-ok]', !s.checking && !s.offline && !s.errors && !s.warnings);
       },
     });
     if (editor.assist) editor.setAssist?.(false);
@@ -378,10 +419,13 @@ export async function render(ctx) {
         </div>`;
       $('[data-statement]').scrollTop = 0;
       const runInput = $('[data-run-input]');
-      $('[data-run-fill]').innerHTML = `<button class="btn" data-run>Chạy</button>${p.samples.map((_, i) => `<button class="btn" data-fill="${i}">Dùng ví dụ ${i + 1}</button>`).join('')}<span class="faint" style="font-size:12.5px">Không tính điểm</span>`;
+$('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip" data-fill="${i}">Dùng ví dụ ${i + 1}</button>`).join('') + '<button class="chip" data-clear-input title="Xoá input">Xoá</button>';
       if (runInput && !runInput.value) runInput.value = p.samples[0]?.input ?? '';
+      /* Chuyển sang bài khác thì xoá kết quả "Chạy thử" cũ để không nhầm. */
+      $('[data-run-result]').innerHTML = runResultHtml();
       await loadSubs();
     }
+    /* Thẻ bài nộp: không còn mở panel log biên dịch (lỗi hiện trực tiếp trong trình soạn code). */
     function subHtml(s) {
       const sts = s.subtasks?.length
         ? `<div class="exam-st">${s.subtasks.map((st) => `<span class="${st.got ? 'ok' : 'no'}">${st.got ? '✓' : '✗'} ${esc(st.name)} · đúng ${st.passedTests}/${st.tests} test · <b class="mono">${st.got}/${st.points} điểm</b></span>`).join('')}</div>`
@@ -391,7 +435,6 @@ export async function render(ctx) {
           <b class="mono">${s.verdict === 'PENDING' ? 'Đang chấm…' : `${Number((s.score ?? 0).toFixed(2))} điểm`}</b></div>
           ${s.verdict !== 'PENDING' && s.verdict !== 'CE' ? `<span class="faint" style="font-size:12.5px">Đúng ${s.testsPassed}/${s.testCount} test</span>` : ''}
           ${sts}
-          <div data-sub-extra></div>
         </div>`;
     }
     async function loadSubs() {
@@ -410,11 +453,10 @@ export async function render(ctx) {
               : ''
           }`
         : '<span class="faint" style="font-size:13.5px">Chưa nộp bài này. Bấm Nộp bài (Ctrl + Enter) khi xong.</span>';
+      /* Lỗi biên dịch chỉ hiện gạch chân trong trình soạn code, không mở panel. */
       const ce = state.subs.find((s) => s.verdict === 'CE');
       if (ce && ce === state.subs[0]) {
         const d = await api(`/api/contests/${cid}/submissions/${ce.id}`);
-        const box = ctx.view.querySelector(`[data-sub="${ce.id}"] [data-sub-extra]`);
-        if (box) box.innerHTML = compileErrorsHtml(d.compileLog);
         editor.showDiagnostics?.(d.compileLog);
       }
       return all;
@@ -451,8 +493,6 @@ export async function render(ctx) {
       }
     }
     async function runCustom() {
-      const box = $('[data-run-box]');
-      box.open = true;
       const out = $('[data-run-result]');
       out.innerHTML = runResultHtml({ loading: true });
       try {
@@ -642,6 +682,12 @@ export async function render(ctx) {
         return ctx.view.querySelector('.exam-subtasks')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       if (t.closest('[data-run]')) return runCustom();
+      if (t.closest('[data-clear-input]')) {
+        const inp = $('[data-run-input]');
+        inp.value = '';
+        $('[data-run-result]').innerHTML = runResultHtml();
+        return inp.focus();
+      }
       if (t.closest('[data-refs]')) {
         await enterFullscreen();
         return guardState();

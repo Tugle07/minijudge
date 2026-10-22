@@ -130,3 +130,42 @@ body.exam-mode { overflow: hidden; }
 .prob-facts a[data-jump-st] { color: var(--accent-text); text-decoration: none; }
 .exam-subs-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; font-size: 14px; }
 .exam-subs-head > span { font-size: 13px; color: var(--fg2); }
+
+
+/* ------- Phòng thi: thanh kéo rộng/hẹp, cột input/output, trạng thái cú pháp ------- */
+.exam-body { display: flex; }
+.exam-left { width: var(--left-w, 46%); flex: none; }
+.exam-sep { flex: none; width: 6px; cursor: col-resize; background: transparent; position: relative; }
+.exam-sep::before { content: ''; position: absolute; left: 2px; top: 0; bottom: 0; width: 2px; background: var(--line); transition: background .15s; }
+.exam-sep:hover::before, .exam-sep:focus-visible::before, .exam-sep.dragging::before { background: var(--accent); }
+.exam-right { padding-bottom: 10px; }
+/* Trạng thái cú pháp: 2 huy hiệu nhỏ (lỗi/cảnh báo) với số, không còn chữ dài. */
+.editor-status { display: flex; align-items: center; gap: 10px; padding: 4px 10px; font-size: 12.5px; }
+.diag-pills { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.diag-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 1; }
+.diag-pill .diag-i { font-weight: 700; }
+.diag-pill b { font-family: var(--font-code); font-weight: 600; }
+.diag-pill.err { background: color-mix(in srgb, var(--wa) 15%, transparent); color: var(--wa); }
+.diag-pill.warn { background: color-mix(in srgb, var(--tle) 15%, transparent); color: var(--tle); }
+.diag-pill.ok { background: color-mix(in srgb, var(--ac) 15%, transparent); color: var(--ac); }
+.diag-pill.checking { color: var(--fg3); }
+/* inp.txt / out.txt: hai cột cạnh nhau; cả hai đều có thể kéo tăng chiều cao. */
+.exam-io { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.io-col { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg2); overflow: hidden; }
+.io-head { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--bg); font-size: 12.5px; color: var(--fg2); }
+.io-head b { font-family: var(--font-code); font-size: 13px; color: var(--fg); font-weight: 600; }
+.io-tools { margin-left: auto; display: flex; gap: 6px; }
+.io-tools .chip { height: 22px; padding: 0 8px; font-size: 11.5px; border-radius: 999px; }
+.io-head .io-run { margin-left: auto; height: 26px; padding: 0 14px; font-size: 12.5px; font-weight: 600; }
+.io-col textarea { width: 100%; resize: vertical; min-height: 110px; padding: 8px 10px; font: 13px var(--font-code); border: 0; background: transparent; color: var(--fg); outline: none; }
+.io-output { min-height: 110px; max-height: 280px; padding: 8px 10px; overflow: auto; resize: vertical; }
+.io-output .result-empty { padding: 0; color: var(--fg3); font-size: 13px; }
+.io-output .celog-wrap { padding: 0; }
+.io-output pre { margin: 6px 0 0; max-height: none; }
+/* Panel cũ (details Chạy thử + list bài nộp) nhường chỗ cho exam-latest. */
+.exam-panel { display: none; }
+.exam-latest { margin-top: 10px; }
+.exam-latest .exam-sub { padding: 10px 12px; }
+
+@media (max-width: 1199px) { .exam-io { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .exam-body { flex-direction: column; } .exam-left { width: 100% !important; } .exam-sep { display: none; } }
