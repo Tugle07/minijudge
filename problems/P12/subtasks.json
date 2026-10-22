@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 10.0,
+    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Dữ liệu nhỏ",
+    "tests": "2-6",
+    "points": 30.0,
+    "note": "n nhỏ"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "7-10",
+    "points": 30.0,
+    "note": "n = k = 1, toàn W, toàn B"
+  },
+  {
+    "name": "Dữ liệu lớn",
+    "tests": "11-12",
+    "points": 30.0,
+    "note": "Tổng n = 2·10^5 — cần cửa sổ trượt O(n)"
+  }
+]

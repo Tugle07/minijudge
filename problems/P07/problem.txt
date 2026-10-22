@@ -1,6 +1,6 @@
 title=Rút tiền ít tờ nhất
 time_ms=1000
 memory_mb=256
-tests=11
+tests=13
 difficulty=Dễ
 samples=1,2,3

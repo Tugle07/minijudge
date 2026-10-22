@@ -157,11 +157,12 @@ async function editor(ctx, summary, problems, onSaved) {
           <button class="btn-line" style="height:30px" data-rm="${i}" title="Bỏ bài">×</button>
         </div>
         <table class="atable" style="font-size:13.5px">
-          <thead><tr><th>Subtask</th><th>Các test (vd 1-5,8)</th><th class="num" style="width:120px">Điểm</th><th style="width:40px"></th></tr></thead>
+          <thead><tr><th>Subtask</th><th>Mô tả (thí sinh thấy)</th><th style="width:130px">Các test (vd 1-5,8)</th><th class="num" style="width:120px">Điểm</th><th style="width:40px"></th></tr></thead>
           <tbody>${cp.subtasks
             .map(
               (s, k) => `<tr>
                 <td><input class="input" style="height:32px" data-st="${i}:${k}:name" value="${esc(s.name)}" /></td>
+                <td><input class="input" style="height:32px;font-size:13.5px" data-st="${i}:${k}:note" value="${esc(s.note || '')}" placeholder="Kiểm tra điều gì" /></td>
                 <td><input class="input mono" style="height:32px" data-st="${i}:${k}:tests" value="${esc(s.tests)}" /></td>
                 <td><input class="input mono st-points" style="height:32px;text-align:right" type="number" min="0" step="any" data-st="${i}:${k}:points" value="${esc(s.points)}" /></td>
                 <td><button class="link-btn" data-strm="${i}:${k}" title="Xóa subtask">×</button></td></tr>`,
@@ -171,6 +172,7 @@ async function editor(ctx, summary, problems, onSaved) {
         <div style="display:flex;gap:8px;align-items:center"><button class="btn-line" style="height:30px" data-stadd="${i}">+ Subtask</button>
           <button class="btn-line" style="height:30px" data-steven="${i}" title="Chia đều 100 điểm cho từng nhóm test">Chia 100 điểm đều theo ${Math.min(5, p?.tests ?? 1)} nhóm</button>
           <button class="btn-line" style="height:30px" data-steach="${i}" title="Mỗi test là một subtask, đúng bao nhiêu test được bấy nhiêu phần điểm">Chấm theo từng test</button>
+          <button class="btn-line" style="height:30px" data-stdefault="${i}" title="Quay về bộ subtask mặc định của bài (chỉnh ở trang Bài tập)">Dùng bộ mặc định của bài</button>
           ${errors[`p${i}`] ? `<span class="err-text" style="color:var(--wa);font-size:13px">${esc(errors[`p${i}`])}</span>` : ''}</div>
         ${scoringNote(cp, p)}
       </div>`;
@@ -262,7 +264,8 @@ async function editor(ctx, summary, problems, onSaved) {
     if (d('status')) f.status = d('status');
     else if (d('add')) {
       const p = pmap.get(d('add'));
-      f.problems.push({ problemId: p.id, subtasks: [{ name: 'Toàn bộ test', tests: `1-${Math.max(1, p.tests)}`, points: 100 }] });
+      /* Lấy bộ subtask mặc định của bài; Admin chỉnh thêm ở bảng bên dưới nếu muốn. */
+      f.problems.push({ problemId: p.id, subtasks: (p.subtasks?.length ? p.subtasks : [{ name: 'Toàn bộ test', tests: `1-${Math.max(1, p.tests)}`, points: 100 }]).map((s) => ({ ...s })) });
     } else if (d('rm') != null) f.problems.splice(Number(d('rm')), 1);
     else if (d('up') != null) {
       const i = Number(d('up'));
@@ -273,6 +276,10 @@ async function editor(ctx, summary, problems, onSaved) {
     } else if (d('strm')) {
       const [i, k] = d('strm').split(':').map(Number);
       f.problems[i].subtasks.splice(k, 1);
+    } else if (d('stdefault') != null) {
+      const cp = f.problems[Number(d('stdefault'))];
+      const p = pmap.get(cp.problemId);
+      if (p?.subtasks?.length) cp.subtasks = p.subtasks.map((s) => ({ ...s }));
     } else if (d('steach') != null) {
       const cp = f.problems[Number(d('steach'))];
       const n = Math.max(1, pmap.get(cp.problemId)?.tests ?? 1);

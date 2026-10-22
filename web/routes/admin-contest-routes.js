@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { defaultSubtasks, parseTests, VIOLATIONS } from '../lib/contests.js';
+import { normalizeSubtasks, VIOLATIONS } from '../lib/contests.js';
 
 const MAX_PROBLEMS = 26;
 const VIOLATION_TEXT = {
@@ -116,15 +116,9 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
       if (!p) return (errors[i] = 'Không tìm thấy bài');
       if (seen.has(p.id)) return (errors[i] = 'Bài bị trùng');
       seen.add(p.id);
-      const raw = Array.isArray(item.subtasks) && item.subtasks.length ? item.subtasks : defaultSubtasks(p.tests);
-      const subtasks = [];
-      for (const [k, st] of raw.entries()) {
-        const tests = parseTests(st.tests, p.tests);
-        const points = Number(st.points);
-        if (!tests) return (errors[i] = `Subtask ${k + 1}: danh sách test sai (bài có ${p.tests} test, ví dụ "1-5,8")`);
-        if (!Number.isFinite(points) || points < 0 || points > 1000) return (errors[i] = `Subtask ${k + 1}: điểm phải từ 0 đến 1000`);
-        subtasks.push({ name: String(st.name || `Subtask ${k + 1}`).slice(0, 60), tests: String(st.tests).replace(/\s+/g, ''), points });
-      }
+      const raw = Array.isArray(item.subtasks) && item.subtasks.length ? item.subtasks : p.subtasks;
+      const { subtasks, error } = normalizeSubtasks(raw, p.tests);
+      if (error) return (errors[i] = error);
       rows.push({ problemId: p.id, label: contests.LABELS[i], subtasks });
     });
     if (Object.keys(errors).length) return res.status(400).json({ error: 'Danh sách bài chưa hợp lệ', fields: errors });

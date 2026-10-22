@@ -6,6 +6,7 @@ const TABS = [
   ['info', 'Thông tin'],
   ['statement', 'Đề bài'],
   ['tests', 'Test'],
+  ['subtasks', 'Subtask mặc định'],
   ['solution', 'Lời giải & Kiểm tra'],
 ];
 const DIFFS = ['Dễ', 'Trung bình', 'Khó'];
@@ -16,12 +17,29 @@ export async function renderEditor(ctx, id) {
   const st = { tab: 'info', dirty: false, testsDirty: false, check: null, errors: {}, over: false };
   let form = pick(p);
   let tests = p.tests.map((t) => ({ ...t }));
+  let subs = (p.subtasks || []).map((s) => ({ ...s }));
+  const SOURCE_TEXT = {
+    file: 'Bộ subtask soạn kèm bài (theo mức độ hiểu bài và các trường hợp cần kiểm tra).',
+    admin: 'Admin đã chỉnh bộ subtask này (khác với bộ soạn kèm bài).',
+    auto: 'Bài chưa có bộ subtask riêng: đang dùng 1 subtask gồm toàn bộ test.',
+  };
+  /* "1-5,8" -> [1..5, 8]; dùng để đếm test và cảnh báo test chưa thuộc subtask nào. */
+  const testsOf = (spec, max) =>
+    String(spec || '').split(',').flatMap((part) => {
+      const [a, b = a] = part.trim().split('-').map(Number);
+      if (!a || !b || b < a) return [];
+      return Array.from({ length: Math.min(b, max) - a + 1 }, (_, k) => a + k).filter((x) => x >= 1 && x <= max);
+    });
 
   function pick(x) {
     return { title: x.title, difficulty: x.difficulty, timeMs: x.timeMs, memoryMb: x.memoryMb, tags: x.tags, statement: x.statement, hint: x.hint, solution: x.solution };
   }
   const markDirty = () => {
     st.dirty = true;
+    drawFoot();
+  };
+  const markSubDirty = () => {
+    st.subDirty = true;
     drawFoot();
   };
 
@@ -42,7 +60,7 @@ export async function renderEditor(ctx, id) {
     return p.status === 'pub' ? pill('Đã xuất bản', 'var(--ac)') : pill('Nháp', 'var(--pd)');
   }
   function drawFoot() {
-    const dirty = st.dirty || st.testsDirty;
+    const dirty = st.dirty || st.testsDirty || st.subDirty;
     ctx.page.querySelector('[data-dirty]').innerHTML = dirty
       ? '<span class="dirty" style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--tle)"><i style="width:8px;height:8px;border-radius:50%;background:var(--tle)"></i>Có thay đổi chưa lưu</span>'
       : '<span class="faint" style="font-size:14px">Đã lưu tất cả thay đổi</span>';
@@ -91,6 +109,47 @@ export async function renderEditor(ctx, id) {
           .join('')}</div>
         ${tests.length ? '' : '<div class="empty" style="padding:36px">Chưa có test nào. Tải file lên ở khung phía trên.</div>'}
       </div>`,
+    subtasks: () => {
+      const n = p.testCount || tests.length;
+      const total = subs.reduce((a, s) => a + (Number(s.points) || 0), 0);
+      const used = new Set(subs.flatMap((s) => testsOf(s.tests, n)));
+      const free = Array.from({ length: n }, (_, k) => k + 1).filter((x) => !used.has(x));
+      return `
+        <div class="notice" style="display:flex;flex-direction:column;gap:6px">
+          <span>${esc(SOURCE_TEXT[p.subtasksSource] || SOURCE_TEXT.auto)}</span>
+          <span class="faint" style="font-size:13px">Khi thêm bài vào một cuộc thi, bộ subtask này được điền sẵn; trong cuộc thi vẫn chỉnh riêng được mà không ảnh hưởng bộ mặc định.</span>
+        </div>
+        <div class="panel" style="overflow-x:auto">
+          <table class="atable" style="font-size:13.5px">
+            <thead><tr><th style="width:36px">#</th><th>Tên subtask</th><th>Mô tả (thí sinh thấy)</th><th style="width:130px">Các test</th><th class="num" style="width:60px">Số test</th><th class="num" style="width:110px">Điểm</th><th style="width:40px"></th></tr></thead>
+            <tbody>${subs
+              .map(
+                (s, k) => `<tr>
+                  <td class="mono faint">${k + 1}</td>
+                  <td><input class="input" style="height:34px" data-sub="${k}:name" value="${esc(s.name)}" /></td>
+                  <td><input class="input" style="height:34px;font-size:13.5px" data-sub="${k}:note" value="${esc(s.note || '')}" placeholder="Kiểm tra điều gì" /></td>
+                  <td><input class="input mono" style="height:34px" data-sub="${k}:tests" value="${esc(s.tests)}" /></td>
+                  <td class="num">${testsOf(s.tests, n).length}</td>
+                  <td><input class="input mono st-points" style="height:34px;text-align:right" type="number" min="0" step="any" data-sub="${k}:points" value="${esc(s.points)}" /></td>
+                  <td><button class="link-btn" data-subdel="${k}" title="Xóa subtask">×</button></td></tr>`,
+              )
+              .join('')}</tbody>
+          </table>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <button class="btn-line" style="height:32px" data-subadd>+ Subtask</button>
+          <button class="btn-line" style="height:32px" data-subeach title="Mỗi test là một subtask">Chấm theo từng test</button>
+          ${p.fileSubtasks && p.subtasksSource === 'admin' ? '<button class="btn-line" style="height:32px" data-subreset title="Bỏ phần đã chỉnh, dùng lại bộ soạn kèm bài">Khôi phục bộ soạn kèm bài</button>' : ''}
+          <div style="flex:1"></div>
+          <b class="mono" style="white-space:nowrap">Tổng ${total} điểm · ${n} test</b>
+          <button class="btn-dark" data-subsave>Lưu bộ subtask</button>
+        </div>
+        <div class="st-rule">
+          <span><b>Cách tính điểm:</b> mỗi subtask chỉ được điểm khi <b>đúng tất cả</b> test trong subtask đó. Nên chia theo mức độ hiểu bài: ví dụ trong đề → dữ liệu nhỏ → trường hợp đặc biệt → dữ liệu lớn.</span>
+          ${free.length ? `<span class="st-warn">Test ${free.join(', ')} chưa thuộc subtask nào nên không được tính điểm.</span>` : ''}
+          ${total !== 100 ? `<span class="st-warn">Tổng điểm đang là ${total}, thường nên để 100.</span>` : ''}
+        </div>`;
+    },
     solution: () => {
       const c = st.check;
       const rows = c?.result?.tests?.length
@@ -187,13 +246,18 @@ export async function renderEditor(ctx, id) {
   }
 
   async function leave(hash) {
-    if ((st.dirty || st.testsDirty) && !(await confirmDialog({ title: 'Rời trang khi chưa lưu?', body: 'Các thay đổi trong trình soạn bài sẽ bị mất.', cta: 'Rời trang', danger: true }))) return;
-    st.dirty = st.testsDirty = false;
+    if ((st.dirty || st.testsDirty || st.subDirty) && !(await confirmDialog({ title: 'Rời trang khi chưa lưu?', body: 'Các thay đổi trong trình soạn bài sẽ bị mất.', cta: 'Rời trang', danger: true }))) return;
+    st.dirty = st.testsDirty = st.subDirty = false;
     if (hash.startsWith('/')) location.href = hash;
     else go(hash);
   }
 
   ctx.page.addEventListener('input', (e) => {
+    if (e.target.dataset.sub) {
+      const [i, key] = e.target.dataset.sub.split(':');
+      subs[Number(i)][key] = key === 'points' ? Number(e.target.value) : e.target.value;
+      return markSubDirty();
+    }
     const k = e.target.dataset.f;
     if (!k) return;
     form[k] = e.target.value;
@@ -201,6 +265,7 @@ export async function renderEditor(ctx, id) {
     markDirty();
   });
   ctx.page.addEventListener('change', (e) => {
+    if (e.target.dataset.sub) return drawTab();
     if (e.target.matches('[data-sample]')) {
       tests[Number(e.target.dataset.sample)].sample = e.target.checked;
       st.testsDirty = true;
@@ -235,6 +300,28 @@ export async function renderEditor(ctx, id) {
       drawFoot();
       return drawTab();
     }
+    if (t.closest('[data-subadd]')) return subs.push({ name: `Subtask ${subs.length + 1}`, tests: '', points: 0, note: '' }), markSubDirty(), drawTab();
+    const subDel = t.closest('[data-subdel]');
+    if (subDel) return subs.splice(Number(subDel.dataset.subdel), 1), markSubDirty(), drawTab();
+    if (t.closest('[data-subeach]')) {
+      const n = p.testCount || tests.length;
+      const base = Math.floor((100 / n) * 100) / 100;
+      subs = Array.from({ length: n }, (_, k) => ({ name: `Test ${k + 1}`, tests: `${k + 1}`, points: k === n - 1 ? Math.round((100 - base * (n - 1)) * 100) / 100 : base, note: '' }));
+      return markSubDirty(), drawTab();
+    }
+    if (t.closest('[data-subsave]') || t.closest('[data-subreset]')) {
+      const reset = Boolean(t.closest('[data-subreset]'));
+      try {
+        p = await api(`/api/admin/problems/${encodeURIComponent(p.id)}/subtasks`, { method: 'PUT', body: reset ? { reset: true } : { subtasks: subs } });
+        subs = p.subtasks.map((s) => ({ ...s }));
+        st.subDirty = false;
+        toast(reset ? 'Đã khôi phục bộ subtask soạn kèm bài' : 'Đã lưu bộ subtask mặc định');
+      } catch (err) {
+        toast(err.message);
+      }
+      drawFoot();
+      return drawTab();
+    }
     const saveBtn = t.closest('[data-save]');
     if (saveBtn) return save(saveBtn.dataset.save);
     if (t.closest('[data-check]')) {
@@ -252,14 +339,14 @@ export async function renderEditor(ctx, id) {
 
   /* Chặn rời trang khi còn thay đổi chưa lưu (đóng tab hoặc bấm menu bên trái). */
   const onBeforeUnload = (e) => {
-    if (st.dirty || st.testsDirty) {
+    if (st.dirty || st.testsDirty || st.subDirty) {
       e.preventDefault();
       e.returnValue = '';
     }
   };
   const onNavClick = (e) => {
     const a = e.target.closest('a[href^="#/"], a[href^="/#/"]');
-    if (!a || !(st.dirty || st.testsDirty)) return;
+    if (!a || !(st.dirty || st.testsDirty || st.subDirty)) return;
     e.preventDefault();
     e.stopPropagation();
     leave(a.getAttribute('href'));

@@ -138,12 +138,12 @@ describe('Cuộc thi', () => {
     cid = created.data.id;
 
     const bad = await admin(`/api/admin/contests/${cid}/problems`, {
-      method: 'PUT', body: { problems: [{ problemId: 'P01', subtasks: [{ name: 'X', tests: '1-9', points: 10 }] }] },
+      method: 'PUT', body: { problems: [{ problemId: 'P01', subtasks: [{ name: 'X', tests: '1-99', points: 10 }] }] },
     });
     assert.equal(bad.status, 400);
     const set = await admin(`/api/admin/contests/${cid}/problems`, {
       method: 'PUT',
-      body: { problems: [{ problemId: 'P01', subtasks: [{ name: 'Số nhỏ', tests: '1-2', points: 40 }, { name: 'Số lớn', tests: '3', points: 60 }] }] },
+      body: { problems: [{ problemId: 'P01', subtasks: [{ name: 'Ví dụ', tests: '1-2', points: 40 }, { name: 'Còn lại', tests: '3-12', points: 60 }] }] },
     });
     assert.equal(set.status, 200);
     assert.equal(set.data.problems[0].label, 'A');
@@ -154,6 +154,26 @@ describe('Cuộc thi', () => {
     const list = await sv1('/api/contests');
     assert.equal(list.data.contests[0].phase, 'running');
     assert.equal(list.data.contests[0].needCode, true);
+  });
+
+  test('Subtask mặc định của bài: điền sẵn khi thêm vào cuộc thi, Admin chỉnh và khôi phục được', async () => {
+    const p13 = (await admin('/api/admin/problems/P13')).data;
+    assert.equal(p13.subtasksSource, 'file');
+    assert.deepEqual(p13.subtasks.map((x) => x.name), ['Ví dụ trong đề', 'Dữ liệu nhỏ', 'Trường hợp đặc biệt', 'Dữ liệu lớn']);
+    assert.equal(p13.subtasks.reduce((t, x) => t + x.points, 0), 100);
+
+    const tmp = (await admin('/api/admin/contests', { method: 'POST', body: { title: 'Thử subtask', startAt: Date.now() + 3_600_000, endAt: Date.now() + 7_200_000 } })).data;
+    const put = await admin(`/api/admin/contests/${tmp.id}/problems`, { method: 'PUT', body: { problems: [{ problemId: 'P13' }] } });
+    assert.equal(put.status, 200);
+    assert.deepEqual(put.data.problems[0].subtasks.map((x) => x.tests), p13.subtasks.map((x) => x.tests), 'không truyền subtask thì lấy bộ mặc định của bài');
+    assert.ok(put.data.problems[0].subtasks[2].note, 'giữ cả mô tả subtask');
+
+    assert.equal((await admin('/api/admin/problems/P13/subtasks', { method: 'PUT', body: { subtasks: [{ name: 'X', tests: '1-99', points: 100 }] } })).status, 400);
+    const own = await admin('/api/admin/problems/P13/subtasks', { method: 'PUT', body: { subtasks: [{ name: 'Tất cả', tests: `1-${p13.testCount}`, points: 100 }] } });
+    assert.equal(own.status, 200);
+    assert.equal(own.data.subtasksSource, 'admin');
+    assert.equal((await admin('/api/admin/problems/P13/subtasks', { method: 'PUT', body: { reset: true } })).data.subtasksSource, 'file');
+    assert.equal((await admin(`/api/admin/contests/${tmp.id}`, { method: 'DELETE' })).status, 200);
   });
 
   test('Bài thi bị ẩn khỏi luyện tập; vào phòng cần đúng mã', async () => {
@@ -186,7 +206,8 @@ describe('Cuộc thi', () => {
     assert.equal(s1.status, 201);
     const r1 = await waitScore(sv1, cid, s1.data.id);
     assert.equal(r1.verdict, 'WA');
-    assert.equal(r1.testsPassed, 2, 'chạy hết test chứ không dừng ở test sai đầu tiên');
+    /* PARTIAL_P01 chỉ sai khi a = 1, tức test 1; chạy hết 12 test chứ không dừng ở test sai đầu tiên */
+    assert.equal(r1.testsPassed, 11, 'chạy hết test chứ không dừng ở test sai đầu tiên');
     assert.equal(r1.score, 60);
     assert.deepEqual(r1.subtasks.map((s) => s.got), [0, 60]);
 

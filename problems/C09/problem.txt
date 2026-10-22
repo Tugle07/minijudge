@@ -1,6 +1,6 @@
 title=Tháp Hà Nội
 time_ms=1000
 memory_mb=256
-tests=11
+tests=9
 difficulty=Trung bình
 samples=1,2,3

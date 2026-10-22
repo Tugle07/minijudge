@@ -1,6 +1,6 @@
 title=Ma trận xoắn ốc
 time_ms=1000
 memory_mb=256
-tests=11
+tests=12
 difficulty=Trung bình
 samples=1,2,3

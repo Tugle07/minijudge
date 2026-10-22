@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 10.0,
+    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Dữ liệu nhỏ",
+    "tests": "2-6",
+    "points": 30.0,
+    "note": "Số nhỏ"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "7-9",
+    "points": 30.0,
+    "note": "n = 1, 2, 3, 4 và số nguyên tố lớn gần 10^9"
+  },
+  {
+    "name": "Dữ liệu lớn",
+    "tests": "10-11",
+    "points": 30.0,
+    "note": "1000 số tới 10^9 — duyệt tới √n"
+  }
+]

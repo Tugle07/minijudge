@@ -1,6 +1,6 @@
 title=Quản lý kho hàng
 time_ms=1000
 memory_mb=256
-tests=11
+tests=10
 difficulty=Trung bình
 samples=1

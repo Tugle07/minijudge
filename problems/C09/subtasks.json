@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-3",
+    "points": 10.0,
+    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Dữ liệu nhỏ",
+    "tests": "4-8",
+    "points": 45.0,
+    "note": "n nhỏ"
+  },
+  {
+    "name": "Dữ liệu lớn",
+    "tests": "9",
+    "points": 45.0,
+    "note": "n = 15 — 32767 bước, đệ quy"
+  }
+]

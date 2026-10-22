@@ -1,6 +1,6 @@
 title=Chia hết cho số may mắn
 time_ms=1000
 memory_mb=256
-tests=11
+tests=14
 difficulty=Dễ
 samples=1,2,3

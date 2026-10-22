@@ -58,6 +58,27 @@ export function parseTests(spec, max) {
 
 export const defaultSubtasks = (testCount) => [{ name: 'Toàn bộ test', tests: `1-${Math.max(1, testCount)}`, points: 100 }];
 
+/* Chuẩn hóa + kiểm tra danh sách subtask của một bài có `testCount` test.
+ * Trả về { subtasks } hoặc { error } (thông báo tiếng Việt). Dùng cho cả subtask mặc định của bài lẫn subtask trong cuộc thi. */
+export function normalizeSubtasks(raw, testCount) {
+  if (!Array.isArray(raw) || !raw.length) return { error: 'Cần ít nhất 1 subtask' };
+  if (raw.length > 30) return { error: 'Tối đa 30 subtask' };
+  const subtasks = [];
+  for (const [k, st] of raw.entries()) {
+    const tests = parseTests(st?.tests, testCount);
+    const points = Number(st?.points);
+    if (!tests) return { error: `Subtask ${k + 1}: danh sách test sai (bài có ${testCount} test, ví dụ "1-5,8")` };
+    if (!Number.isFinite(points) || points < 0 || points > 1000) return { error: `Subtask ${k + 1}: điểm phải từ 0 đến 1000` };
+    subtasks.push({
+      name: String(st.name || `Subtask ${k + 1}`).trim().slice(0, 60),
+      tests: String(st.tests).replace(/\s+/g, ''),
+      points,
+      ...(st.note ? { note: String(st.note).trim().slice(0, 200) } : {}),
+    });
+  }
+  return { subtasks };
+}
+
 /* tests: mảng kết quả từng test theo thứ tự (test i ở vị trí i-1). Bài CE/IE được 0 điểm. */
 export function scoreTests(subtasks, tests, verdict) {
   const ok = (i) => tests[i - 1]?.verdict === 'AC';

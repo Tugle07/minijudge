@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import express from 'express';
 
+import { normalizeSubtasks } from '../lib/contests.js';
+
 const NEW_ID_RE = /^[A-Z][A-Z0-9_]{1,14}$/;
 
 /* Quản lý bài: bài trong repo chỉ đổi được trạng thái/nhãn/lời giải (nội dung sửa qua git);
@@ -33,6 +35,10 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
     solution: p.solution,
     sets: catalog.sets.filter((s) => s.problems.includes(p.id)).map((s) => ({ id: s.id, short: s.short })),
     tests: store.listTests(p.id, p.root),
+    testCount: p.tests,
+    subtasks: p.subtasks,
+    subtasksSource: p.subtasksSource,
+    fileSubtasks: p.fileSubtasks,
   });
 
   r.get('/problems', (_req, res) => {
@@ -48,6 +54,7 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
           difficulty: p.difficulty,
           status: p.status,
           tests: p.tests,
+          subtasks: p.subtasks,
           submissions: subs.get(p.id) || 0,
           acRate: s && s.tried ? Math.round((s.solved / s.tried) * 100) : 0,
           sets: catalog.sets.filter((x) => x.problems.includes(p.id)).map((x) => ({ id: x.id, short: x.short })),
@@ -98,6 +105,24 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
       typeof b.solution === 'string' ? b.solution.slice(0, 64 * 1024) : p.solution,
       Date.now(),
     );
+    catalog.reload();
+    res.json(detail(catalog.problemMap.get(p.id)));
+  });
+
+  /* Bộ subtask mặc định của bài: dùng khi thêm bài vào cuộc thi. reset = true thì quay về bộ soạn kèm bài. */
+  const saveSubtasks = db.prepare(`
+    INSERT INTO problem_meta (id, status, tags, solution, subtasks, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET subtasks = excluded.subtasks, updated_at = excluded.updated_at`);
+  r.put('/problems/:id/subtasks', (req, res) => {
+    const p = find(req, res);
+    if (!p) return;
+    if (req.body?.reset) {
+      saveSubtasks.run(p.id, p.status, p.tags, p.solution, null, Date.now());
+    } else {
+      const { subtasks, error } = normalizeSubtasks(req.body?.subtasks, p.tests);
+      if (error) return res.status(400).json({ error });
+      saveSubtasks.run(p.id, p.status, p.tags, p.solution, JSON.stringify(subtasks), Date.now());
+    }
     catalog.reload();
     res.json(detail(catalog.problemMap.get(p.id)));
   });

@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { defaultSubtasks, normalizeSubtasks } from './contests.js';
+
 export const ID_RE = /^[A-Za-z0-9_]{1,15}$/;
 export const SET_STATUSES = ['draft', 'open', 'closed', 'hidden'];
 
@@ -31,6 +33,15 @@ function loadProblem(root, id, origin) {
     memoryMb: Number(cfg.memory_mb) || 256,
     tests: Number(cfg.tests) || 0,
     difficulty: cfg.difficulty || 'Trung bình',
+    /* Bộ subtask mặc định soạn kèm bài (problems/<id>/subtasks.json); sai định dạng thì bỏ qua. */
+    fileSubtasks: (() => {
+      try {
+        const raw = JSON.parse(readIfExists(path.join(base, 'subtasks.json')) || 'null');
+        return raw ? normalizeSubtasks(raw, Number(cfg.tests) || 0).subtasks ?? null : null;
+      } catch {
+        return null;
+      }
+    })(),
     statement: readIfExists(path.join(base, 'statement.md')),
     hint: readIfExists(path.join(base, 'hint.md')).trim(),
     sampleTests: sampleIds,
@@ -80,7 +91,7 @@ function normalizeSet(s, i) {
 export function createCatalog({ db, repoDir, customDir }) {
   const catalog = { problems: [], problemMap: new Map(), sets: [], setMap: new Map(), repoDir, customDir };
   const listSets = db.prepare('SELECT data FROM problem_sets ORDER BY position, id');
-  const listMeta = db.prepare('SELECT id, status, tags, solution FROM problem_meta');
+  const listMeta = db.prepare('SELECT id, status, tags, solution, subtasks FROM problem_meta');
 
   /* Khối mới thêm vào sets.json (qua git) được nạp vào DB đúng một lần; khối Admin đã xóa không bị nạp lại. */
   const seed = JSON.parse(readIfExists(path.join(repoDir, 'sets.json')) || '[]');
@@ -109,11 +120,18 @@ export function createCatalog({ db, repoDir, customDir }) {
         .map((id) => loadProblem(customDir, id, 'custom')),
     ].map((p) => {
       const m = meta.get(p.id);
+      /* Subtask mặc định: Admin đã chỉnh (lưu DB) > soạn kèm bài (subtasks.json) > một subtask gồm toàn bộ test. */
+      let custom = null;
+      try {
+        custom = m?.subtasks ? normalizeSubtasks(JSON.parse(m.subtasks), p.tests).subtasks ?? null : null;
+      } catch {}
       return {
         ...p,
         status: m?.status ?? (p.origin === 'repo' ? 'pub' : 'draft'),
         tags: m?.tags ?? '',
         solution: m?.solution ?? '',
+        subtasks: custom || p.fileSubtasks || defaultSubtasks(p.tests),
+        subtasksSource: custom ? 'admin' : p.fileSubtasks ? 'file' : 'auto',
       };
     });
     const problemMap = new Map(problems.map((p) => [p.id, p]));

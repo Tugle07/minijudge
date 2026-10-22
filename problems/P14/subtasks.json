@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 10.0,
+    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Dữ liệu nhỏ",
+    "tests": "2-6",
+    "points": 30.0,
+    "note": "n nhỏ"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "7-10",
+    "points": 30.0,
+    "note": "n = 2 với tổng chẵn/lẻ, toàn số chẵn"
+  },
+  {
+    "name": "Dữ liệu lớn",
+    "tests": "11-12",
+    "points": 30.0,
+    "note": "1000 bộ test"
+  }
+]

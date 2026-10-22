@@ -167,7 +167,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
       statement: p.statement,
       samples: p.samples,
       points: cp.points,
-      subtasks: cp.subtasks.map((s) => ({ name: s.name, points: s.points, tests: s.tests })),
+      subtasks: cp.subtasks.map((s) => ({ name: s.name, points: s.points, tests: s.tests, note: s.note || '' })),
     });
   });
 

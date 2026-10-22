@@ -1,6 +1,6 @@
 title=Đợi ngày nóng hơn
 time_ms=1000
 memory_mb=256
-tests=11
+tests=13
 difficulty=Khó
 samples=1,2

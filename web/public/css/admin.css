@@ -93,7 +93,7 @@
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: min(560px, 100vw); display: flex; flex-direction: column;
   background: var(--bg); border-left: 1px solid var(--line); box-shadow: var(--shadow);
 }
-.drawer.wide { width: min(640px, 100vw); }
+.drawer.wide { width: min(880px, 100vw); }
 .drawer-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
 .drawer-head .x { margin-left: auto; width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--fg2); font-size: 18px; }
 .drawer-head .x:hover { background: var(--bg3); }

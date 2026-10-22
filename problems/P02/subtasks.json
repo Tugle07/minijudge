@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10.0,
+    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Dữ liệu nhỏ",
+    "tests": "3-7",
+    "points": 30.0,
+    "note": "n ≤ 10, giá trị nhỏ"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "8-11",
+    "points": 30.0,
+    "note": "k = n, n = 1, toàn số âm, toàn số 0"
+  },
+  {
+    "name": "Dữ liệu lớn",
+    "tests": "12-13",
+    "points": 30.0,
+    "note": "n = 2·10^5 — cần cửa sổ trượt O(n), tổng cần long long"
+  }
+]
