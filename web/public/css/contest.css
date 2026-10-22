@@ -119,3 +119,14 @@ body.exam-mode { overflow: hidden; }
 @media (max-width: 1199px) { .exam-right .btn-submit .kbd { display: none; } }
 @media (max-width: 900px) { .exam-right .toolbar .lang-chip { display: none; } }
 .st-desc { display: block; margin-top: 1px; font-size: 12.5px; color: var(--fg2); line-height: 1.45; }
+
+/* Ô chọn bài hiện điểm đã đạt ngay dưới chữ cái. */
+.exam-tab { position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; gap: 2px; }
+.exam-tab .tab-score { font-size: 10px; font-weight: 600; font-family: var(--font-code); opacity: .85; }
+/* Lần nộp cũ thu gọn để khung code không bị co lại. */
+.exam-panel { max-height: 32vh; }
+.exam-older > summary { cursor: pointer; font-size: 13px; color: var(--fg2); padding: 2px 0; }
+.exam-older-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.prob-facts a[data-jump-st] { color: var(--accent-text); text-decoration: none; }
+.exam-subs-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; font-size: 14px; }
+.exam-subs-head > span { font-size: 13px; color: var(--fg2); }

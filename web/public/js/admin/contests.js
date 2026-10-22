@@ -178,7 +178,7 @@ async function editor(ctx, summary, problems, onSaved) {
   const start = Date.now() + 3_600_000;
   const f = full
     ? { ...full, settings: { ...full.settings }, problems: full.problems.map((p) => ({ problemId: p.problemId, subtasks: p.subtasks.map((s) => ({ ...s })) })) }
-    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true }, problems: [] };
+    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, showSubtaskNotes: false }, problems: [] };
   let errors = {};
   const pmap = new Map(problems.map((p) => [p.id, p]));
 
@@ -254,6 +254,7 @@ async function editor(ctx, summary, problems, onSaved) {
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="desktopOnly" ${f.settings.desktopOnly !== false ? 'checked' : ''} />Chỉ cho vào thi bằng máy tính (chặn điện thoại, máy tính bảng)</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="boardAfterFinish" ${f.settings.boardAfterFinish !== false ? 'checked' : ''} />Thí sinh hoàn tất bài làm được xem bảng xếp hạng trực tiếp</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="publishResults" ${f.settings.publishResults ? 'checked' : ''} />Công bố bảng kết quả cho mọi người (sau giờ thi)</label>
+      <label style="display:flex;gap:7px;align-items:center" title="Mô tả thường nêu hướng giải hoặc trường hợp biên — nên tắt khi kiểm tra"><input type="checkbox" data-b="showSubtaskNotes" ${f.settings.showSubtaskNotes ? 'checked' : ''} />Hiện mô tả subtask cho thí sinh (thường lộ hướng giải, nên tắt khi kiểm tra)</label>
     </div>
     <div class="afield"><span>Trạng thái</span><div class="seg" style="max-width:320px">${[['draft', 'Nháp'], ['published', 'Xuất bản']].map(([k, l]) => `<button type="button" class="${f.status === k ? 'on' : ''}" data-status="${k}">${l}</button>`).join('')}</div>
       <span class="help">Nháp: thí sinh chưa thấy. Xuất bản: hiện trong mục Cuộc thi, vào được khi đến giờ.</span></div>

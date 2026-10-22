@@ -160,7 +160,8 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
       statement: p.statement,
       samples: p.samples,
       points: cp.points,
-      subtasks: cp.subtasks.map((s) => ({ name: s.name, points: s.points, tests: s.tests, note: s.note || '' })),
+      /* Mô tả subtask có thể lộ hướng giải hoặc giá trị biên — chỉ gửi khi Admin bật showSubtaskNotes. */
+      subtasks: cp.subtasks.map((s) => ({ name: s.name, points: s.points, tests: s.tests, note: c.settings.showSubtaskNotes ? s.note || '' : '' })),
     });
   });
 

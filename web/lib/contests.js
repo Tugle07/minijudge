@@ -165,7 +165,7 @@ export function createContests(db, catalog) {
       startAt: row.start_at,
       endAt: row.end_at,
       status: row.status,
-      settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, ...JSON.parse(row.settings || '{}') },
+      settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, showSubtaskNotes: false, ...JSON.parse(row.settings || '{}') },
       createdAt: row.created_at,
     };
 

@@ -191,16 +191,17 @@ export async function mountEditor(container, { value, onChange, onSubmit, onRun,
     state: EditorState.create({
       doc: value,
       extensions: [
-        coreSetup,
-        cpp(),
-        indentUnit.of('    '),
-        EditorState.tabSize.of(4),
+        /* Đặt trước coreSetup để được ưu tiên: defaultKeymap gán sẵn Ctrl+Enter = chèn dòng trống. */
         keymap.of([
           { key: 'Mod-Enter', run: () => (onSubmit(), true) },
           { key: "Mod-'", run: () => (onRun(), true) },
           { key: 'Mod-s', run: () => true, preventDefault: true },
           indentWithTab,
         ]),
+        coreSetup,
+        cpp(),
+        indentUnit.of('    '),
+        EditorState.tabSize.of(4),
         assistConf.of(assistExt(assist)),
         lintGutter(),
         liveCheck,

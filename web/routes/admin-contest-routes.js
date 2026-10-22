@@ -26,6 +26,7 @@ function readSettings(b) {
     beepOnLeave: b.beepOnLeave !== false,
     blockPaste: b.blockPaste !== false,
     desktopOnly: b.desktopOnly !== false,
+    showSubtaskNotes: b.showSubtaskNotes === true,
   };
 }
 

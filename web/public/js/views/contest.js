@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
-import { badge, esc, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
+import { badge, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
 import { compileErrorsHtml, runResultHtml } from './problem-result.js';
 import { fmtCountdown, fmtDuration, fmtTime } from './contests.js';
 
@@ -338,7 +338,7 @@ export async function render(ctx) {
         <span class="rail-count"><b>${list.length} bài</b><small>Đã nộp ${done}/${list.length}</small></span>
         ${list
           .map(
-            (p) => `<button class="exam-tab ${p.label === state.label ? 'on' : ''} ${p.myScore == null ? 'todo' : p.myScore === p.points ? 'full' : 'part'}" data-label="${esc(p.label)}" title="${esc(p.label)}. ${esc(p.title || '')} · ${statusText(p)}" aria-label="Bài ${esc(p.label)}, ${statusText(p)}">${esc(p.label)}</button>`,
+            (p) => `<button class="exam-tab ${p.label === state.label ? 'on' : ''} ${p.myScore == null ? 'todo' : p.myScore === p.points ? 'full' : 'part'}" data-label="${esc(p.label)}" title="${esc(p.label)}. ${esc(p.title || '')} · ${statusText(p)}" aria-label="Bài ${esc(p.label)}, ${statusText(p)}">${esc(p.label)}${p.myScore == null ? '' : `<small class="tab-score">${Number(p.myScore.toFixed(1))}</small>`}</button>`,
           )
           .join('')}`;
     }
@@ -366,13 +366,14 @@ export async function render(ctx) {
           <div class="prob-head"><h1 class="prob-title"><span class="mono">${esc(p.label)}.</span> ${esc(p.title)}</h1></div>
           <dl class="prob-facts">
             <div><dt>Thời gian</dt><dd class="num">${p.timeMs} ms</dd></div><div><dt>Bộ nhớ</dt><dd class="num">${p.memoryMb} MB</dd></div><div><dt>Điểm tối đa</dt><dd class="num">${p.points}</dd></div>
+            <div><dt>Thang điểm</dt><dd><a href="#st-${esc(p.label)}" data-jump-st class="num">${p.subtasks.length} subtask ↓</a></dd></div>
           </dl>
-          <div class="exam-subtasks"><b>Thang điểm</b>
+          <article class="statement">${renderMarkdown(p.statement)}</article>
+          ${p.samples.length ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${p.samples.map((s, i) => `<div class="sample"><div><div class="sample-head">INPUT #${i + 1}</div><pre>${esc(s.input)}</pre></div><div><div class="sample-head">OUTPUT #${i + 1}</div><pre>${esc(s.output)}</pre></div></div>`).join('')}</div>` : ''}
+          <div class="exam-subtasks" id="st-${esc(p.label)}"><b>Thang điểm</b>
             <div class="st-bar" aria-hidden="true">${p.subtasks.map((s) => `<span style="flex-grow:${Math.max(1, s.points)}"></span>`).join('')}</div>
             ${p.subtasks.map((s, i) => `<div><span>Subtask ${i + 1}: ${esc(s.name)}${s.tests ? ` <span class="faint mono">· test ${esc(String(s.tests).replace(/-/g, '–'))}</span>` : ''}${s.note ? `<small class="st-desc">${esc(s.note)}</small>` : ''}</span><b class="mono">${s.points} điểm</b></div>`).join('')}
             <p class="st-note">Mỗi subtask chỉ được điểm khi <b>đúng tất cả</b> test của subtask đó; sai 1 test thì subtask đó được 0 điểm. Điểm bài = tổng điểm các subtask đạt được, tính theo lần nộp cao điểm nhất của bạn.</p></div>
-          <article class="statement">${renderMarkdown(p.statement)}</article>
-          ${p.samples.length ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${p.samples.map((s, i) => `<div class="sample"><div><div class="sample-head">INPUT #${i + 1}</div><pre>${esc(s.input)}</pre></div><div><div class="sample-head">OUTPUT #${i + 1}</div><pre>${esc(s.output)}</pre></div></div>`).join('')}</div>` : ''}
           ${problemNav(p.label)}
         </div>`;
       $('[data-statement]').scrollTop = 0;
@@ -397,7 +398,17 @@ export async function render(ctx) {
       const all = await api(`/api/contests/${cid}/submissions`);
       state.subs = all.filter((s) => s.label === state.label);
       $('[data-subs]').innerHTML = state.subs.length
-        ? `<b style="font-size:14px">Bài nộp bài ${esc(state.label)} (${state.subs.length})</b>${state.subs.map(subHtml).join('')}`
+        ? `<div class="exam-subs-head"><b>Bài nộp bài ${esc(state.label)} (${state.subs.length})</b>${(() => {
+            const cur = state.info.problems.find((x) => x.label === state.label);
+            return cur?.myScore != null ? `<span>Điểm bài này: <b class="mono">${Number(cur.myScore.toFixed(2))}/${cur.points}</b> <span class="faint">(lần nộp cao nhất)</span></span>` : '';
+          })()}</div>${subHtml(state.subs[0])}${
+            state.subs.length > 1
+              ? `<details class="exam-older"><summary>${state.subs.length - 1} lần nộp trước</summary>${state.subs
+                  .slice(1)
+                  .map((s) => `<div class="exam-older-row">${badge(s.verdict)}<span class="faint mono">${fmtWhen(s.createdAt)}</span><div class="spacer"></div><b class="mono">${s.verdict === 'PENDING' ? 'Đang chấm…' : `${Number((s.score ?? 0).toFixed(2))} điểm`}</b></div>`)
+                  .join('')}</details>`
+              : ''
+          }`
         : '<span class="faint" style="font-size:13.5px">Chưa nộp bài này. Bấm Nộp bài (Ctrl + Enter) khi xong.</span>';
       const ce = state.subs.find((s) => s.verdict === 'CE');
       if (ce && ce === state.subs[0]) {
@@ -426,8 +437,8 @@ export async function render(ctx) {
           if (!state.alive) return;
           const s = await api(`/api/contests/${cid}/submissions/${id}`).catch(() => null);
           if (s && s.verdict !== 'PENDING' && s.score != null) {
-            await loadSubs();
             await refreshScores();
+            await loadSubs();
             return toast(`Bài ${s.label}: ${Number(s.score.toFixed(2))} điểm`);
           }
           later(poll, POLL_MS);
@@ -625,6 +636,11 @@ export async function render(ctx) {
         return openProblem(tab.dataset.label).catch(handleError);
       }
       if (t.closest('[data-submit]')) return submit();
+      /* Link "6 subtask ↓" trong phần thông tin bài: cuộn tới thang điểm, không đổi địa chỉ trang. */
+      if (t.closest('[data-jump-st]')) {
+        e.preventDefault();
+        return ctx.view.querySelector('.exam-subtasks')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       if (t.closest('[data-run]')) return runCustom();
       if (t.closest('[data-refs]')) {
         await enterFullscreen();
