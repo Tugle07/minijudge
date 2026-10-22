@@ -189,5 +189,6 @@ button.trow:hover:not(:disabled) { background: var(--bg3); }
 /* Tắt ligature của font code (vd == thành một ký hiệu liền) để người mới thấy đúng từng ký tự đã gõ. */
 code, pre, kbd, samp, textarea, .mono, .cm-editor, .cm-content {
   font-variant-ligatures: none;
-  font-feature-settings: 'liga' 0, 'calt' 0;
+  /* ss20 nâng dấu * lên gần đỉnh dòng cho dễ nhìn (JetBrains Mono mặc định để ở giữa dòng, dễ lẫn với dấu nhân). */
+  font-feature-settings: 'liga' 0, 'calt' 0, 'ss20' 1;
 }
