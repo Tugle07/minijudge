@@ -134,3 +134,13 @@ body {
 .set-grid > :nth-child(4), .roadmap > :nth-child(4), .contest-group > :nth-child(5), .ov-stat:nth-child(4), .kpis > :nth-child(4) { animation-delay: .15s; }
 .set-grid > :nth-child(n+5), .roadmap > :nth-child(n+5) { animation-delay: .2s; }
 .roadmap > :nth-child(n+7) { animation-delay: .25s; }
+
+/* Tiêu đề cột bảng: nổi bật, tách rõ khỏi dữ liệu */
+.atable th, .thead, .thead > span, .test-row.head {
+  color: var(--fg); font-weight: 700; font-size: 12.5px; letter-spacing: .04em;
+}
+.atable thead, .table .thead { background: color-mix(in oklch, var(--accent) 9%, var(--bg3)); }
+.atable thead th { border-bottom: var(--bw) solid var(--ink); padding-top: 12px; padding-bottom: 12px; }
+.table .thead { border-bottom: var(--bw) solid var(--ink); }
+.atable th small, .thead small, .thead .faint { color: var(--fg2); font-weight: 600; }
+.atable th.num { font-family: var(--font-ui); }
