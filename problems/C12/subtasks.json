@@ -2,25 +2,37 @@
   {
     "name": "Ví dụ trong đề",
     "tests": "1",
-    "points": 10.0,
-    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+    "points": 5.0,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
   },
   {
-    "name": "Dữ liệu nhỏ",
-    "tests": "2-6",
-    "points": 30.0,
-    "note": "Dãy nhỏ"
+    "name": "n ≤ 20",
+    "tests": "2-20",
+    "points": 15.0,
+    "note": "Dữ liệu rất nhỏ — duyệt tuần tự vẫn qua"
+  },
+  {
+    "name": "n ≤ 2 000",
+    "tests": "21-60",
+    "points": 20.0,
+    "note": "Dữ liệu vừa — duyệt tuần tự vẫn kịp"
+  },
+  {
+    "name": "n ≤ 3·10^4",
+    "tests": "61-80",
+    "points": 20.0,
+    "note": "Duyệt tuần tự O(n·q) bắt đầu chậm"
+  },
+  {
+    "name": "n tới 2·10^5",
+    "tests": "81-100",
+    "points": 25.0,
+    "note": "Cần tìm kiếm nhị phân O(q log n)"
   },
   {
     "name": "Trường hợp đặc biệt",
-    "tests": "7-9",
-    "points": 30.0,
+    "tests": "101-103",
+    "points": 15.0,
     "note": "n = 1, phần tử trùng (vị trí đầu tiên), x không có"
-  },
-  {
-    "name": "Dữ liệu lớn",
-    "tests": "10-11",
-    "points": 30.0,
-    "note": "n, q = 2·10^5 — cần tìm kiếm nhị phân"
   }
 ]

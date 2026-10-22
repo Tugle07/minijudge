@@ -3,24 +3,30 @@
     "name": "Ví dụ trong đề",
     "tests": "1",
     "points": 10.0,
-    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
   },
   {
-    "name": "Dữ liệu nhỏ",
-    "tests": "2-6",
+    "name": "Xâu ngắn (≤ 10 ký tự)",
+    "tests": "2-10",
+    "points": 20.0,
+    "note": "Gồm xâu 1–2 ký tự, độ dài chẵn và lẻ"
+  },
+  {
+    "name": "Xâu trung bình (≤ 100 ký tự)",
+    "tests": "11-20",
+    "points": 25.0,
+    "note": "Nhiều xâu, YES/NO xen kẽ"
+  },
+  {
+    "name": "Xâu dài (≤ 1000 ký tự)",
+    "tests": "21-30",
     "points": 30.0,
-    "note": "Xâu ngắn"
+    "note": "Tới 100 xâu dài 1000 ký tự"
   },
   {
     "name": "Trường hợp đặc biệt",
-    "tests": "7-9",
-    "points": 30.0,
+    "tests": "31-33",
+    "points": 15.0,
     "note": "Xâu 1 ký tự, độ dài chẵn/lẻ, gần đối xứng"
-  },
-  {
-    "name": "Dữ liệu lớn",
-    "tests": "10-11",
-    "points": 30.0,
-    "note": "Xâu dài 1000"
   }
 ]

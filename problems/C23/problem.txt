@@ -1,6 +1,6 @@
 title=Ghép cặp chia hết
 time_ms=1000
 memory_mb=256
-tests=12
+tests=103
 difficulty=Trung bình
 samples=1,2

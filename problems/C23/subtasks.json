@@ -2,25 +2,37 @@
   {
     "name": "Ví dụ trong đề",
     "tests": "1-2",
-    "points": 10.0,
-    "note": "Đúng các ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+    "points": 5.0,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
   },
   {
-    "name": "Dữ liệu nhỏ",
-    "tests": "3-7",
-    "points": 30.0,
-    "note": "Dãy nhỏ"
+    "name": "n ≤ 20",
+    "tests": "3-20",
+    "points": 15.0,
+    "note": "Dữ liệu rất nhỏ — thử mọi cặp O(n²) vẫn qua"
+  },
+  {
+    "name": "n ≤ 2 000",
+    "tests": "21-60",
+    "points": 20.0,
+    "note": "Thử mọi cặp O(n²) vẫn kịp"
+  },
+  {
+    "name": "n ≤ 3·10^4",
+    "tests": "61-80",
+    "points": 20.0,
+    "note": "O(n²) bắt đầu chậm — nên đếm theo số dư"
+  },
+  {
+    "name": "n tới 2·10^5",
+    "tests": "81-100",
+    "points": 25.0,
+    "note": "Cần đếm theo số dư O(n + K), kết quả cần long long"
   },
   {
     "name": "Trường hợp đặc biệt",
-    "tests": "8-10",
-    "points": 30.0,
+    "tests": "101-103",
+    "points": 15.0,
     "note": "n = 1, k = 1, số âm và 0"
-  },
-  {
-    "name": "Dữ liệu lớn",
-    "tests": "11-12",
-    "points": 30.0,
-    "note": "n lớn — cần đếm theo số dư"
   }
 ]

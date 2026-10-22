@@ -197,6 +197,8 @@ NOTES = {
 }
 
 POINTS = {"sample": 10, "small": 30, "edge": 30, "big": 30}
+# Bài dùng bộ test chia theo mức ràng buộc (nhập bằng scripts/import-tiered-suites.py) — không dựng lại ở đây.
+TIERED = {"C12", "C18", "C23", "C28"}
 
 
 def write(path, text):
@@ -282,6 +284,9 @@ if __name__ == "__main__":
     if missing:
         print("Thiếu mô tả subtask:", missing)
     for p in problems:
+        if p["id"] in TIERED and p["id"] not in only:
+            print(f"{p['id']:4} giữ bộ test chia mức (scripts/import-tiered-suites.py)")
+            continue
         if not only or p["id"] in only:
             s, sm, e, b = build(p)
             print(f"{p['id']:4} {p['title'][:34]:34} ví dụ {s} · nhỏ {sm} · đặc biệt {e} · lớn {b} = {s + sm + e + b} test")
