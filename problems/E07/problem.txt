@@ -1,0 +1,6 @@
+title=Xếp hạng kỳ thi
+time_ms=1000
+memory_mb=256
+tests=33
+difficulty=Khó
+samples=1

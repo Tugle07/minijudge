@@ -1,0 +1,6 @@
+title=Tổng ước
+time_ms=2000
+memory_mb=256
+tests=40
+difficulty=Trung bình
+samples=1

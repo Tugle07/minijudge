@@ -1,0 +1,6 @@
+title=Tổng hình chữ nhật
+time_ms=1000
+memory_mb=256
+tests=30
+difficulty=Trung bình
+samples=1

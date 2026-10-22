@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n ≤ 20, k ≤ 3, không có bậc hỏng",
+    "tests": "3-10",
+    "points": 15,
+    "note": "Đệ quy thử mọi bước vẫn kịp"
+  },
+  {
+    "name": "n ≤ 1 000, có bậc hỏng",
+    "tests": "11-18",
+    "points": 20,
+    "note": "Đệ quy quá chậm — cần quy hoạch động (mảng f)"
+  },
+  {
+    "name": "n ≤ 10^5, k ≤ 100",
+    "tests": "19-26",
+    "points": 20,
+    "note": "Quy hoạch động O(n·k) vẫn kịp"
+  },
+  {
+    "name": "n, k ≤ 10^6",
+    "tests": "27-34",
+    "points": 30,
+    "note": "O(n·k) quá chậm — cần tổng trượt O(n), lấy dư đúng"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "35-42",
+    "points": 10,
+    "note": "Biên và trường hợp dễ sót: n = 1, k = n, hỏng gần hết, hai bậc hỏng liền nhau dài hơn k"
+  }
+]

@@ -1,0 +1,1 @@
+$f[i]$ = số cách tới bậc $i$: $f[0] = 1$, $f[i] = 0$ nếu bậc hỏng, ngược lại $f[i] = f[i-1] + \dots + f[i-k]$. Tính tổng này mỗi lần là $O(nk)$ — quá chậm khi $n, k$ tới $10^6$. Giữ **tổng trượt** của $k$ giá trị gần nhất: cộng $f[i]$ vào, bớt $f[i-k]$ ra (nhớ cộng thêm $10^9+7$ trước khi lấy dư để không âm).

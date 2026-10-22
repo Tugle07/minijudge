@@ -1,0 +1,1 @@
+Tách từ: duyệt từng ký tự, `isalpha` thì nối vào từ hiện tại (đổi `tolower`), gặp ký tự khác thì kết thúc từ. Lưu các từ vào mảng `char words[200000][21]`, **sắp xếp bằng `qsort` với `strcmp`**, khi đó các từ giống nhau nằm liền nhau — đếm từng nhóm. So từng cặp từ $O(w^2)$ sẽ quá chậm khi có $2 \cdot 10^5$ từ.

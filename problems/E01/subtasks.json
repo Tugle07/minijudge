@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "t < 60",
+    "tests": "3-10",
+    "points": 10,
+    "note": "Chỉ có giây — in đúng định dạng 0 00:00:ss"
+  },
+  {
+    "name": "t < 86 400",
+    "tests": "11-20",
+    "points": 20,
+    "note": "Chưa tới một ngày — cần in đủ 2 chữ số cho giờ, phút, giây"
+  },
+  {
+    "name": "t ≤ 2·10^9",
+    "tests": "21-30",
+    "points": 25,
+    "note": "Có ngày — vẫn vừa kiểu int"
+  },
+  {
+    "name": "t ≤ 10^18",
+    "tests": "31-40",
+    "points": 25,
+    "note": "Vượt kiểu int — cần long long và %lld"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "41-49",
+    "points": 15,
+    "note": "Biên và trường hợp dễ sót: 0, 59, 60, 3599, 3600, 86399, 86400, 2^31 − 1, 2^31, 10^18"
+  }
+]

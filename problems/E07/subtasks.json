@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n ≤ 10, tổng điểm khác nhau",
+    "tests": "2-9",
+    "points": 15,
+    "note": "Chỉ cần sắp theo tổng điểm"
+  },
+  {
+    "name": "n ≤ 1 000, có người bằng tổng điểm",
+    "tests": "10-17",
+    "points": 20,
+    "note": "Bằng điểm thì so thời gian phạt"
+  },
+  {
+    "name": "n ≤ 1 000, có người cùng hạng",
+    "tests": "18-25",
+    "points": 20,
+    "note": "Bằng cả điểm và phạt: cùng hạng, in theo mã tăng dần"
+  },
+  {
+    "name": "n ≤ 2·10^5",
+    "tests": "26-28",
+    "points": 30,
+    "note": "Sắp xếp O(n²) quá chậm — dùng qsort với hàm so sánh"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "29-33",
+    "points": 10,
+    "note": "Biên và trường hợp dễ sót: một thí sinh, tất cả bằng nhau, toàn điểm 0, toàn điểm tuyệt đối"
+  }
+]

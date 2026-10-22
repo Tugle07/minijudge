@@ -1,0 +1,1 @@
+Số bội của $a$ trong $[1, n]$ là $n / a$. Bao hàm – loại trừ: $f(n) = n/a + n/b - n/\mathrm{lcm}(a,b)$, đáp án $f(R) - f(L-1)$. Tính $\mathrm{lcm} = a / \gcd(a,b) \cdot b$ có thể tràn `long long`: nếu $a/\gcd > R / b$ thì $\mathrm{lcm} > R$, số hạng thứ ba bằng $0$.

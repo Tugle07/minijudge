@@ -1,0 +1,6 @@
+title=Chia hết cho a hoặc b
+time_ms=1000
+memory_mb=256
+tests=50
+difficulty=Dễ
+samples=1,2

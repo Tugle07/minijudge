@@ -1,0 +1,1 @@
+Khai báo `struct` gồm mã (`char id[21]`), tổng điểm, thời gian phạt. Viết hàm so sánh cho `qsort`: so tổng điểm, rồi phạt, rồi `strcmp` mã. Hạng: người thứ $i$ (đếm từ 1) cùng hạng người trước nếu bằng tổng và phạt, ngược lại hạng $= i$. Sắp xếp nổi bọt $O(n^2)$ không kịp với $n = 2 \cdot 10^5$.

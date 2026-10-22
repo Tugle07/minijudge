@@ -1,0 +1,1 @@
+Ước đi theo cặp $(i, n/i)$ với $i \le \sqrt{n}$, chỉ cần duyệt $i$ tới $\sqrt{n}$ (điều kiện `i * i <= n`, $i$ kiểu `long long`). Cẩn thận khi $n$ là số chính phương: $i = n/i$ chỉ cộng một lần. Tổng ước có thể vượt $2^{31}$.

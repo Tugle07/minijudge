@@ -1,0 +1,6 @@
+title=Leo cầu thang
+time_ms=1000
+memory_mb=256
+tests=42
+difficulty=Trung bình
+samples=1,2

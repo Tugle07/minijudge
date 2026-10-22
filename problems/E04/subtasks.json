@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n, m ≤ 10, q ≤ 10",
+    "tests": "2-9",
+    "points": 15,
+    "note": "Cộng từng ô cho mỗi câu hỏi"
+  },
+  {
+    "name": "n, m ≤ 100, q ≤ 1 000, 0 ≤ a ≤ 1 000",
+    "tests": "10-17",
+    "points": 20,
+    "note": "Cộng từng ô vẫn kịp (≈ 10^7 phép)"
+  },
+  {
+    "name": "n, m ≤ 500, q ≤ 2 000, 0 ≤ a ≤ 1 000",
+    "tests": "18-23",
+    "points": 20,
+    "note": "Bảng lớn, ít câu hỏi — cộng từng ô vẫn kịp nhưng sát giới hạn"
+  },
+  {
+    "name": "n, m ≤ 500, q ≤ 2·10^5, |a| ≤ 10^9",
+    "tests": "24-26",
+    "points": 30,
+    "note": "Bắt buộc cộng dồn 2 chiều O(1) mỗi câu; có số âm, tổng cần long long"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "27-30",
+    "points": 10,
+    "note": "Biên và trường hợp dễ sót: bảng 1×1, một hàng, một cột, toàn bảng, toàn số âm"
+  }
+]

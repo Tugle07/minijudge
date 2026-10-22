@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Một dòng, chữ thường, cách nhau một dấu cách",
+    "tests": "3-10",
+    "points": 15,
+    "note": "Đọc từng từ bằng scanf(\"%s\") là đủ"
+  },
+  {
+    "name": "Có chữ hoa, dấu câu, chữ số",
+    "tests": "11-18",
+    "points": 20,
+    "note": "Phải tự tách từ theo chữ cái và đổi về chữ thường"
+  },
+  {
+    "name": "Nhiều dòng, ≤ 10^4 từ",
+    "tests": "19-26",
+    "points": 20,
+    "note": "Đọc tới hết dữ liệu (EOF); so từng cặp từ vẫn kịp; có từ hòa số lần"
+  },
+  {
+    "name": "≤ 2·10^5 từ",
+    "tests": "27-30",
+    "points": 30,
+    "note": "So từng cặp O(w²) quá chậm — sắp xếp (qsort + strcmp) rồi đếm"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "31-39",
+    "points": 10,
+    "note": "Biên và trường hợp dễ sót: một từ duy nhất, mọi từ khác nhau, hòa số lần, từ dài 20 chữ, toàn chữ hoa"
+  }
+]

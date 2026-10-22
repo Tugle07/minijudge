@@ -1,0 +1,6 @@
+title=Đổi thời gian
+time_ms=1000
+memory_mb=256
+tests=49
+difficulty=Dễ
+samples=1,2

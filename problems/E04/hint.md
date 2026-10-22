@@ -1,0 +1,1 @@
+Dựng **mảng cộng dồn 2 chiều** $S[i][j]$ = tổng hình chữ nhật $(1,1)$–$(i,j)$: $S[i][j] = a[i][j] + S[i-1][j] + S[i][j-1] - S[i-1][j-1]$. Mỗi câu hỏi: $S[r_2][c_2] - S[r_1-1][c_2] - S[r_2][c_1-1] + S[r_1-1][c_1-1]$. Tổng có thể tới $2{,}5 \cdot 10^{14}$ — dùng `long long`, khai báo mảng toàn cục.

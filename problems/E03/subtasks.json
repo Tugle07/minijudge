@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n ≤ 1 000, T ≤ 10",
+    "tests": "2-9",
+    "points": 15,
+    "note": "Duyệt mọi số từ 1 tới n"
+  },
+  {
+    "name": "n ≤ 10^6",
+    "tests": "10-17",
+    "points": 20,
+    "note": "Duyệt O(n) mỗi số vẫn kịp"
+  },
+  {
+    "name": "n ≤ 10^9",
+    "tests": "18-25",
+    "points": 25,
+    "note": "O(n) quá chậm — duyệt tới √n; tổng ước vượt kiểu int"
+  },
+  {
+    "name": "n ≤ 10^12",
+    "tests": "26-33",
+    "points": 25,
+    "note": "Biến chạy phải là long long (i·i tràn int), nhiều số nguyên tố lớn"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "34-40",
+    "points": 10,
+    "note": "Biên và trường hợp dễ sót: n = 1, số nguyên tố lớn, số chính phương, 10^12"
+  }
+]

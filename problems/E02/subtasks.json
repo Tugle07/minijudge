@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 5,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "R ≤ 10^6, a, b ≤ 100",
+    "tests": "3-12",
+    "points": 20,
+    "note": "Duyệt từng số trong đoạn vẫn kịp"
+  },
+  {
+    "name": "R ≤ 10^12, a, b ≤ 10^6",
+    "tests": "13-22",
+    "points": 25,
+    "note": "Duyệt O(R) quá chậm — cần công thức bao hàm – loại trừ, long long"
+  },
+  {
+    "name": "R ≤ 10^18, a, b ≤ 10^9",
+    "tests": "23-32",
+    "points": 25,
+    "note": "Số lớn tới 10^18, bội chung nhỏ nhất vẫn vừa long long"
+  },
+  {
+    "name": "R ≤ 10^18, a, b ≤ 10^18",
+    "tests": "33-40",
+    "points": 10,
+    "note": "BCNN có thể vượt 10^18 và tràn số khi nhân a·b — phải xử lý trước khi nhân"
+  },
+  {
+    "name": "Trường hợp đặc biệt",
+    "tests": "41-50",
+    "points": 15,
+    "note": "Biên và trường hợp dễ sót: a = b, a = 1, L = R, b là bội của a, a > R"
+  }
+]

@@ -1,0 +1,1 @@
+Gọi $P_i$ là tổng $i$ phần tử đầu; cần đếm cặp $i < j$ có $P_j - P_i = K$. Vì $a_i \ge 0$, $P$ **không giảm** — dùng **hai con trỏ**: với mỗi $j$, đẩy $i$ tới khi $P_j - P_i \le K$. Có số $0$ thì nhiều $P$ bằng nhau: đếm theo **nhóm giá trị bằng nhau** (nhân số lượng hai nhóm). Đáp án có thể tới $2 \cdot 10^{10}$ — `long long`.

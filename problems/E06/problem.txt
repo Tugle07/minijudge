@@ -1,0 +1,6 @@
+title=Từ xuất hiện nhiều nhất
+time_ms=1000
+memory_mb=256
+tests=39
+difficulty=Khó
+samples=1,2
