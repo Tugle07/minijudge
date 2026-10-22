@@ -13,7 +13,8 @@ const DIFFS = ['Dễ', 'Trung bình', 'Khó'];
 
 export async function renderEditor(ctx, id) {
   let p = await api(`/api/admin/problems/${encodeURIComponent(id)}`);
-  const custom = p.origin === 'custom';
+  /* Bài ở thùng rác chỉ xem được; mọi bài khác (kể cả bài trong repo) sửa được toàn bộ. */
+  let custom = p.status !== 'deleted';
   const st = { tab: 'info', dirty: false, testsDirty: false, check: null, errors: {}, over: false };
   let form = pick(p);
   let tests = p.tests.map((t) => ({ ...t }));
@@ -49,15 +50,52 @@ export async function renderEditor(ctx, id) {
       <button class="btn-ghost" data-back style="height:32px;font-size:14px">‹ Danh sách bài</button>
       <span class="mono muted" style="font-weight:500;font-size:15px">${esc(p.id)}</span><b style="font-weight:600" data-ed-title>${esc(p.title)}</b>
       <span data-ed-status>${statusPill()}</span>
+      <div style="flex:1"></div>
+      <div data-ed-actions style="display:flex;gap:8px"></div>
     </div>
-    ${custom ? '' : '<div class="notice">Bài này nằm trong repo (thư mục <span class="mono">problems/</span>). Nội dung đề và test sửa qua git rồi deploy; ở đây chỉ đổi trạng thái, nhãn và lời giải mẫu.</div>'}
+    <div data-ed-note></div>
     <div class="ed-tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}"><i>${i + 1}</i>${l}</button>`).join('')}</div>
     <div data-tabbody></div>
-    <div class="ed-foot" style="margin:0 -28px -96px"><span data-dirty></span><div style="flex:1"></div><button class="btn-line" data-save="draft">Lưu nháp</button><button class="btn-dark" data-save="pub">Xuất bản</button></div>`;
+    <div class="ed-foot" style="margin:0 -28px -96px"><span data-dirty></span><div style="flex:1"></div><span data-ed-save style="display:flex;gap:8px"><button class="btn-line" data-save="draft">Lưu nháp</button><button class="btn-dark" data-save="pub">Xuất bản</button></span></div>`;
   const body = ctx.page.querySelector('[data-tabbody]');
 
   function statusPill() {
-    return p.status === 'pub' ? pill('Đã xuất bản', 'var(--ac)') : pill('Nháp', 'var(--pd)');
+    return p.status === 'pub' ? pill('Đã xuất bản', 'var(--ac)') : p.status === 'deleted' ? pill('Thùng rác', 'var(--wa)') : pill('Nháp', 'var(--pd)');
+  }
+  /* Nguồn bài + các nút Xóa / Khôi phục; vẽ lại sau mỗi thao tác đổi nguồn hoặc trạng thái. */
+  function drawHead() {
+    custom = p.status !== 'deleted';
+    dis = custom ? '' : 'disabled';
+    const q = (sel) => ctx.page.querySelector(sel);
+    q('[data-ed-status]').innerHTML = statusPill();
+    q('[data-ed-title]').textContent = p.title;
+    q('[data-ed-save]').hidden = !custom;
+    const hardDelete = p.origin === 'custom' && !p.overridesRepo;
+    q('[data-ed-actions]').innerHTML = custom
+      ? '<button class="btn-line" data-del style="height:32px">Xóa bài</button>'
+      : `<button class="btn-dark" data-restore style="height:32px">Khôi phục</button>${hardDelete ? '<button class="btn-danger" data-purge style="height:32px">Xóa vĩnh viễn</button>' : ''}`;
+    q('[data-ed-note]').innerHTML = !custom
+      ? '<div class="notice">Bài đang ở thùng rác: sinh viên không thấy, không thêm được vào khối hay cuộc thi. Bài nộp cũ vẫn được giữ.</div>'
+      : p.overridesRepo
+        ? '<div class="notice" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><span style="flex:1;min-width:240px">Đang dùng bản đã sửa trên web của bài trong repo. Bản gốc (đề, test) vẫn còn.</span><button class="btn-line" data-revert style="height:30px">Khôi phục bản gốc</button></div>'
+        : p.origin === 'repo'
+          ? '<div class="notice">Bài gốc trong repo. Khi lưu thay đổi đề hoặc test, hệ thống tạo bản sửa trên web; bản gốc vẫn giữ để khôi phục.</div>'
+          : '';
+  }
+  async function act(url, method, msg) {
+    try {
+      p = await api(url, { method });
+      form = pick(p);
+      tests = p.tests.map((t) => ({ ...t }));
+      subs = (p.subtasks || []).map((x) => ({ ...x }));
+      Object.assign(st, { dirty: false, testsDirty: false, subDirty: false });
+      toast(msg);
+      drawHead();
+      drawTab();
+      drawFoot();
+    } catch (err) {
+      toast(err.message);
+    }
   }
   function drawFoot() {
     const dirty = st.dirty || st.testsDirty || st.subDirty;
@@ -66,7 +104,7 @@ export async function renderEditor(ctx, id) {
       : '<span class="faint" style="font-size:14px">Đã lưu tất cả thay đổi</span>';
   }
 
-  const dis = custom ? '' : 'disabled';
+  let dis = custom ? '' : 'disabled';
   const views = {
     info: () => `
       <div style="max-width:760px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px">
@@ -210,6 +248,7 @@ export async function renderEditor(ctx, id) {
     try {
       const r = await api(`/api/admin/problems/${encodeURIComponent(p.id)}/tests`, { method: 'POST', body: { files: payload } });
       tests = r.tests;
+      await refreshOrigin();
       toast(r.added ? `Đã thêm ${r.added} test` : 'Không ghép được cặp .in/.out nào (cần cùng tên)');
       drawTab();
     } catch (err) {
@@ -224,6 +263,13 @@ export async function renderEditor(ctx, id) {
     });
     tests = r.tests;
     st.testsDirty = false;
+    await refreshOrigin();
+  }
+  /* Sửa test bài repo lần đầu tạo bản sửa trên web: lấy lại thông tin để cập nhật ghi chú nguồn. */
+  async function refreshOrigin() {
+    if (p.origin !== 'repo') return;
+    p = { ...p, ...(await api(`/api/admin/problems/${encodeURIComponent(p.id)}`)) };
+    drawHead();
   }
 
   async function save(status) {
@@ -233,8 +279,7 @@ export async function renderEditor(ctx, id) {
       form = pick(p);
       tests = p.tests;
       Object.assign(st, { dirty: false, errors: {} });
-      ctx.page.querySelector('[data-ed-title]').textContent = p.title;
-      ctx.page.querySelector('[data-ed-status]').innerHTML = statusPill();
+      drawHead();
       toast(status === 'pub' ? `Đã xuất bản ${p.id}` : 'Đã lưu nháp');
     } catch (err) {
       st.errors = err.fields || {};
@@ -322,6 +367,34 @@ export async function renderEditor(ctx, id) {
       drawFoot();
       return drawTab();
     }
+    if (t.closest('[data-del]')) {
+      const ok = await confirmDialog({
+        title: `Xóa ${p.id}?`,
+        body: 'Bài được chuyển vào thùng rác và gỡ khỏi mọi khối; sinh viên không thấy nữa. Bài nộp cũ vẫn giữ. Có thể khôi phục từ thùng rác.',
+        cta: 'Chuyển vào thùng rác',
+        danger: true,
+      });
+      if (ok) await act(`/api/admin/problems/${encodeURIComponent(p.id)}`, 'DELETE', `Đã chuyển ${p.id} vào thùng rác`);
+      return;
+    }
+    if (t.closest('[data-restore]')) return act(`/api/admin/problems/${encodeURIComponent(p.id)}/restore`, 'POST', `Đã khôi phục ${p.id} (Nháp)`);
+    if (t.closest('[data-revert]')) {
+      const ok = await confirmDialog({ title: 'Khôi phục bản gốc?', body: 'Mọi chỉnh sửa đề và test trên web của bài này sẽ bị bỏ, dùng lại bản trong repo.', cta: 'Khôi phục bản gốc', danger: true });
+      if (ok) await act(`/api/admin/problems/${encodeURIComponent(p.id)}/revert`, 'POST', 'Đã dùng lại bản gốc trong repo');
+      return;
+    }
+    if (t.closest('[data-purge]')) {
+      const ok = await confirmDialog({ title: `Xóa vĩnh viễn ${p.id}?`, body: 'Đề, test và lời giải mẫu bị xóa hẳn, không khôi phục được. Bài nộp cũ vẫn còn trong lịch sử.', cta: 'Xóa vĩnh viễn', danger: true });
+      if (!ok) return;
+      try {
+        await api(`/api/admin/problems/${encodeURIComponent(p.id)}?permanent=1`, { method: 'DELETE' });
+        toast(`Đã xóa vĩnh viễn ${p.id}`);
+        go('#/probs');
+      } catch (err) {
+        toast(err.message);
+      }
+      return;
+    }
     const saveBtn = t.closest('[data-save]');
     if (saveBtn) return save(saveBtn.dataset.save);
     if (t.closest('[data-check]')) {
@@ -354,6 +427,7 @@ export async function renderEditor(ctx, id) {
   window.addEventListener('beforeunload', onBeforeUnload);
   document.addEventListener('click', onNavClick, true);
 
+  drawHead();
   drawTab();
   drawFoot();
   return () => {

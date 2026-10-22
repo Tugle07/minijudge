@@ -3,7 +3,8 @@ import { diffColor, esc, go, toast } from '../ui.js';
 import { pill, promptDialog } from './kit.js';
 import { renderEditor } from './prob-editor.js';
 
-const statusPill = (s) => (s === 'pub' ? pill('Đã xuất bản', 'var(--ac)') : pill('Nháp', 'var(--pd)'));
+const statusPill = (s) => (s === 'pub' ? pill('Đã xuất bản', 'var(--ac)') : s === 'deleted' ? pill('Thùng rác', 'var(--wa)') : pill('Nháp', 'var(--pd)'));
+const sourceText = (p) => (p.origin === 'repo' ? 'Repo (git)' : p.overridesRepo ? 'Repo · đã sửa trên web' : 'Tạo trên web');
 
 export async function render(ctx) {
   if (ctx.params[0]) return renderEditor(ctx, ctx.params[0]);
@@ -16,7 +17,7 @@ export async function render(ctx) {
     <div class="filters">
       <input class="ctl" data-q placeholder="Tìm theo mã hoặc tên bài" style="flex:1 1 240px;max-width:340px" />
       <select class="ctl" data-set aria-label="Lọc theo khối"><option value="all">Tất cả khối</option><option value="none">Chưa thuộc khối nào</option>${sets.map((s) => `<option value="${esc(s.id)}">${esc(s.short)}</option>`).join('')}</select>
-      <select class="ctl" data-status aria-label="Lọc trạng thái"><option value="all">Mọi trạng thái</option><option value="pub">Đã xuất bản</option><option value="draft">Nháp</option></select>
+      <select class="ctl" data-status aria-label="Lọc trạng thái"><option value="all">Mọi trạng thái</option><option value="pub">Đã xuất bản</option><option value="draft">Nháp</option><option value="deleted">Thùng rác</option></select>
       <span class="count" data-count></span>
     </div>
     <div class="panel" style="overflow:auto"><table class="atable" style="min-width:880px">
@@ -27,7 +28,7 @@ export async function render(ctx) {
     const q = f.q.trim().toLowerCase();
     const rows = problems.filter(
       (p) =>
-        (f.status === 'all' || p.status === f.status) &&
+        (f.status === 'all' ? p.status !== 'deleted' : p.status === f.status) &&
         (f.set === 'all' || (f.set === 'none' ? !p.sets.length : p.sets.some((s) => s.id === f.set))) &&
         (!q || `${p.id} ${p.title}`.toLowerCase().includes(q)),
     );
@@ -37,7 +38,7 @@ export async function render(ctx) {
         (p) => `<tr class="click" data-open="${esc(p.id)}">
           <td class="mono muted">${esc(p.id)}</td><td style="font-weight:500">${esc(p.title)}</td>
           <td class="muted">${p.sets.map((s) => esc(s.short)).join(', ') || '—'}</td>
-          <td class="muted" style="font-size:13px">${p.origin === 'repo' ? 'Repo (git)' : 'Tạo trên web'}</td>
+          <td class="muted" style="font-size:13px">${sourceText(p)}</td>
           <td style="color:${diffColor(p.difficulty)}">${esc(p.difficulty)}</td>
           <td class="num">${p.tests}</td><td class="num">${p.submissions}</td><td class="num">${p.acRate}%</td><td>${statusPill(p.status)}</td></tr>`,
       )

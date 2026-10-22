@@ -47,6 +47,15 @@ export function createProblemStore(customDir) {
   return {
     exists: (id) => fs.existsSync(path.join(dirOf(id), 'problem.txt')),
 
+    /* Bản chỉnh sửa của bài trong repo: chép nguyên thư mục (đề, test, subtasks.json) sang customDir. */
+    copyFrom(srcDir, id) {
+      fs.cpSync(srcDir, dirOf(id), { recursive: true });
+    },
+
+    remove(id) {
+      fs.rmSync(dirOf(id), { recursive: true, force: true });
+    },
+
     create(id) {
       fs.mkdirSync(testsDir(id), { recursive: true });
       writeConfig(id, { title: id, time_ms: 1000, memory_mb: 256, tests: 0, difficulty: 'Trung bình' });

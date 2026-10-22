@@ -113,11 +113,11 @@ export function createCatalog({ db, repoDir, customDir }) {
   catalog.reload = () => {
     const meta = new Map(listMeta.all().map((m) => [m.id, m]));
     const repo = repoIds(repoDir);
+    const custom = customIds(customDir);
+    /* Bài repo đã được Admin chỉnh trên web: dùng bản trong customDir (overridesRepo), bản gốc vẫn còn để khôi phục. */
     const problems = [
-      ...repo.map((id) => loadProblem(repoDir, id, 'repo')),
-      ...customIds(customDir)
-        .filter((id) => !repo.includes(id))
-        .map((id) => loadProblem(customDir, id, 'custom')),
+      ...repo.map((id) => (custom.includes(id) ? { ...loadProblem(customDir, id, 'custom'), overridesRepo: true } : loadProblem(repoDir, id, 'repo'))),
+      ...custom.filter((id) => !repo.includes(id)).map((id) => loadProblem(customDir, id, 'custom')),
     ].map((p) => {
       const m = meta.get(p.id);
       /* Subtask mặc định: Admin đã chỉnh (lưu DB) > soạn kèm bài (subtasks.json) > một subtask gồm toàn bộ test. */

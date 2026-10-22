@@ -131,6 +131,34 @@ describe('Admin', () => {
     assert.fail('rejudge timeout');
   });
 
+  test('sửa bài trong repo trên web, khôi phục bản gốc; xóa vào thùng rác, khôi phục, xóa vĩnh viễn', async () => {
+    const orig = (await admin('/api/admin/problems/P02')).data;
+    assert.equal(orig.origin, 'repo');
+    const edited = await admin('/api/admin/problems/P02', { method: 'PUT', body: { title: 'Tên mới', statement: orig.statement, status: 'pub' } });
+    assert.equal(edited.data.origin, 'custom');
+    assert.equal(edited.data.overridesRepo, true);
+    assert.equal(edited.data.testCount, orig.testCount);
+    assert.equal((await student('/api/problems/P02')).data.title, 'Tên mới');
+    const reverted = await admin('/api/admin/problems/P02/revert', { method: 'POST' });
+    assert.equal(reverted.data.origin, 'repo');
+    assert.equal(reverted.data.title, orig.title);
+
+    assert.equal((await admin('/api/admin/problems/X99?permanent=1', { method: 'DELETE' })).status, 409, 'phải vào thùng rác trước');
+    const trashed = await admin('/api/admin/problems/X99', { method: 'DELETE' });
+    assert.equal(trashed.data.status, 'deleted');
+    assert.deepEqual(trashed.data.sets, []);
+    assert.equal((await student('/api/problems/X99')).status, 404);
+    assert.equal((await admin('/api/admin/problems/X99', { method: 'PUT', body: { title: 'x' } })).status, 409);
+    assert.equal((await admin('/api/admin/problems/X99/restore', { method: 'POST' })).data.status, 'draft');
+    await admin('/api/admin/problems/X99', { method: 'DELETE' });
+    assert.equal((await admin('/api/admin/problems/X99?permanent=1', { method: 'DELETE' })).status, 200);
+    assert.equal((await admin('/api/admin/problems/X99')).status, 404);
+
+    await admin('/api/admin/problems/P03', { method: 'DELETE' });
+    assert.equal((await admin('/api/admin/problems/P03?permanent=1', { method: 'DELETE' })).status, 400, 'bài repo không xóa vĩnh viễn');
+    assert.equal((await admin('/api/admin/problems/P03/restore', { method: 'POST' })).data.status, 'draft');
+  });
+
   test('khóa tài khoản, đặt lại mật khẩu, tắt đăng ký', async () => {
     const users = (await admin('/api/admin/users')).data;
     const sv = users.find((u) => u.username === 'sv_a');

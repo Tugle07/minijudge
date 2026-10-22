@@ -19,6 +19,7 @@ export async function render(ctx) {
 
   async function load() {
     [sets, problems] = await Promise.all([api('/api/admin/sets'), api('/api/admin/problems')]);
+    problems = problems.filter((p) => p.status !== 'deleted');
     draw();
   }
 

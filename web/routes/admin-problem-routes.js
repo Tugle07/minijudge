@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { Router } from 'express';
 import express from 'express';
 
@@ -5,8 +7,9 @@ import { normalizeSubtasks } from '../lib/contests.js';
 
 const NEW_ID_RE = /^[A-Z][A-Z0-9_]{1,14}$/;
 
-/* Quản lý bài: bài trong repo chỉ đổi được trạng thái/nhãn/lời giải (nội dung sửa qua git);
- * bài custom (tạo trên web) sửa được toàn bộ: thông tin, đề, gợi ý, test. */
+/* Quản lý bài (thêm / xem / sửa / xóa). Bài trong repo sửa được trên web: lần sửa nội dung hoặc test đầu tiên
+ * chép bài sang customDir rồi sửa bản đó (bản gốc giữ nguyên để khôi phục). Xóa là chuyển vào thùng rác
+ * (status = 'deleted', gỡ khỏi các khối); bài tạo trên web xóa vĩnh viễn được từ thùng rác. */
 export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats }) {
   const r = Router();
   r.use(auth.requireAdmin);
@@ -15,6 +18,21 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
     INSERT INTO problem_meta (id, status, tags, solution, updated_at) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET status = excluded.status, tags = excluded.tags, solution = excluded.solution, updated_at = excluded.updated_at`);
   const subCounts = db.prepare('SELECT problem_id, COUNT(*) AS n FROM submissions GROUP BY problem_id');
+  const setRows = db.prepare('SELECT id, data FROM problem_sets');
+  const saveSet = db.prepare('UPDATE problem_sets SET data = ? WHERE id = ?');
+  const openContests = db.prepare(
+    `SELECT c.title FROM contest_problems cp JOIN contests c ON c.id = cp.contest_id
+     WHERE cp.problem_id = ? AND (c.status != 'published' OR c.end_at > ?)`,
+  );
+  const deleteMeta = db.prepare('DELETE FROM problem_meta WHERE id = ?');
+
+  /* Bài repo chưa có bản chỉnh: chép sang customDir trước khi sửa nội dung/test. */
+  const editable = (p) => {
+    if (p.origin !== 'repo') return p;
+    store.copyFrom(path.join(catalog.repoDir, p.id), p.id);
+    catalog.reload();
+    return catalog.problemMap.get(p.id);
+  };
 
   const find = (req, res) => {
     const p = catalog.problemMap.get(req.params.id);
@@ -24,6 +42,7 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
   const detail = (p) => ({
     id: p.id,
     origin: p.origin,
+    overridesRepo: Boolean(p.overridesRepo),
     title: p.title,
     timeMs: p.timeMs,
     memoryMb: p.memoryMb,
@@ -51,6 +70,7 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
           id: p.id,
           title: p.title,
           origin: p.origin,
+          overridesRepo: Boolean(p.overridesRepo),
           difficulty: p.difficulty,
           status: p.status,
           tests: p.tests,
@@ -80,9 +100,18 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
 
   /* Lưu thông tin + đề + lời giải; status = 'pub' để xuất bản, 'draft' để lưu nháp. */
   r.put('/problems/:id', (req, res) => {
-    const p = find(req, res);
+    let p = find(req, res);
     if (!p) return;
+    if (p.status === 'deleted') return res.status(409).json({ error: 'Bài đang ở thùng rác — khôi phục trước khi sửa' });
     const b = req.body ?? {};
+    const changed =
+      (typeof b.title === 'string' && b.title.trim() !== p.title) ||
+      (typeof b.statement === 'string' && b.statement !== p.statement) ||
+      (typeof b.hint === 'string' && b.hint.trim() !== p.hint) ||
+      (b.timeMs !== undefined && Number(b.timeMs) !== p.timeMs) ||
+      (b.memoryMb !== undefined && Number(b.memoryMb) !== p.memoryMb) ||
+      (typeof b.difficulty === 'string' && b.difficulty !== p.difficulty);
+    if (changed) p = editable(p);
     if (p.origin === 'custom') {
       if (typeof b.title !== 'string' || !b.title.trim()) return res.status(400).json({ error: 'Nhập tên bài', fields: { title: 'Nhập tên bài' } });
       store.saveMeta(p.id, {
@@ -128,23 +157,67 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
   });
 
   r.post('/problems/:id/tests', express.json({ limit: '40mb' }), (req, res) => {
-    const p = find(req, res);
+    let p = find(req, res);
     if (!p) return;
-    if (p.origin !== 'custom') return res.status(400).json({ error: 'Test của bài trong repo được quản lý qua git' });
+    p = editable(p);
     const added = store.addTests(p.id, Array.isArray(req.body?.files) ? req.body.files : []);
     catalog.reload();
     res.json({ added, tests: store.listTests(p.id) });
   });
 
   r.put('/problems/:id/tests', (req, res) => {
-    const p = find(req, res);
+    let p = find(req, res);
     if (!p) return;
-    if (p.origin !== 'custom') return res.status(400).json({ error: 'Test của bài trong repo được quản lý qua git' });
     const { order, samples } = req.body ?? {};
     if (!Array.isArray(order) || !Array.isArray(samples)) return res.status(400).json({ error: 'Yêu cầu không hợp lệ' });
+    p = editable(p);
     store.reorderTests(p.id, order, samples);
     catalog.reload();
     res.json({ tests: store.listTests(p.id) });
+  });
+
+  /* Xóa: chuyển vào thùng rác và gỡ khỏi mọi khối. Không xóa khi bài đang nằm trong cuộc thi chưa kết thúc. */
+  r.delete('/problems/:id', (req, res) => {
+    const p = find(req, res);
+    if (!p) return;
+    const busy = openContests.all(p.id, Date.now()).map((c) => c.title);
+    if (busy.length) return res.status(409).json({ error: `Bài đang dùng trong cuộc thi chưa kết thúc: ${busy.join(', ')}. Gỡ bài khỏi cuộc thi trước.` });
+    if (req.query.permanent === '1') {
+      if (p.status !== 'deleted') return res.status(409).json({ error: 'Chuyển bài vào thùng rác trước khi xóa vĩnh viễn' });
+      if (p.origin !== 'custom' || p.overridesRepo) return res.status(400).json({ error: 'Bài trong repo không xóa vĩnh viễn được, chỉ để trong thùng rác' });
+      store.remove(p.id);
+      deleteMeta.run(p.id);
+      catalog.reload();
+      return res.json({ ok: true, removed: true });
+    }
+    for (const row of setRows.all()) {
+      const data = JSON.parse(row.data);
+      if (Array.isArray(data.problems) && data.problems.includes(p.id)) {
+        saveSet.run(JSON.stringify({ ...data, problems: data.problems.filter((x) => x !== p.id) }), row.id);
+      }
+    }
+    upsertMeta.run(p.id, 'deleted', p.tags, p.solution, Date.now());
+    catalog.reload();
+    res.json(detail(catalog.problemMap.get(p.id)));
+  });
+
+  /* Khôi phục từ thùng rác (về Nháp, Admin tự thêm lại vào khối). */
+  r.post('/problems/:id/restore', (req, res) => {
+    const p = find(req, res);
+    if (!p) return;
+    upsertMeta.run(p.id, p.status === 'deleted' ? 'draft' : p.status, p.tags, p.solution, Date.now());
+    catalog.reload();
+    res.json(detail(catalog.problemMap.get(p.id)));
+  });
+
+  /* Bỏ bản chỉnh trên web, dùng lại đề và test gốc trong repo. */
+  r.post('/problems/:id/revert', (req, res) => {
+    const p = find(req, res);
+    if (!p) return;
+    if (!p.overridesRepo) return res.status(400).json({ error: 'Bài này chưa có bản chỉnh sửa' });
+    store.remove(p.id);
+    catalog.reload();
+    res.json(detail(catalog.problemMap.get(p.id)));
   });
 
   /* Chạy lời giải mẫu với toàn bộ test (không lưu thành bài nộp). */

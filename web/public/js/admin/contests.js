@@ -45,6 +45,7 @@ async function list(ctx) {
   let problems = [];
   async function load() {
     [contests, problems] = await Promise.all([api('/api/admin/contests'), api('/api/admin/problems')]);
+    problems = problems.filter((p) => p.status !== 'deleted');
     draw();
   }
   function draw() {
