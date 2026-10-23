@@ -165,6 +165,45 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
     res.json({ added, tests: store.listTests(p.id) });
   });
 
+  /* Đọc một test (toàn bộ nội dung, không bị cắt) để Admin chỉnh sửa. */
+  r.get('/problems/:id/tests/:n', (req, res) => {
+    const p = find(req, res);
+    if (!p) return;
+    try {
+      res.json(store.readTest(p.id, Number(req.params.n), p.root));
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  /* Ghi lại một test đã có. */
+  r.put('/problems/:id/tests/:n', express.json({ limit: '20mb' }), (req, res) => {
+    let p = find(req, res);
+    if (!p) return;
+    p = editable(p);
+    try {
+      store.writeTest(p.id, Number(req.params.n), req.body ?? {});
+      catalog.reload();
+      res.json({ tests: store.listTests(p.id) });
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
+  /* Thêm một test mới (gõ trực tiếp input/output, không cần kéo file). */
+  r.post('/problems/:id/tests/new', express.json({ limit: '20mb' }), (req, res) => {
+    let p = find(req, res);
+    if (!p) return;
+    p = editable(p);
+    try {
+      const n = store.appendTest(p.id, req.body ?? {});
+      catalog.reload();
+      res.json({ n, tests: store.listTests(p.id) });
+    } catch (e) {
+      res.status(e.status || 500).json({ error: e.message });
+    }
+  });
+
   r.put('/problems/:id/tests', (req, res) => {
     let p = find(req, res);
     if (!p) return;

@@ -184,3 +184,9 @@
 .tp-sum b { color: var(--fg); font-family: var(--font-code); font-size: 16px; }
 .tp-sum.err { color: var(--wa); }
 .tp-warn { color: var(--tle); font-weight: 600; }
+
+/* Hộp sửa test rộng hơn hộp đổi mật khẩu, hai cột input/output. */
+.pf-dialog.test-dialog { width: min(880px, calc(100vw - 32px)); }
+/* Ô Input/Output trong bảng test có thể bấm để sửa — đổi nền khi rê chuột. */
+.test-cell:hover pre { background: var(--bg3); }
+.test-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }

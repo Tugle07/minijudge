@@ -120,6 +120,42 @@ export function createProblemStore(customDir) {
       return pairs.length;
     },
 
+    /* Đọc toàn bộ input/output của 1 test — không bị cắt 400 ký tự như `listTests`. */
+    readTest(id, n, root = customDir) {
+      const dir = path.join(root, id, 'tests');
+      if (!fs.existsSync(path.join(dir, `${n}.in`))) throw Object.assign(new Error('Không tìm thấy test'), { status: 404 });
+      return {
+        input: fs.readFileSync(path.join(dir, `${n}.in`), 'utf8'),
+        output: fs.existsSync(path.join(dir, `${n}.out`)) ? fs.readFileSync(path.join(dir, `${n}.out`), 'utf8') : '',
+      };
+    },
+
+    /* Ghi lại input/output của 1 test đã có. */
+    writeTest(id, n, { input, output }) {
+      const dir = testsDir(id);
+      if (!fs.existsSync(path.join(dir, `${n}.in`))) throw Object.assign(new Error('Test không tồn tại'), { status: 404 });
+      if (typeof input !== 'string' || typeof output !== 'string') throw Object.assign(new Error('Thiếu input/output'), { status: 400 });
+      if (Buffer.byteLength(input) > MAX_TEST_BYTES || Buffer.byteLength(output) > MAX_TEST_BYTES) {
+        throw Object.assign(new Error('Input hoặc output quá 8 MB'), { status: 400 });
+      }
+      fs.writeFileSync(path.join(dir, `${n}.in`), input);
+      fs.writeFileSync(path.join(dir, `${n}.out`), output);
+      this.saveMeta(id, {});
+    },
+
+    /* Thêm một test mới (nối vào cuối), nội dung do Admin gõ hoặc để trống. */
+    appendTest(id, { input = '', output = '' } = {}) {
+      if (Buffer.byteLength(input) > MAX_TEST_BYTES || Buffer.byteLength(output) > MAX_TEST_BYTES) {
+        throw Object.assign(new Error('Input hoặc output quá 8 MB'), { status: 400 });
+      }
+      fs.mkdirSync(testsDir(id), { recursive: true });
+      const n = countTests(id) + 1;
+      fs.writeFileSync(path.join(testsDir(id), `${n}.in`), input);
+      fs.writeFileSync(path.join(testsDir(id), `${n}.out`), output);
+      this.saveMeta(id, {});
+      return n;
+    },
+
     /* order: danh sách số test cũ theo thứ tự mới (test bị bỏ = xóa); samples: số test cũ là ví dụ. */
     reorderTests(id, order, samples) {
       const dir = testsDir(id);

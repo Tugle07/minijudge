@@ -138,15 +138,16 @@ export async function renderEditor(ctx, id) {
             (t, i) => `<div class="test-grid order-row" style="height:auto;padding:10px 14px" ${custom ? 'draggable="true"' : ''} data-idx="${i}">
               <button class="grip" aria-label="Kéo để sắp xếp (Alt + ↑/↓)" ${custom ? '' : 'disabled'}>⋮⋮</button>
               <span class="mono" style="font-weight:500;line-height:28px">${String(i + 1).padStart(2, '0')}</span>
-              <div style="min-width:0;display:flex;flex-direction:column;gap:3px"><pre>${esc(t.input)}</pre><span class="faint" style="font-size:12px">${t.inSize}</span></div>
-              <div style="min-width:0;display:flex;flex-direction:column;gap:3px"><pre>${esc(t.output)}</pre><span class="faint" style="font-size:12px">${t.outSize}</span></div>
+              <div class="test-cell" ${custom ? `role="button" tabindex="0" title="Bấm để sửa test ${i + 1}" data-edittest="${i + 1}"` : ''} style="min-width:0;display:flex;flex-direction:column;gap:3px${custom ? ';cursor:pointer' : ''}"><pre>${esc(t.input)}</pre><span class="faint" style="font-size:12px">${t.inSize}</span></div>
+              <div class="test-cell" ${custom ? `role="button" tabindex="0" title="Bấm để sửa test ${i + 1}" data-edittest="${i + 1}"` : ''} style="min-width:0;display:flex;flex-direction:column;gap:3px${custom ? ';cursor:pointer' : ''}"><pre>${esc(t.output)}</pre><span class="faint" style="font-size:12px">${t.outSize}</span></div>
               <label style="display:flex;align-items:center;gap:8px;height:28px;font-size:14px;cursor:pointer"><input type="checkbox" data-sample="${i}" ${t.sample ? 'checked' : ''} ${dis} style="width:16px;height:16px;accent-color:var(--fg)" />Ví dụ</label>
               ${custom ? `<button class="icon-x" data-deltest="${i}" aria-label="Xóa test">×</button>` : '<span></span>'}
             </div>`,
           )
           .join('')}</div>
         ${tests.length ? '' : '<div class="empty" style="padding:36px">Chưa có test nào. Tải file lên ở khung phía trên.</div>'}
-      </div>`,
+      </div>
+      ${custom ? '<div style="display:flex;gap:8px;align-items:center"><button class="btn-line" data-newtest>+ Thêm test mới (gõ trực tiếp)</button><span class="faint" style="font-size:13px">hoặc kéo thả file ở khung trên để nhập hàng loạt</span></div>' : ''}`,
     subtasks: () => {
       const n = p.testCount || tests.length;
       const total = subs.reduce((a, s) => a + (Number(s.points) || 0), 0);
@@ -265,6 +266,66 @@ export async function renderEditor(ctx, id) {
     st.testsDirty = false;
     await refreshOrigin();
   }
+  /* Mở hộp sửa 1 test (n = số test, hoặc null để thêm test mới). Hai textarea input/output. */
+  async function openTestEditor(n) {
+    if (st.testsDirty) await saveTests();  /* lưu thứ tự / sample đang có trước khi gọi API đọc test */
+    let input = '', output = '';
+    const adding = n == null;
+    if (!adding) {
+      try {
+        const data = await api(`/api/admin/problems/${encodeURIComponent(p.id)}/tests/${n}`);
+        input = data.input ?? '';
+        output = data.output ?? '';
+      } catch (err) {
+        toast(err.message);
+        return;
+      }
+    }
+    const dialog = document.createElement('dialog');
+    dialog.className = 'pf-dialog test-dialog';
+    dialog.innerHTML = `
+      <form class="form" style="gap:14px" novalidate>
+        <b style="font-size:17px">${adding ? 'Thêm test mới' : `Sửa test #${String(n).padStart(2, '0')}`}</b>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:min(720px, 90vw)">
+          <label class="afield"><span>Input (nội dung file <code>${n ?? '…'}.in</code>)</span>
+            <textarea class="input mono" data-tf="input" spellcheck="false" style="height:220px;padding:10px;font-size:13px;line-height:1.5;white-space:pre"></textarea></label>
+          <label class="afield"><span>Output (nội dung file <code>${n ?? '…'}.out</code>)</span>
+            <textarea class="input mono" data-tf="output" spellcheck="false" style="height:220px;padding:10px;font-size:13px;line-height:1.5;white-space:pre"></textarea></label>
+        </div>
+        <span class="faint" style="font-size:12.5px">Nội dung được so khớp theo từng token (bỏ qua khoảng trắng cuối dòng). Giới hạn 8 MB mỗi ô.</span>
+        <div class="pf-dialog-actions">
+          <button class="btn" type="button" data-tcancel>Hủy</button>
+          <button class="btn-primary" type="submit" data-tsave>${adding ? 'Thêm test' : 'Lưu test'}</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dialog);
+    dialog.querySelector('[data-tf="input"]').value = input;
+    dialog.querySelector('[data-tf="output"]').value = output;
+    dialog.showModal();
+    const close = () => (dialog.close(), dialog.remove());
+    dialog.querySelector('[data-tcancel]').addEventListener('click', close);
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
+    dialog.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        input: dialog.querySelector('[data-tf="input"]').value,
+        output: dialog.querySelector('[data-tf="output"]').value,
+      };
+      try {
+        const r = adding
+          ? await api(`/api/admin/problems/${encodeURIComponent(p.id)}/tests/new`, { method: 'POST', body })
+          : await api(`/api/admin/problems/${encodeURIComponent(p.id)}/tests/${n}`, { method: 'PUT', body });
+        tests = r.tests;
+        await refreshOrigin();
+        toast(adding ? `Đã thêm test ${String(r.n).padStart(2, '0')}` : `Đã lưu test ${String(n).padStart(2, '0')}`);
+        close();
+        drawTab();
+      } catch (err) {
+        toast(err.message);
+      }
+    });
+  }
+
   /* Sửa test bài repo lần đầu tạo bản sửa trên web: lấy lại thông tin để cập nhật ghi chú nguồn. */
   async function refreshOrigin() {
     if (p.origin !== 'repo') return;
@@ -345,6 +406,9 @@ export async function renderEditor(ctx, id) {
       drawFoot();
       return drawTab();
     }
+    const edit = t.closest('[data-edittest]');
+    if (edit) return openTestEditor(Number(edit.dataset.edittest));
+    if (t.closest('[data-newtest]')) return openTestEditor(null);
     if (t.closest('[data-subadd]')) return subs.push({ name: `Subtask ${subs.length + 1}`, tests: '', points: 0, note: '' }), markSubDirty(), drawTab();
     const subDel = t.closest('[data-subdel]');
     if (subDel) return subs.splice(Number(subDel.dataset.subdel), 1), markSubDirty(), drawTab();
