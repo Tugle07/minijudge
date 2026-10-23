@@ -118,7 +118,7 @@ export async function mountEditor(container, { value, onChange, onSubmit, onRun,
           );
           return report(diags);
         },
-        { delay: 300, needsRefresh: (update) => update.selectionSet && !update.docChanged },
+        { delay: 0, needsRefresh: (update) => update.selectionSet && !update.docChanged },
       )
     : [];
 

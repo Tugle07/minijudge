@@ -89,7 +89,7 @@ if (process.env.BACKUP !== '0') scheduleBackups(db, path.join(DATA_DIR, 'backups
 const authLimit = createRateLimit({ windowMs: 15 * 60_000, max: 20, message: 'Thử quá nhiều lần, đợi 15 phút rồi thử lại.' });
 const submitLimit = createRateLimit({ windowMs: 60_000, max: 6, message: 'Nộp quá nhanh, đợi 1 phút nhé' });
 const runLimit = createRateLimit({ windowMs: 60_000, max: 30, message: 'Chạy thử quá nhanh, đợi một chút nhé' });
-const checkLimit = createRateLimit({ windowMs: 60_000, max: 40, message: 'Kiểm tra cú pháp quá nhanh' });
+const checkLimit = createRateLimit({ windowMs: 60_000, max: 240, message: 'Kiểm tra cú pháp quá nhanh' });
 
 for (const { id } of db.prepare("SELECT id FROM submissions WHERE verdict = 'PENDING' ORDER BY id").all()) {
   queue.push(id);
