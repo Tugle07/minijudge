@@ -46,7 +46,7 @@ body {
 .btn-primary, .btn-submit, .btn-dark, .btn-run-all, .btn.btn-go {
   border: var(--bw) solid var(--ink); box-shadow: var(--hard-sm); transition: transform .08s, box-shadow .08s, filter .12s;
 }
-.btn-primary:hover, .btn-submit:hover, .btn-dark:hover, .btn-run-all:hover, .btn.btn-go:hover { transform: translate(-1px, -1px); box-shadow: var(--hard); filter: none; }
+.btn-primary:hover, .btn-submit:hover, .btn-dark:hover, .btn-run-all:hover, .btn.btn-go:hover { box-shadow: var(--hard); filter: none; }
 .btn-primary:active, .btn-submit:active, .btn-dark:active, .btn-run-all:active, .btn.btn-go:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
 .btn-primary:disabled, .btn-submit:disabled, .btn-dark:disabled { transform: none; box-shadow: none; }
 .btn, .btn-line, .file-btn, .nav-btn { border-color: var(--ink); border-width: var(--bw); }
@@ -57,9 +57,9 @@ body {
 .set-card, .step-card, .contest-card, .exam-tab, .road-seg .road-track {
   border: var(--bw) solid var(--ink);
 }
-.set-card, .step-card, .contest-card { box-shadow: var(--hard); transition: transform .12s ease-out, box-shadow .12s ease-out; }
-.set-card:hover, .step-card:hover, .contest-card:hover { transform: translate(-2px, -2px); box-shadow: var(--hard-lg); border-color: var(--ink); }
-.set-card:active, .step-card:active, .contest-card:active { transform: translate(1px, 1px); box-shadow: var(--hard-sm); }
+.set-card, .step-card, .contest-card { box-shadow: var(--hard); transition: box-shadow .12s ease-out; }
+.set-card:hover, .step-card:hover, .contest-card:hover { box-shadow: var(--hard-lg); border-color: var(--ink); }
+.set-card:active, .step-card:active, .contest-card:active { box-shadow: var(--hard-sm); }
 .set-card.done { background: color-mix(in oklch, var(--ac) 7%, var(--bg2)); }
 .step.current .step-card { border-color: var(--ink); box-shadow: 3px 3px 0 var(--accent), var(--hard-lg); }
 .step-dot { border: var(--bw) solid var(--ink); }
