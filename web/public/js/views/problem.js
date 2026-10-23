@@ -115,10 +115,8 @@ export async function render(ctx) {
           <span data-cursor>Dòng 1, cột 1</span>
           <label class="assist-toggle wide-only" title="Gợi ý từ khóa và hàm C khi gõ"><input type="checkbox" data-assist role="switch" /><span class="sw" aria-hidden="true"></span><span>Gợi ý code</span></label>
           <span class="diag-pills" aria-label="Kết quả kiểm tra cú pháp">
-            <span class="diag-pill checking" data-diag-check hidden>Đang kiểm tra…</span>
-            <span class="diag-pill ok" data-diag-ok hidden><span class="diag-i">✓</span>Cú pháp tốt</span>
-            <span class="diag-pill err" data-diag-err title="Số lỗi cú pháp" hidden><span class="diag-i">✕</span><b>0</b></span>
-            <span class="diag-pill warn" data-diag-warn title="Số cảnh báo" hidden><span class="diag-i">!</span><b>0</b></span>
+            <span class="diag-pill err" data-diag-err title="Số lỗi cú pháp"><span class="diag-i" aria-hidden="true">⊘</span><b data-diag-err-n>0</b></span>
+            <span class="diag-pill warn" data-diag-warn title="Số cảnh báo"><span class="diag-i" aria-hidden="true">△</span><b data-diag-warn-n>0</b></span>
           </span>
           <span class="keys wide-only" style="margin-left:auto;font-size:12px;color:var(--fg3)"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> nộp · <kbd>Ctrl</kbd>+<kbd>'</kbd> chạy</span>
         </div>
@@ -183,16 +181,15 @@ export async function render(ctx) {
       }
     },
     onLint: (s) => {
-      const show = (sel, on, n) => {
-        const el = $(sel);
-        if (!el) return;
-        el.hidden = !on;
-        if (on && n != null && el.querySelector('b')) el.querySelector('b').textContent = n;
-      };
-      show('[data-diag-check]', Boolean(s.checking));
-      show('[data-diag-err]', !s.checking && Number(s.errors) > 0, s.errors);
-      show('[data-diag-warn]', !s.checking && !s.errors && Number(s.warnings) > 0, s.warnings);
-      show('[data-diag-ok]', !s.checking && !s.offline && !s.errors && !s.warnings);
+      const err = $('[data-diag-err]');
+      const warn = $('[data-diag-warn]');
+      if (!err || !warn) return;
+      const en = Number(s.errors) || 0;
+      const wn = Number(s.warnings) || 0;
+      err.querySelector('[data-diag-err-n]').textContent = en;
+      warn.querySelector('[data-diag-warn-n]').textContent = wn;
+      err.classList.toggle('on', en > 0);
+      warn.classList.toggle('on', wn > 0);
     },
   });
 

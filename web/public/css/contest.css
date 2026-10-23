@@ -145,10 +145,10 @@ body.exam-mode { overflow: hidden; }
 .diag-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; line-height: 1; }
 .diag-pill .diag-i { font-weight: 700; }
 .diag-pill b { font-family: var(--font-code); font-weight: 600; }
-.diag-pill.err { background: color-mix(in srgb, var(--wa) 15%, transparent); color: var(--wa); }
-.diag-pill.warn { background: color-mix(in srgb, var(--tle) 15%, transparent); color: var(--tle); }
-.diag-pill.ok { background: color-mix(in srgb, var(--ac) 15%, transparent); color: var(--ac); }
-.diag-pill.checking { color: var(--fg3); }
+/* Giống thanh dưới của VS Code: luôn hiện cả 2 ô (lỗi · cảnh báo). Khi đếm = 0 thì mờ, > 0 thì sáng màu. */
+.diag-pill { color: var(--fg3); background: transparent; cursor: default; }
+.diag-pill.err.on { background: color-mix(in srgb, var(--wa) 15%, transparent); color: var(--wa); }
+.diag-pill.warn.on { background: color-mix(in srgb, var(--tle) 15%, transparent); color: var(--tle); }
 /* inp.txt / out.txt: hai cột cạnh nhau; cả hai đều có thể kéo tăng chiều cao. */
 .exam-io { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .io-col { display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg2); overflow: hidden; }
