@@ -118,7 +118,7 @@ export async function mountEditor(container, { value, onChange, onSubmit, onRun,
           );
           return report(diags);
         },
-        { delay: 0, needsRefresh: (update) => update.selectionSet && !update.docChanged },
+        { delay: 150, needsRefresh: (update) => update.selectionSet && !update.docChanged },
       )
     : [];
 
@@ -172,6 +172,15 @@ export async function mountEditor(container, { value, onChange, onSubmit, onRun,
     '.cm-foldPlaceholder': { backgroundColor: 'var(--bg3)', border: 'none', color: 'var(--fg2)' },
     '.cm-diagnostic-error': { borderLeftColor: 'var(--wa)' },
     '.cm-diagnostic-warning': { borderLeftColor: 'var(--tle)' },
+    /* Dành sẵn chỗ cho cột đánh dấu lỗi, để con trỏ không bị nhảy khi lỗi vừa xuất hiện. */
+    '.cm-gutter.cm-lint-marker-gutter': { minWidth: '18px', width: '18px' },
+    '.cm-lint-marker': { width: '14px', height: '14px', margin: '2px' },
+    /* Dấu lỗi: hình tròn đỏ. Cảnh báo: tam giác vàng. */
+    '.cm-lint-marker-error': { backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23e5484d'/><path d='M5 5l6 6M11 5l-6 6' stroke='white' stroke-width='2' fill='none'/></svg>")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', content: '""', display: 'block' },
+    '.cm-lint-marker-warning': { backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M8 1 L15 14 L1 14 Z' fill='%23f5a623' stroke='%23b67b00' stroke-width='0.5'/><path d='M8 6 L8 10' stroke='white' stroke-width='2' stroke-linecap='round'/><circle cx='8' cy='12' r='1' fill='white'/></svg>")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', content: '""', display: 'block' },
+    /* Gạch chân răng cưa cho đoạn code bị lỗi/cảnh báo. */
+    '.cm-lintRange-error': { backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 3' width='6' height='3'><path d='M0 3 L1.5 1 L3 3 L4.5 1 L6 3' fill='none' stroke='%23e5484d' stroke-width='1'/></svg>")`, backgroundRepeat: 'repeat-x', backgroundPosition: 'bottom', paddingBottom: '2px' },
+    '.cm-lintRange-warning': { backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 3' width='6' height='3'><path d='M0 3 L1.5 1 L3 3 L4.5 1 L6 3' fill='none' stroke='%23f5a623' stroke-width='1'/></svg>")`, backgroundRepeat: 'repeat-x', backgroundPosition: 'bottom', paddingBottom: '2px' },
   });
 
   let size = 14;
