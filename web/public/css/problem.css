@@ -280,3 +280,8 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent-text); 
 
 @media (max-width: 1199px) { .exam-io { grid-template-columns: 1fr; } }
 @media (max-width: 819px) { .exam-sep { display: none; } }
+
+/* Dải A, B, C… trên đầu trang bài luyện tập — cùng kiểu với phòng thi (exam-rail). */
+.set-rail { margin-top: 8px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--bg2); padding: 10px 14px; }
+.set-rail.exam-rail { border-bottom: 1px solid var(--line); }
+.set-rail .exam-tab.todo { color: var(--fg2); }

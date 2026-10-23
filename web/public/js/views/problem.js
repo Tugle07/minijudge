@@ -13,7 +13,11 @@ const saveDraft = (id, code) => draftSet(`code-${id}`, code);
 
 const MY_LABEL = { ac: ['Bạn đã AC bài này', 'var(--ac)'], tried: ['Bạn đã nộp, chưa AC', 'var(--wa)'] };
 
-/* Điều hướng trong khối: bài trước / sau và dải các bài có màu theo trạng thái của mình. */
+/* Dải A, B, C… trên đầu trang bài tập — thanh điều hướng nhanh như trong phòng thi.
+ * Màu viền: xanh nếu đã AC, cam nếu đã thử chưa AC. Phím tắt Alt + A/B/C… nhảy sang bài tương ứng. */
+function letter(i) {
+  return i < 26 ? String.fromCharCode(65 + i) : `${i + 1}`;
+}
 function setNavHtml(p, set) {
   if (!set) return { top: '', strip: '' };
   const list = set.problems;
@@ -21,15 +25,16 @@ function setNavHtml(p, set) {
   const prev = list[i - 1];
   const next = list[i + 1];
   const go = (x, label) => (x ? `<button class="nav-btn" data-go="#/problem/${encodeURIComponent(x.id)}" title="${esc(x.id)} — ${esc(x.title)}">${label}</button>` : `<button class="nav-btn" disabled>${label}</button>`);
+  const cls = (x) => (x.my === 'ac' ? 'full' : x.my === 'tried' ? 'part' : 'todo');
   return {
     top: i < 0 ? '' : `<div class="prob-nav">${go(prev, '‹ Bài trước')}<span class="mono muted">${i + 1}/${list.length}</span>${go(next, 'Bài sau ›')}</div>`,
     strip: `
-      <div class="set-strip">
-        <div class="set-strip-head"><b>${esc(set.set.title)}</b><span class="muted">${set.set.ac}/${set.set.count} bài đã AC</span></div>
-        <div class="strip">${list
-          .map((x) => `<button class="strip-item ${x.my} ${x.id === p.id ? 'on' : ''}" data-go="#/problem/${encodeURIComponent(x.id)}" title="${esc(x.title)}"><span class="mono">${esc(x.id)}</span><span class="ellipsis">${esc(x.title)}</span></button>`)
-          .join('')}</div>
-      </div>`,
+      <nav class="exam-rail set-rail" aria-label="Danh sách bài trong khối">
+        <span class="rail-count"><b>${list.length} bài</b><small>Đã AC ${set.set.ac}/${set.set.count}</small></span>
+        ${list
+          .map((x, j) => `<button class="exam-tab ${cls(x)} ${x.id === p.id ? 'on' : ''}" data-go="#/problem/${encodeURIComponent(x.id)}" title="${esc(x.id)}. ${esc(x.title)} · Alt + ${letter(j)}" aria-label="Bài ${letter(j)}: ${esc(x.title)}">${letter(j)}</button>`)
+          .join('')}
+      </nav>`,
   };
 }
 
@@ -67,8 +72,7 @@ function statementHtml(p, set) {
     </dl>
     <article class="statement">${renderMarkdown(p.statement)}</article>
     ${samples ? `<div class="samples"><h3 class="section-title">Ví dụ</h3>${samples}</div>` : ''}
-    ${p.hint ? `<div class="hint"><button data-hint aria-expanded="false"><span>Gợi ý</span><span>Xem gợi ý</span></button><div class="hint-body" hidden>${renderMarkdown(p.hint)}</div></div>` : ''}
-    ${nav.strip}`;
+    ${p.hint ? `<div class="hint"><button data-hint aria-expanded="false"><span>Gợi ý</span><span>Xem gợi ý</span></button><div class="hint-body" hidden>${renderMarkdown(p.hint)}</div></div>` : ''}`;
 }
 
 export async function render(ctx) {
@@ -85,7 +89,9 @@ export async function render(ctx) {
     alive: true,
   };
 
+  const nav = setNavHtml(p, set);
   ctx.view.innerHTML = `
+    ${nav.strip}
     <div class="split exam-body" data-split>
       <section class="pane-left exam-left" aria-label="Đề bài"><div class="pane-left-inner">${statementHtml(p, set)}</div></section>
       <div class="exam-sep" data-sep role="separator" aria-orientation="vertical" aria-label="Kéo để chỉnh độ rộng" tabindex="0"></div>
@@ -503,11 +509,30 @@ export async function render(ctx) {
   drawHistory();
   loadHistory();
 
+  /* Alt + A/B/C/… nhảy sang bài tương ứng trong khối, miễn con trỏ không ở trong trình soạn code hay ô nhập. */
+  const onKey = (e) => {
+    if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (!p.set) return;
+    const t = e.target;
+    if (t && t.closest && t.closest('.cm-editor, textarea, input, [contenteditable]')) return;
+    const k = (e.key || '').toUpperCase();
+    if (k.length !== 1 || k < 'A' || k > 'Z') return;
+    const idx = k.charCodeAt(0) - 65;
+    const items = ctx.view.querySelectorAll('.set-rail [data-go]');
+    const btn = items[idx];
+    if (btn) {
+      e.preventDefault();
+      btn.click();
+    }
+  };
+  document.addEventListener('keydown', onKey);
+
   return () => {
     state.alive = false;
     clearTimeout(state.timer);
     clearTimeout(savedTimer);
     editor.destroy?.();
     ctx.view.removeEventListener('click', onClick);
+    document.removeEventListener('keydown', onKey);
   };
 }

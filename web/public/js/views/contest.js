@@ -585,6 +585,21 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
         e.preventDefault();
         const combo = e.key === 'F12' ? 'F12' : `Ctrl+${e.shiftKey ? 'Shift+' : ''}${e.key.toUpperCase()}`;
         violation('devtools_key', combo, `bạn vừa bấm phím ${combo} (mở công cụ trình duyệt, đã bị chặn)`);
+        return;
+      }
+      /* Alt + A/B/C/… nhảy nhanh tới bài tương ứng. Bỏ qua khi con trỏ ở trong trình soạn code hoặc ô nhập. */
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const t = e.target;
+        if (t && t.closest && t.closest('.cm-editor, textarea, input, [contenteditable]')) return;
+        const K = (e.key || '').toUpperCase();
+        if (K.length === 1 && K >= 'A' && K <= 'Z') {
+          const items = ctx.view.querySelectorAll('[data-tabs] [data-label]');
+          const btn = items[K.charCodeAt(0) - 65];
+          if (btn) {
+            e.preventDefault();
+            btn.click();
+          }
+        }
       }
     };
     const onMenu = (e) => {
