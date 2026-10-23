@@ -76,7 +76,7 @@ body.exam-mode { overflow: hidden; }
 /* Khung soạn code: một khối có viền rõ, thanh nút ở trên, trạng thái ở dưới */
 .exam-right { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 10px 12px 0; background: var(--bg); }
 .exam-right .toolbar { border: 1px solid var(--line2); border-bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; background: var(--bg2); }
-.exam-right .editor { min-height: 240px; border: 1px solid var(--line2); border-top-color: var(--line); background: var(--bg2); }
+.exam-right .editor { flex: none; height: var(--editor-h, 42vh); min-height: 160px; max-height: 70vh; border: 1px solid var(--line2); border-top-color: var(--line); background: var(--bg2); }
 .exam-right .editor-status { border: 1px solid var(--line2); border-top: 0; border-radius: 0 0 var(--r-md) var(--r-md); }
 .exam-right .editor:focus-within { border-color: var(--accent); }
 .exam-panel { flex: none; max-height: 38vh; overflow: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -169,3 +169,6 @@ body.exam-mode { overflow: hidden; }
 
 @media (max-width: 1199px) { .exam-io { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .exam-body { flex-direction: column; } .exam-left { width: 100% !important; } .exam-sep { display: none; } }
+.editor-sep { flex: none; height: 8px; cursor: row-resize; position: relative; }
+.editor-sep::before { content: ''; position: absolute; top: 3px; left: 0; right: 0; height: 2px; background: var(--line); transition: background .15s; }
+.editor-sep:hover::before, .editor-sep:focus-visible::before, .editor-sep.dragging::before { background: var(--accent); }

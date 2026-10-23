@@ -210,6 +210,7 @@ export async function render(ctx) {
                 <span class="diag-pill warn" data-diag-warn title="Số cảnh báo" hidden><span class="diag-i">!</span><b>0</b></span>
               </span>
             </div>
+            <div class="editor-sep" data-editor-sep role="separator" aria-orientation="horizontal" aria-label="Kéo xuống để mở rộng khung code" tabindex="0"></div>
             <div class="exam-io">
               <div class="io-col">
                 <div class="io-head"><b>inp.txt</b><span class="io-tools" data-fill-tools></span></div>
@@ -251,6 +252,32 @@ export async function render(ctx) {
       };
       sep.addEventListener('pointermove', onMove);
       sep.addEventListener('pointerup', onUp);
+    });
+
+    /* Thanh ngang dưới khung code: kéo xuống để làm editor cao hơn. */
+    const eSep = $('[data-editor-sep]');
+    const right = ctx.view.querySelector('.exam-right');
+    const savedH = parseFloat(localStorage.getItem('mj-editor-h'));
+    if (savedH > 160 && savedH < innerHeight * 0.75) right.style.setProperty('--editor-h', savedH + 'px');
+    eSep?.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      eSep.setPointerCapture(ev.pointerId);
+      eSep.classList.add('dragging');
+      const ed = right.querySelector('.editor');
+      const start = ev.clientY;
+      const h0 = ed.getBoundingClientRect().height;
+      const onMove = (e) => {
+        const h = Math.max(160, Math.min(innerHeight * 0.75, h0 + (e.clientY - start)));
+        right.style.setProperty('--editor-h', h + 'px');
+      };
+      const onUp = () => {
+        eSep.classList.remove('dragging');
+        eSep.removeEventListener('pointermove', onMove);
+        eSep.removeEventListener('pointerup', onUp);
+        try { localStorage.setItem('mj-editor-h', parseInt(right.style.getPropertyValue('--editor-h')) || 320); } catch {}
+      };
+      eSep.addEventListener('pointermove', onMove);
+      eSep.addEventListener('pointerup', onUp);
     });
 
     /* Báo cho thí sinh biết ngay khi hệ thống ghi nhận vi phạm: nói rõ chuyện gì, lần thứ mấy, và cách xử lý nếu là nhầm lẫn. */
