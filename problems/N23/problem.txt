@@ -1,0 +1,6 @@
+title=Đếm số lần xuất hiện của X
+time_ms=1000
+memory_mb=256
+tests=16
+difficulty=Dễ
+samples=1

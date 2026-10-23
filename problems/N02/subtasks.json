@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "a, h ≤ 100",
+    "tests": "3-10",
+    "points": 50,
+    "note": "Số nhỏ, kết quả chẵn"
+  },
+  {
+    "name": "a, h ≤ 1000",
+    "tests": "11-14",
+    "points": 25,
+    "note": "Kết quả lẻ, kiểm tra format %.2f"
+  },
+  {
+    "name": "a hoặc h cỡ 10^6",
+    "tests": "15-17",
+    "points": 15,
+    "note": "Tích lớn — cần đổi sang double khi chia"
+  }
+]

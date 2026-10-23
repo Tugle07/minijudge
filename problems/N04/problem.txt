@@ -1,0 +1,6 @@
+title=Đổi độ F sang độ C
+time_ms=1000
+memory_mb=256
+tests=17
+difficulty=Dễ
+samples=1,2,3

@@ -1,0 +1,6 @@
+title=Chữ số tận cùng của a mũ b
+time_ms=1000
+memory_mb=256
+tests=18
+difficulty=Khó
+samples=1,2,3

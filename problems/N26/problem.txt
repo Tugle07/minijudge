@@ -1,0 +1,6 @@
+title=Tổng từng hàng của ma trận
+time_ms=1000
+memory_mb=256
+tests=17
+difficulty=Dễ
+samples=1,2

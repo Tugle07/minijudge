@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n ≤ 100",
+    "tests": "3-8",
+    "points": 50,
+    "note": "Bubble sort ổn"
+  },
+  {
+    "name": "n ≤ 2000",
+    "tests": "9-13",
+    "points": 25,
+    "note": "Vẫn O(n²) kịp (~4 triệu phép)"
+  },
+  {
+    "name": "n ≤ 2·10^4",
+    "tests": "14-17",
+    "points": 15,
+    "note": "Bubble gần giới hạn 400 triệu phép — nên dùng qsort"
+  }
+]

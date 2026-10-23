@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "sl ≤ 100, dg ≤ 10^5",
+    "tests": "3-8",
+    "points": 50,
+    "note": ""
+  },
+  {
+    "name": "Tích ≤ 10^12",
+    "tests": "9-13",
+    "points": 25,
+    "note": ""
+  },
+  {
+    "name": "Tích tới 10^15 — bắt buộc long long",
+    "tests": "14-16",
+    "points": 15,
+    "note": ""
+  }
+]

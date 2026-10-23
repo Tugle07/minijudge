@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n, q ≤ 100",
+    "tests": "2-7",
+    "points": 50,
+    "note": "Trâu for cho mỗi truy vấn"
+  },
+  {
+    "name": "n, q ≤ 2000",
+    "tests": "8-12",
+    "points": 25,
+    "note": "O(n*q) sát giới hạn"
+  },
+  {
+    "name": "n, q tới 2·10^5",
+    "tests": "13-16",
+    "points": 15,
+    "note": "Bắt buộc tìm kiếm nhị phân O(q log n)"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-4",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n ≤ 20",
+    "tests": "5-10",
+    "points": 50,
+    "note": "Có thể trâu n! trực tiếp (fit long long với n ≤ 20)"
+  },
+  {
+    "name": "n ≤ 10^6",
+    "tests": "11-15",
+    "points": 25,
+    "note": "Trâu n! tràn — cần công thức Legendre"
+  },
+  {
+    "name": "n ≤ 10^9",
+    "tests": "16-19",
+    "points": 15,
+    "note": "Long long cho p"
+  }
+]

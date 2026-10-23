@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Điểm nguyên 0–10",
+    "tests": "3-8",
+    "points": 50,
+    "note": ""
+  },
+  {
+    "name": "Điểm có 1 chữ số thập phân",
+    "tests": "9-13",
+    "points": 25,
+    "note": ""
+  },
+  {
+    "name": "Số 0 và 10 ở các biên",
+    "tests": "14-16",
+    "points": 15,
+    "note": ""
+  }
+]

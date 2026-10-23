@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "tests": "1-2",
+    "points": 10,
+    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "n, m ≤ 10",
+    "tests": "3-8",
+    "points": 50,
+    "note": ""
+  },
+  {
+    "name": "n, m ≤ 100",
+    "tests": "9-13",
+    "points": 25,
+    "note": ""
+  },
+  {
+    "name": "n, m tới 500",
+    "tests": "14-17",
+    "points": 15,
+    "note": ""
+  }
+]

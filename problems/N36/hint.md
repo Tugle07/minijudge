@@ -1,0 +1,1 @@
+`struct SV { char name[25]; int total, pass; };`. Vòng ngoài duyệt sinh viên, trong duyệt môn, cộng tổng và đếm số đậu. Để tìm người đứng đầu dùng vòng for giữ `best` thỏa 3 tiêu chí (hoặc dùng `qsort` sau khi đã in theo thứ tự nhập).

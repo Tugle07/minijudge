@@ -1,0 +1,6 @@
+title=Rút gọn phân số
+time_ms=1000
+memory_mb=256
+tests=18
+difficulty=Dễ
+samples=1,2,3

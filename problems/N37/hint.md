@@ -1,0 +1,1 @@
+Khai mảng `int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};`. Nếu tháng 2 và năm nhuận thì `days[1] = 29`. Năm nhuận: chia hết cho 400, hoặc chia hết cho 4 nhưng không chia hết cho 100. Tăng `d`. Nếu `d > days[m-1]` thì về 1 và tăng `m`. Nếu `m > 12` thì về 1 và tăng `y`. In với `%02d/%02d/%d`.

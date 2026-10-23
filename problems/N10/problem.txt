@@ -1,0 +1,6 @@
+title=Số Armstrong
+time_ms=1000
+memory_mb=256
+tests=17
+difficulty=Trung bình
+samples=1,2

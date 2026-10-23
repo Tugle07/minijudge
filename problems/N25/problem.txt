@@ -1,0 +1,6 @@
+title=Tạo email sinh viên
+time_ms=1000
+memory_mb=256
+tests=18
+difficulty=Trung bình
+samples=1,2,3

@@ -1,0 +1,1 @@
+Hàm `int tim(int a[], int n, int x)`: `lo = 0, hi = n - 1`. Lặp `while (lo <= hi)`: `mid = (lo + hi) / 2`. Nếu `a[mid] == x` trả về `mid + 1`. Nếu `a[mid] < x` thì `lo = mid + 1`, ngược lại `hi = mid - 1`. Hết vòng chưa thấy thì trả `-1`.

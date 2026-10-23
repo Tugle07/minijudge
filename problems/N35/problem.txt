@@ -1,0 +1,6 @@
+title=Xử lý N mảng số
+time_ms=1000
+memory_mb=256
+tests=16
+difficulty=Trung bình
+samples=1

@@ -1,0 +1,6 @@
+title=Danh thiếp sinh viên
+time_ms=1000
+memory_mb=256
+tests=1
+difficulty=Dễ
+samples=1

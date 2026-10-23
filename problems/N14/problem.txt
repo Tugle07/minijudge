@@ -1,0 +1,6 @@
+title=Dồn số 0 về cuối mảng
+time_ms=1000
+memory_mb=256
+tests=17
+difficulty=Trung bình
+samples=1,2

@@ -1,0 +1,1 @@
+Số 0 tận cùng = số thừa số 5 trong phân tích của $n!$. Công thức Legendre: $\lfloor n/5 \rfloor + \lfloor n/25 \rfloor + \lfloor n/125 \rfloor + \dots$. Dùng vòng `while` nhân biến $p$ lên 5 lần mỗi vòng tới khi $p > n$. Nhớ `long long` vì $n$ tới $10^9$ và $p$ có thể lớn hơn.

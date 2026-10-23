@@ -1,0 +1,1 @@
+Chữ số tận cùng của $a^b$ chỉ phụ thuộc **chữ số tận cùng của $a$** và **$b$**. Các chữ số 0, 1, 5, 6 có chu kỳ 1 (lặp chính nó). Chữ số 4 và 9 có chu kỳ 2. Các chữ số 2, 3, 7, 8 có chu kỳ 4. Khi $b = 0$ kết quả luôn là 1 (quy ước $a^0 = 1$). Nhớ dùng `long long` vì b có thể tới $10^{18}$.

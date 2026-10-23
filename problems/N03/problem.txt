@@ -1,0 +1,6 @@
+title=Điểm trung bình ba môn
+time_ms=1000
+memory_mb=256
+tests=16
+difficulty=Dễ
+samples=1,2
