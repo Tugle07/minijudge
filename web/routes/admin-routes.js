@@ -232,12 +232,22 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
 
   /* ---------- Cài đặt ---------- */
   r.get('/settings', (_req, res) => {
-    res.json({ registerCode: settings.registerCode, allowRegister: settings.allowRegister, banner: settings.banner });
+    res.json({
+      registerCode: settings.registerCode,
+      allowRegister: settings.allowRegister,
+      banner: settings.banner,
+      allowedLangs: settings.allowedLangs,
+    });
   });
 
   r.put('/settings', (req, res) => {
     settings.update(req.body ?? {});
-    res.json({ registerCode: settings.registerCode, allowRegister: settings.allowRegister, banner: settings.banner });
+    res.json({
+      registerCode: settings.registerCode,
+      allowRegister: settings.allowRegister,
+      banner: settings.banner,
+      allowedLangs: settings.allowedLangs,
+    });
   });
 
   return r;

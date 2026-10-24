@@ -13,6 +13,7 @@ export function authRoutes({ db, auth, authLimit, settings, adminUsers }) {
       registerCodeRequired: Boolean(settings.registerCode),
       allowRegister: settings.allowRegister,
       banner: settings.banner,
+      allowedLangs: settings.allowedLangs,
     });
   });
 
@@ -40,20 +41,20 @@ export function authRoutes({ db, auth, authLimit, settings, adminUsers }) {
       .prepare('INSERT INTO users (username, pass_hash, salt, role, created_at) VALUES (?, ?, ?, ?, ?)')
       .run(username, hash, salt, role, Date.now());
     auth.startSession(res, Number(lastInsertRowid));
-    res.status(201).json({ username, role });
+    res.status(201).json({ username, fullName: '', role, avatar: '' });
   });
 
   r.post('/login', authLimit, (req, res) => {
     const { username, password } = req.body ?? {};
     const user =
       typeof username === 'string' &&
-      db.prepare('SELECT id, username, pass_hash, salt, role, locked FROM users WHERE username = ?').get(username);
+      db.prepare('SELECT id, username, pass_hash, salt, role, locked, full_name, avatar FROM users WHERE username = ?').get(username);
     if (!user || typeof password !== 'string' || !verifyPassword(password, user.salt, user.pass_hash)) {
       return res.status(401).json({ error: 'Sai tên đăng nhập hoặc mật khẩu', fields: { pw: 'Sai tên đăng nhập hoặc mật khẩu' } });
     }
     if (user.locked) return res.status(403).json({ error: 'Tài khoản đã bị khóa. Liên hệ lớp trưởng để mở lại.' });
     auth.startSession(res, user.id);
-    res.json({ username: user.username, role: user.role });
+    res.json({ username: user.username, fullName: user.full_name || '', role: user.role, avatar: user.avatar || '' });
   });
 
   r.post('/logout', (req, res) => {
@@ -62,7 +63,16 @@ export function authRoutes({ db, auth, authLimit, settings, adminUsers }) {
   });
 
   r.get('/me', (req, res) => {
-    res.json({ user: req.user ? { username: req.user.username, role: req.user.role } : null });
+    res.json({
+      user: req.user
+        ? {
+            username: req.user.username,
+            fullName: req.user.full_name || '',
+            role: req.user.role,
+            avatar: req.user.avatar || '',
+          }
+        : null,
+    });
   });
 
   return r;

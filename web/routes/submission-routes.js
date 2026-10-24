@@ -15,17 +15,22 @@ function failedSample(row, problem) {
   return { test: testNo, input: problem.samples[k].input, expected: problem.samples[k].output, output: row.fail_output };
 }
 
-export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit, checkLimit }) {
+export function submissionRoutes({ db, catalog, stats, auth, queue, judge, settings, submitLimit, runLimit, checkLimit }) {
   const r = Router();
   r.use(auth.requireUser);
 
   /* Kiểm tra cú pháp khi đang gõ: gcc/g++ -fsyntax-only hoặc python -m py_compile. */
   r.post('/check', checkLimit, async (req, res) => {
-    const { source, lang } = req.body ?? {};
+    const { source, lang: rawLang } = req.body ?? {};
     if (typeof source !== 'string' || Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn không hợp lệ' });
     if (!judge.check) return res.json({ ok: true, log: '' });
+    const allowed = settings?.allowedLangs || ['c'];
+    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
+      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
+      : 'c';
+    const lang = allowed.includes(requested) ? requested : (allowed[0] || 'c');
     try {
-      const { ok, log } = await judge.check(source, lang || 'c');
+      const { ok, log } = await judge.check(source, lang);
       res.json({ ok: Boolean(ok), log: log || '' });
     } catch {
       res.json({ ok: false, log: '', busy: true });
@@ -33,15 +38,23 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
   });
 
   r.post('/run', runLimit, async (req, res) => {
-    const { problemId, source, input, lang } = req.body ?? {};
+    const { problemId, source, input, lang: rawLang } = req.body ?? {};
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
     if (typeof input !== 'string' || Buffer.byteLength(input) > MAX_INPUT_BYTES) {
       return res.status(400).json({ error: 'Input tối đa 64KB' });
     }
+    const allowed = settings?.allowedLangs || ['c'];
+    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
+      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
+      : 'c';
+    if (!allowed.includes(requested)) {
+      return res.status(400).json({ error: `Ngôn ngữ ${requested.toUpperCase()} hiện chưa được bật trên hệ thống` });
+    }
+    const lang = requested;
     const p = catalog.problemMap.get(problemId);
     try {
-      const result = await judge.run(source, input.endsWith('\n') ? input : `${input}\n`, p?.timeMs ?? 2000, p?.memoryMb ?? 256, lang || 'c');
+      const result = await judge.run(source, input.endsWith('\n') ? input : `${input}\n`, p?.timeMs ?? 2000, p?.memoryMb ?? 256, lang);
       res.json(result);
     } catch (e) {
       console.error('Custom run failed:', e);
@@ -58,9 +71,14 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
 
-    const lang = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
+    const allowed = settings?.allowedLangs || ['c'];
+    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
       ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
       : 'c';
+    if (!allowed.includes(requested)) {
+      return res.status(400).json({ error: `Ngôn ngữ ${requested.toUpperCase()} hiện chưa được bật trên hệ thống` });
+    }
+    const lang = requested;
 
     const pending = db
       .prepare("SELECT COUNT(*) AS n FROM submissions WHERE user_id = ? AND verdict = 'PENDING'")

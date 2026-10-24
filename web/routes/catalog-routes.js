@@ -25,6 +25,7 @@ export function catalogRoutes({ catalog, stats, auth, settings }) {
     const pids = catalog.visibleProblems(set);
     const mine = stats.myProblemStatus(req.user.id);
     const { classSize, solved } = stats.classStats();
+    const { rows: leaderboard, myRank } = stats.setLeaderboard(pids, req.user.id);
     res.json({
       set: { ...publicSet(set, pids, mine), classSize },
       problems: pids.map((pid) => {
@@ -39,6 +40,8 @@ export function catalogRoutes({ catalog, stats, auth, settings }) {
           my: mine.get(pid) || '',
         };
       }),
+      leaderboard,
+      myRank,
     });
   });
 
@@ -52,6 +55,7 @@ export function catalogRoutes({ catalog, stats, auth, settings }) {
       ...pub,
       set: set ? { id: set.id, short: set.short, title: set.title } : null,
       my: stats.myProblemStatus(req.user.id).get(p.id) || '',
+      allowedLangs: settings.allowedLangs,
     });
   });
 

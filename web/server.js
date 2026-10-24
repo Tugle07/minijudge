@@ -127,7 +127,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 /* Đang trong giờ thi: khóa phần luyện tập (đề, lịch sử, bảng xếp hạng) với thí sinh đã vào phòng. */
-const PRACTICE_API = /^\/api\/(home|sets|problems|submissions|leaderboard|me\/profile)(\/|$|\?)/;
+const PRACTICE_API = /^\/api\/(home|sets|problems|submissions|leaderboard|me\/profile|users)(\/|$|\?)/;
 app.use((req, res, next) => {
   if (!req.user || req.user.role === 'admin' || !PRACTICE_API.test(req.path)) return next();
   const active = contests.activeFor(req.user.id);
@@ -137,8 +137,8 @@ app.use((req, res, next) => {
 
 app.use('/api', authRoutes({ db, auth, authLimit, settings, adminUsers: ADMIN_USERS }));
 app.use('/api', catalogRoutes({ catalog, stats, auth, settings }));
-app.use('/api', contestRoutes({ db, catalog, contests, auth, queue, submitLimit }));
-app.use('/api', submissionRoutes({ db, catalog, stats, auth, queue, judge, submitLimit, runLimit, checkLimit }));
+app.use('/api', contestRoutes({ db, catalog, contests, auth, queue, settings, submitLimit }));
+app.use('/api', submissionRoutes({ db, catalog, stats, auth, queue, judge, settings, submitLimit, runLimit, checkLimit }));
 app.use('/api', profileRoutes({ db, catalog, stats, contests, auth, authLimit }));
 app.use('/api/admin', adminRoutes({ db, catalog, auth, queue, judge, settings, adminStats }));
 app.use('/api/admin', adminContestRoutes({ db, catalog, contests, auth }));

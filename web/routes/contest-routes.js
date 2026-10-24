@@ -8,7 +8,7 @@ const MAX_EVENTS_PER_MIN = 30;
 
 /* API cho thí sinh. Trong giờ thi, bài thi gắn với đúng một phiên đăng nhập (một thiết bị, một tab):
  * phiên khác gọi vào sẽ bị từ chối cho tới khi phiên cũ im lặng quá 45 giây hoặc giám thị mở khóa. */
-export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit }) {
+export function contestRoutes({ db, catalog, contests, auth, queue, settings, submitLimit }) {
   const r = Router();
   r.use(auth.requireUser);
 
@@ -81,7 +81,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     const c = load(req, res);
     if (!c) return;
     const me = contests.participant(c.id, req.user.id);
-    const out = { now: Date.now(), contest: publicContest(c, req.user, me), problems: [], total: 0 };
+    const out = { now: Date.now(), contest: publicContest(c, req.user, me), problems: [], total: 0, allowedLangs: settings?.allowedLangs || ['c'] };
     const phase = contests.phase(c);
     if (me && (phase === 'running' || phase === 'ended')) {
       const best = new Map(
@@ -174,9 +174,14 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
 
-    const lang = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
+    const allowed = settings?.allowedLangs || ['c'];
+    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
       ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
       : 'c';
+    if (!allowed.includes(requested)) {
+      return res.status(400).json({ error: `Ngôn ngữ ${requested.toUpperCase()} hiện chưa được bật trên hệ thống` });
+    }
+    const lang = requested;
 
     const pending = db.prepare("SELECT COUNT(*) AS n FROM submissions WHERE user_id = ? AND verdict = 'PENDING'").get(req.user.id).n;
     if (pending > 0) return res.status(429).json({ error: 'Bài trước đang được chấm, đợi xong rồi nộp tiếp nhé' });

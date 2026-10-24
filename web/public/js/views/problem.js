@@ -91,9 +91,12 @@ function statementHtml(p, set) {
 export async function render(ctx) {
   const p = await api(`/api/problems/${encodeURIComponent(ctx.arg || '')}`);
   const set = p.set ? await api(`/api/sets/${encodeURIComponent(p.set.id)}`).catch(() => null) : null;
-  const initialLang = getLastLang(p.id) || 'c';
+  const allowedLangs = Array.isArray(p.allowedLangs) && p.allowedLangs.length ? p.allowedLangs : ['c'];
+  let initialLang = getLastLang(p.id) || 'c';
+  if (!allowedLangs.includes(initialLang)) initialLang = allowedLangs[0];
   const state = {
     lang: initialLang,
+    allowedLangs,
     samples: p.samples.map(() => ({ status: 'idle' })),
     tab: ctx.extra === 'history' ? 'history' : 'submit',
     result: { phase: 'idle' },
@@ -117,14 +120,15 @@ export async function render(ctx) {
           <button class="btn-primary" data-submit style="height:36px;padding:0 14px;font-size:14px">Nộp bài</button>
         </div>
         <header class="toolbar">
-          <select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
-            <option value="c" ${state.lang === 'c' ? 'selected' : ''}>C (C11)</option>
-            <option value="cpp" ${state.lang === 'cpp' ? 'selected' : ''}>C++ (C++17)</option>
-            <option value="py" ${state.lang === 'py' ? 'selected' : ''}>Python (Python 3)</option>
-          </select>
+          ${allowedLangs.length > 1
+            ? `<select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
+                ${allowedLangs.map((l) => `<option value="${l}" ${state.lang === l ? 'selected' : ''}>${LANG_CONFIG[l]?.label || l.toUpperCase()}</option>`).join('')}
+              </select>`
+            : `<span class="lang-chip">${LANG_CONFIG[state.lang]?.badge || 'C11 · gcc -O2'}</span>`
+          }
           <div class="zoom" role="group" aria-label="Cỡ chữ"><button data-zoom="-1" title="Chữ nhỏ hơn">A−</button><button data-zoom="1" title="Chữ lớn hơn">A+</button></div>
           <button class="file-btn" data-reset title="Xóa code, quay về khung mẫu">Khung mẫu</button>
-          <label class="file-btn" data-upload-label>Tải file ${LANG_CONFIG[state.lang]?.ext || '.c'}<input type="file" accept="${LANG_CONFIG[state.lang]?.ext || '.c'},text/plain" data-file /></label>
+          <label class="file-btn" data-upload-label>Tải file ${LANG_CONFIG[state.lang]?.ext || '.c'}<input type="file" accept="${allowedLangs.map((l) => LANG_CONFIG[l]?.ext || '.' + l).join(',')},text/plain" data-file /></label>
           <span class="faint wide-only" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
           <div class="spacer"></div>
           <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
@@ -514,6 +518,10 @@ export async function render(ctx) {
     if (name.endsWith('.cpp') || name.endsWith('.cc') || name.endsWith('.cxx')) detected = 'cpp';
     else if (name.endsWith('.py')) detected = 'py';
     else if (name.endsWith('.c')) detected = 'c';
+    if (detected && !state.allowedLangs.includes(detected)) {
+      e.target.value = '';
+      return toast(`Ngôn ngữ ${detected.toUpperCase()} hiện chưa được bật trên hệ thống`);
+    }
     if (detected && detected !== state.lang) {
       state.lang = detected;
       const lSel = $('[data-lang]');

@@ -183,8 +183,11 @@ export async function render(ctx) {
   /* ---------- Phòng thi ---------- */
   async function exam() {
     const { contest, problems } = state.info;
+    const allowedLangs = Array.isArray(state.info.allowedLangs) && state.info.allowedLangs.length ? state.info.allowedLangs : ['c'];
+    state.allowedLangs = allowedLangs;
     state.label = state.label || problems[0]?.label;
     state.lang = getLastLang(cid, state.label) || 'c';
+    if (!allowedLangs.includes(state.lang)) state.lang = allowedLangs[0];
     ctx.view.innerHTML = `
       <div class="exam" data-exam>
         <header class="exam-bar">
@@ -202,11 +205,12 @@ export async function render(ctx) {
           <div class="exam-sep" data-sep role="separator" aria-orientation="vertical" aria-label="Kéo để chỉnh độ rộng" tabindex="0"></div>
           <section class="exam-right">
             <div class="toolbar">
-              <select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
-                <option value="c" ${state.lang === 'c' ? 'selected' : ''}>C (C11)</option>
-                <option value="cpp" ${state.lang === 'cpp' ? 'selected' : ''}>C++ (C++17)</option>
-                <option value="py" ${state.lang === 'py' ? 'selected' : ''}>Python (Python 3)</option>
-              </select>
+              ${allowedLangs.length > 1
+                ? `<select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
+                    ${allowedLangs.map((l) => `<option value="${l}" ${state.lang === l ? 'selected' : ''}>${l === 'c' ? 'C (C11)' : l === 'cpp' ? 'C++ (C++17)' : 'Python (Python 3)'}</option>`).join('')}
+                  </select>`
+                : `<span class="lang-chip">C11 · gcc -O2</span>`
+              }
               <span class="faint" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
               <div class="spacer"></div>
               <button class="btn-submit" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
@@ -445,6 +449,7 @@ export async function render(ctx) {
       if (state.label && editor.value) saveDraft(cid, state.label, state.lang, editor.value);
       state.label = label;
       state.lang = getLastLang(cid, label) || 'c';
+      if (!state.allowedLangs.includes(state.lang)) state.lang = state.allowedLangs[0];
       const langSel = $('[data-lang]');
       if (langSel) langSel.value = state.lang;
       drawTabs();
