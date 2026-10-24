@@ -168,16 +168,21 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
   r.post('/contests/:id/submit', submitLimit, (req, res) => {
     const c = load(req, res);
     if (!c || !seat(req, res, c)) return;
-    const { label, source } = req.body ?? {};
+    const { label, source, lang: rawLang } = req.body ?? {};
     const cp = contests.problemsOf(c.id).find((p) => p.label === label);
     if (!cp || !catalog.problemMap.has(cp.problemId)) return res.status(400).json({ error: 'Bài không hợp lệ' });
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
+
+    const lang = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
+      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
+      : 'c';
+
     const pending = db.prepare("SELECT COUNT(*) AS n FROM submissions WHERE user_id = ? AND verdict = 'PENDING'").get(req.user.id).n;
     if (pending > 0) return res.status(429).json({ error: 'Bài trước đang được chấm, đợi xong rồi nộp tiếp nhé' });
     const { lastInsertRowid } = db
-      .prepare('INSERT INTO submissions (user_id, problem_id, source, created_at, contest_id) VALUES (?, ?, ?, ?, ?)')
-      .run(req.user.id, cp.problemId, source, Date.now(), c.id);
+      .prepare('INSERT INTO submissions (user_id, problem_id, source, lang, created_at, contest_id) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(req.user.id, cp.problemId, source, lang, Date.now(), c.id);
     const id = Number(lastInsertRowid);
     queue.push(id);
     res.status(201).json({ id });
@@ -188,6 +193,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, submitLimit 
     label: labels.get(s.problem_id) ?? '?',
     verdict: s.verdict,
     score: s.score,
+    lang: s.lang || 'c',
     testsPassed: s.tests_passed,
     testCount: s.test_count,
     timeMs: s.time_ms,

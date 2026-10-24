@@ -19,13 +19,13 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
   const r = Router();
   r.use(auth.requireUser);
 
-  /* Kiểm tra cú pháp khi đang gõ: chỉ chạy gcc -fsyntax-only, không chạy chương trình. */
+  /* Kiểm tra cú pháp khi đang gõ: gcc/g++ -fsyntax-only hoặc python -m py_compile. */
   r.post('/check', checkLimit, async (req, res) => {
-    const { source } = req.body ?? {};
+    const { source, lang } = req.body ?? {};
     if (typeof source !== 'string' || Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn không hợp lệ' });
     if (!judge.check) return res.json({ ok: true, log: '' });
     try {
-      const { ok, log } = await judge.check(source);
+      const { ok, log } = await judge.check(source, lang || 'c');
       res.json({ ok: Boolean(ok), log: log || '' });
     } catch {
       res.json({ ok: false, log: '', busy: true });
@@ -33,7 +33,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
   });
 
   r.post('/run', runLimit, async (req, res) => {
-    const { problemId, source, input } = req.body ?? {};
+    const { problemId, source, input, lang } = req.body ?? {};
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
     if (typeof input !== 'string' || Buffer.byteLength(input) > MAX_INPUT_BYTES) {
@@ -41,7 +41,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
     }
     const p = catalog.problemMap.get(problemId);
     try {
-      const result = await judge.run(source, input.endsWith('\n') ? input : `${input}\n`, p?.timeMs ?? 2000, p?.memoryMb ?? 256);
+      const result = await judge.run(source, input.endsWith('\n') ? input : `${input}\n`, p?.timeMs ?? 2000, p?.memoryMb ?? 256, lang || 'c');
       res.json(result);
     } catch (e) {
       console.error('Custom run failed:', e);
@@ -50,7 +50,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
   });
 
   r.post('/submissions', submitLimit, (req, res) => {
-    const { problemId, source } = req.body ?? {};
+    const { problemId, source, lang: rawLang } = req.body ?? {};
     const problem = catalog.problemMap.get(problemId);
     if (!problem || (req.user.role !== 'admin' && !catalog.isProblemVisible(problem))) {
       return res.status(400).json({ error: 'Mã đề không hợp lệ' });
@@ -58,14 +58,18 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
 
+    const lang = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
+      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
+      : 'c';
+
     const pending = db
       .prepare("SELECT COUNT(*) AS n FROM submissions WHERE user_id = ? AND verdict = 'PENDING'")
       .get(req.user.id).n;
     if (pending > 0) return res.status(429).json({ error: 'Bạn đang có bài chờ chấm, đợi xong rồi nộp tiếp nhé' });
 
     const { lastInsertRowid } = db
-      .prepare('INSERT INTO submissions (user_id, problem_id, source, created_at) VALUES (?, ?, ?, ?)')
-      .run(req.user.id, problemId, source, Date.now());
+      .prepare('INSERT INTO submissions (user_id, problem_id, source, lang, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run(req.user.id, problemId, source, lang, Date.now());
     const id = Number(lastInsertRowid);
     queue.push(id);
     res.status(201).json({ id });
@@ -76,7 +80,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
     const problem = typeof req.query.problem === 'string' ? req.query.problem : null;
     const rows = db
       .prepare(
-        `SELECT id, problem_id, verdict, time_ms, memory_kb, tests_passed, test_count, created_at
+        `SELECT id, problem_id, verdict, time_ms, memory_kb, tests_passed, test_count, COALESCE(lang, 'c') AS lang, created_at
          FROM submissions WHERE user_id = ? AND contest_id IS NULL ${problem ? 'AND problem_id = ?' : ''}
          ORDER BY id DESC LIMIT ${PAGE_SIZE}`,
       )
@@ -93,6 +97,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, submi
       id: row.id,
       problemId: row.problem_id,
       verdict: row.verdict,
+      lang: row.lang || 'c',
       timeMs: row.time_ms,
       memoryKb: row.memory_kb,
       testsPassed: row.tests_passed,

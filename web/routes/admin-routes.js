@@ -145,7 +145,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     const total = db.prepare(`SELECT COUNT(*) AS n ${base}`).get(...args).n;
     const rows = db
       .prepare(
-        `SELECT s.id, s.problem_id, s.verdict, s.time_ms, s.memory_kb, s.tests_passed, s.test_count, s.created_at, u.username
+        `SELECT s.id, s.problem_id, s.verdict, s.time_ms, s.memory_kb, s.tests_passed, s.test_count, COALESCE(s.lang, 'c') AS lang, s.created_at, u.username
          ${base} ORDER BY ${sortCol} ${dir}, s.id DESC LIMIT ${PAGE} OFFSET ${page * PAGE}`,
       )
       .all(...args);
@@ -193,7 +193,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
   r.get('/users', (_req, res) => {
     const rows = db
       .prepare(
-        `SELECT u.id, u.username, u.full_name AS fullName, u.role, u.locked, u.last_seen, u.created_at,
+        `SELECT u.id, u.username, u.full_name AS fullName, u.avatar, u.role, u.locked, u.last_seen, u.created_at,
            (SELECT COUNT(DISTINCT problem_id) FROM submissions s WHERE s.user_id = u.id AND s.verdict = 'AC') AS solved
          FROM users u ORDER BY u.username COLLATE NOCASE`,
       )
@@ -205,7 +205,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     const id = Number(req.params.id);
     const user = db.prepare('SELECT id, username, role FROM users WHERE id = ?').get(id);
     if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
-    const { role, locked } = req.body ?? {};
+    const { role, locked, avatar } = req.body ?? {};
     if (id === req.user.id && (role === 'student' || locked === true)) {
       return res.status(400).json({ error: 'Không thể tự hạ quyền hoặc tự khóa tài khoản của mình' });
     }
@@ -213,6 +213,9 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     if (typeof locked === 'boolean') {
       db.prepare('UPDATE users SET locked = ? WHERE id = ?').run(locked ? 1 : 0, id);
       if (locked) auth.endAllSessions(id);
+    }
+    if (typeof avatar === 'string') {
+      db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatar, id);
     }
     res.json(db.prepare('SELECT id, username, role, locked FROM users WHERE id = ?').get(id));
   });

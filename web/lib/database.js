@@ -32,6 +32,7 @@ export function openDatabase(file) {
       test_count   INTEGER,
       tests_json   TEXT,
       compile_log  TEXT,
+      lang         TEXT NOT NULL DEFAULT 'c',
       created_at   INTEGER NOT NULL
     );
 
@@ -119,12 +120,14 @@ function migrate(db) {
   if (!subs.has('contest_id')) db.exec('ALTER TABLE submissions ADD COLUMN contest_id INTEGER');
   if (!subs.has('score')) db.exec('ALTER TABLE submissions ADD COLUMN score REAL');
   if (!subs.has('subtasks_json')) db.exec('ALTER TABLE submissions ADD COLUMN subtasks_json TEXT');
+  if (!subs.has('lang')) db.exec("ALTER TABLE submissions ADD COLUMN lang TEXT NOT NULL DEFAULT 'c'");
   db.exec('CREATE INDEX IF NOT EXISTS idx_submissions_contest ON submissions(contest_id, user_id)');
   const users = columnsOf(db, 'users');
   if (!users.has('role')) db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'student'");
   if (!users.has('locked')) db.exec('ALTER TABLE users ADD COLUMN locked INTEGER NOT NULL DEFAULT 0');
   if (!users.has('last_seen')) db.exec('ALTER TABLE users ADD COLUMN last_seen INTEGER');
   if (!users.has('full_name')) db.exec("ALTER TABLE users ADD COLUMN full_name TEXT NOT NULL DEFAULT ''");
+  if (!users.has('avatar')) db.exec("ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT ''");
   const meta = columnsOf(db, 'problem_meta');
   if (meta.size && !meta.has('subtasks')) db.exec('ALTER TABLE problem_meta ADD COLUMN subtasks TEXT');
   const parts = columnsOf(db, 'contest_participants');

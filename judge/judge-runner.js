@@ -38,19 +38,43 @@ function invoke(judgeBin, workRoot, files, buildArgs, env) {
   });
 }
 
-/* Chỉ kiểm tra cú pháp (gcc -fsyntax-only, không tạo file chạy, không chạy code) để báo lỗi ngay khi đang gõ. */
-function syntaxCheck(workRoot, source) {
+export function sourceFilename(lang = 'c') {
+  if (lang === 'cpp' || lang === 'c++') return 'main.cpp';
+  if (lang === 'py' || lang === 'python') return 'main.py';
+  return 'main.c';
+}
+
+/* Chỉ kiểm tra cú pháp (gcc/g++ -fsyntax-only hoặc python -m py_compile, không tạo file chạy, không chạy code) để báo lỗi ngay khi đang gõ. */
+function syntaxCheck(workRoot, source, lang = 'c') {
   return new Promise((resolve) => {
     const dir = path.join(workRoot, crypto.randomUUID());
     fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
-    fs.writeFileSync(path.join(dir, 'main.c'), source, { mode: 0o644 });
-    const gcc = process.env.MJ_GCC || 'gcc';
+    const filename = sourceFilename(lang);
+    fs.writeFileSync(path.join(dir, filename), source, { mode: 0o644 });
     const opts = { cwd: dir, timeout: 8000, maxBuffer: 1 << 18, windowsHide: true };
-    execFile(gcc, ['-std=c11', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', 'main.c'], opts, (err, _out, stderr) => {
-      fs.rmSync(dir, { recursive: true, force: true });
-      if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
-      resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
-    });
+
+    if (filename.endsWith('.py')) {
+      const py = process.env.MJ_PYTHON || 'python3';
+      execFile(py, ['-m', 'py_compile', filename], opts, (err, _out, stderr) => {
+        fs.rmSync(dir, { recursive: true, force: true });
+        if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
+        resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
+      });
+    } else if (filename.endsWith('.cpp')) {
+      const gpp = process.env.MJ_GXX || 'g++';
+      execFile(gpp, ['-std=c++17', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', filename], opts, (err, _out, stderr) => {
+        fs.rmSync(dir, { recursive: true, force: true });
+        if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
+        resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
+      });
+    } else {
+      const gcc = process.env.MJ_GCC || 'gcc';
+      execFile(gcc, ['-std=c11', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', filename], opts, (err, _out, stderr) => {
+        fs.rmSync(dir, { recursive: true, force: true });
+        if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
+        resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
+      });
+    }
   });
 }
 
@@ -62,23 +86,27 @@ export function createRunner({ judgeBin, problemsDir, customDir, workRoot }) {
   fs.mkdirSync(workRoot, { recursive: true, mode: 0o755 });
   return {
     /* all = true: chạy hết mọi test thay vì dừng ở test sai đầu tiên (chấm điểm theo subtask). */
-    judge: (problemId, source, { slot, origin, all } = {}) =>
-      invoke(
+    judge: (problemId, source, { slot, origin, all, lang } = {}) => {
+      const fname = sourceFilename(lang);
+      return invoke(
         judgeBin,
         workRoot,
-        { 'main.c': source },
-        (p, dir) => [...(all ? ['--all'] : []), origin === 'custom' && customDir ? customDir : problemsDir, problemId, p['main.c'], dir],
+        { [fname]: source },
+        (p, dir) => [...(all ? ['--all'] : []), origin === 'custom' && customDir ? customDir : problemsDir, problemId, p[fname], dir],
         slotEnv(slot),
-      ),
+      );
+    },
     health: async () => ({ ok: true }),
-    check: (source) => syntaxCheck(workRoot, source),
-    run: (source, input, timeMs = 2000, memoryMb = 256, slot) =>
-      invoke(
+    check: (source, lang) => syntaxCheck(workRoot, source, lang),
+    run: (source, input, timeMs = 2000, memoryMb = 256, slot, lang) => {
+      const fname = sourceFilename(lang);
+      return invoke(
         judgeBin,
         workRoot,
-        { 'main.c': source, 'input.txt': input },
-        (p, dir) => ['--run', p['main.c'], p['input.txt'], dir, String(timeMs), String(memoryMb)],
+        { [fname]: source, 'input.txt': input },
+        (p, dir) => ['--run', p[fname], p['input.txt'], dir, String(timeMs), String(memoryMb)],
         slotEnv(slot),
-      ),
+      );
+    },
   };
 }

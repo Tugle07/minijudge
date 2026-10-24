@@ -48,15 +48,15 @@ function send(res, status, body) {
 }
 
 const ROUTES = {
-  '/judge': ({ problemId, source, origin, all }) =>
+  '/judge': ({ problemId, source, origin, all, lang }) =>
     typeof problemId === 'string' && ID_RE.test(problemId) && typeof source === 'string'
-      ? (slot) => runner.judge(problemId, source, { slot, origin: origin === 'custom' ? 'custom' : 'repo', all: all === true })
+      ? (slot) => runner.judge(problemId, source, { slot, origin: origin === 'custom' ? 'custom' : 'repo', all: all === true, lang })
       : null,
-  '/run': ({ source, input, timeMs, memoryMb }) =>
+  '/run': ({ source, input, timeMs, memoryMb, lang }) =>
     typeof source === 'string' && typeof input === 'string'
-      ? (slot) => runner.run(source, input, Number(timeMs) || 2000, Number(memoryMb) || 256, slot)
+      ? (slot) => runner.run(source, input, Number(timeMs) || 2000, Number(memoryMb) || 256, slot, lang)
       : null,
-  '/check': ({ source }) => (typeof source === 'string' ? () => runner.check(source) : null),
+  '/check': ({ source, lang }) => (typeof source === 'string' ? () => runner.check(source, lang) : null),
 };
 
 const server = http.createServer((req, res) => {

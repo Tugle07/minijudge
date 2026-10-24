@@ -16,9 +16,9 @@ export async function createJudgeClient({ judgeUrl, judgeBin, problemsDir, custo
       return res.json();
     };
     return {
-      judge: (problemId, source, { origin, all } = {}) => post('/judge', { problemId, source, origin, all: Boolean(all) }),
-      run: (source, input, timeMs, memoryMb) => post('/run', { source, input, timeMs, memoryMb }),
-      check: (source) => post('/check', { source }),
+      judge: (problemId, source, { origin, all, lang } = {}) => post('/judge', { problemId, source, origin, all: Boolean(all), lang }),
+      run: (source, input, timeMs, memoryMb, lang) => post('/run', { source, input, timeMs, memoryMb, lang }),
+      check: (source, lang) => post('/check', { source, lang }),
       health: async () => {
         const res = await fetch(`${base}/health`, { signal: AbortSignal.timeout(3000) });
         return res.ok ? res.json() : { ok: false };
@@ -36,7 +36,7 @@ export function createJudgeQueue({ db, client, concurrency = 1, originOf = () =>
   const queue = [];
   let running = 0;
 
-  const getSubmission = db.prepare('SELECT id, problem_id, source, contest_id FROM submissions WHERE id = ?');
+  const getSubmission = db.prepare('SELECT id, problem_id, source, contest_id, COALESCE(lang, \'c\') AS lang FROM submissions WHERE id = ?');
   const saveResult = db.prepare(`
     UPDATE submissions
     SET verdict = ?, time_ms = ?, memory_kb = ?, tests_passed = ?, test_count = ?, tests_json = ?, compile_log = ?, fail_output = ?
@@ -49,7 +49,7 @@ export function createJudgeQueue({ db, client, concurrency = 1, originOf = () =>
     try {
       const sub = getSubmission.get(id);
       if (sub) {
-        const r = await client.judge(sub.problem_id, sub.source, { origin: originOf(sub.problem_id), all: sub.contest_id != null });
+        const r = await client.judge(sub.problem_id, sub.source, { origin: originOf(sub.problem_id), all: true, lang: sub.lang });
         saveResult.run(
           r.verdict ?? 'IE',
           r.time_ms ?? 0,

@@ -28,6 +28,18 @@ export const diffMeter = (d) => {
 };
 
 export const SPINNER = '<span class="spinner" aria-hidden="true"></span>';
+
+export const LANGS = {
+  c: { name: 'C', badge: 'C11 · gcc', color: 'var(--fg2)' },
+  cpp: { name: 'C++', badge: 'C++17 · g++', color: '#3b82f6' },
+  py: { name: 'Python', badge: 'Python 3', color: '#eab308' },
+};
+export const langName = (l = 'c') => LANGS[l]?.name || (l === 'python' ? 'Python' : l === 'c++' ? 'C++' : 'C');
+export const langBadge = (l = 'c') => {
+  const norm = l === 'python' ? 'py' : l === 'c++' ? 'cpp' : (l || 'c');
+  const info = LANGS[norm] || LANGS.c;
+  return `<span class="pill mono" style="font-size:11px;padding:1px 6px;border-radius:4px;background:color-mix(in oklch, ${info.color} 15%, transparent);color:${info.color};font-weight:600;">${esc(info.name)}</span>`;
+};
 export const SHIMMER = '<div class="shimmer-track"><div></div></div>';
 
 const NEW_FOR_MS = 3 * 86_400_000;
@@ -64,7 +76,15 @@ export const statLine = (s) =>
 
 /* Avatar trung tính: chữ viết tắt là đủ phân biệt, không cần mỗi người một màu. */
 export const avatarColor = () => 'var(--bg3)';
-export const initials = (name) => name.slice(0, 2).toUpperCase();
+export const initials = (name) => (name ? String(name).slice(0, 2).toUpperCase() : '?');
+
+export function renderAvatar(name = '', avatar = '', size = 26) {
+  const safeName = String(name || '');
+  if (avatar && (avatar.startsWith('data:image/') || avatar.startsWith('http://') || avatar.startsWith('https://'))) {
+    return `<img class="avatar" src="${esc(avatar)}" alt="${esc(safeName)}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:inline-block;vertical-align:middle;" />`;
+  }
+  return `<span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.max(9, Math.round(size * 0.42))}px;background:${avatarColor()};display:inline-grid;place-items:center;border-radius:50%;vertical-align:middle;">${esc(initials(safeName))}</span>`;
+}
 
 /* Markdown + công thức $...$ (KaTeX). Tách công thức ra trước để marked không phá dấu _ và \. */
 export function renderMarkdown(md) {

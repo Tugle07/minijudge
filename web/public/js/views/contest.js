@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
-import { badge, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
+import { badge, esc, fmtWhen, langBadge, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
 import { compileErrorsHtml, runResultHtml } from './problem-result.js';
 import { fmtCountdown, fmtDuration, fmtTime } from './contests.js';
 
@@ -9,13 +9,19 @@ import { fmtCountdown, fmtDuration, fmtTime } from './contests.js';
  * một tab, ghi lại mọi lần rời bài (chuyển tab, thoát toàn màn hình, dán code từ ngoài) để giám thị xem,
  * và khóa phần luyện tập trong giờ thi. Kết hợp với giám thị trong phòng và kiểm tra code giống nhau sau thi. */
 
-const TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
+const TEMPLATES = {
+  c: '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n',
+  cpp: '#include <iostream>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    return 0;\n}\n',
+  py: '# Đọc dữ liệu từ sys.stdin và in ra màn hình\nimport sys\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n',
+};
 const HEARTBEAT_MS = 10_000;
 const POLL_MS = 800;
 const PASTE_LIMIT = 30;
 
-const readDraft = (cid, label) => draftGet(`exam-${cid}-${label}`);
-const saveDraft = (cid, label, code) => draftSet(`exam-${cid}-${label}`, code);
+const readDraft = (cid, label, lang = 'c') => draftGet(`exam-${cid}-${label}-${lang}`) || (lang === 'c' ? draftGet(`exam-${cid}-${label}`) : null);
+const saveDraft = (cid, label, lang, code) => draftSet(`exam-${cid}-${label}-${lang}`, code);
+const getLastLang = (cid, label) => draftGet(`exam-lang-${cid}-${label}`) || 'c';
+const setLastLang = (cid, label, lang) => draftSet(`exam-lang-${cid}-${label}`, lang);
 const isFullscreen = () => Boolean(document.fullscreenElement);
 
 /* 3 tiếng bíp khi thí sinh rời bài thi (Web Audio, không cần file âm thanh).
@@ -178,6 +184,7 @@ export async function render(ctx) {
   async function exam() {
     const { contest, problems } = state.info;
     state.label = state.label || problems[0]?.label;
+    state.lang = getLastLang(cid, state.label) || 'c';
     ctx.view.innerHTML = `
       <div class="exam" data-exam>
         <header class="exam-bar">
@@ -195,7 +202,11 @@ export async function render(ctx) {
           <div class="exam-sep" data-sep role="separator" aria-orientation="vertical" aria-label="Kéo để chỉnh độ rộng" tabindex="0"></div>
           <section class="exam-right">
             <div class="toolbar">
-              <span class="lang-chip">C11 · gcc -O2</span>
+              <select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
+                <option value="c" ${state.lang === 'c' ? 'selected' : ''}>C (C11)</option>
+                <option value="cpp" ${state.lang === 'cpp' ? 'selected' : ''}>C++ (C++17)</option>
+                <option value="py" ${state.lang === 'py' ? 'selected' : ''}>Python (Python 3)</option>
+              </select>
               <span class="faint" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
               <div class="spacer"></div>
               <button class="btn-submit" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
@@ -335,7 +346,7 @@ export async function render(ctx) {
     const insideExam = (t) => {
       const haystack = [
         (() => { try { return editor.value; } catch { return ''; } })(),
-        ...(state.info.problems || []).map((p) => readDraft(cid, p.label)),
+        ...(state.info.problems || []).flatMap((p) => ['c', 'cpp', 'py'].map((l) => readDraft(cid, p.label, l))),
         state.problem?.statement,
         ...(state.problem?.samples || []).flatMap((s) => [s.input, s.output]),
       ].map(norm).join('\n');
@@ -355,10 +366,10 @@ export async function render(ctx) {
 
     let savedTimer;
     const editor = await mountEditor(editorHost, {
-      value: readDraft(cid, state.label) ?? TEMPLATE,
+      value: readDraft(cid, state.label, state.lang) ?? TEMPLATES[state.lang] ?? TEMPLATES.c,
       onChange: (code) => {
         if (!state.label) return;
-        saveDraft(cid, state.label, code);
+        saveDraft(cid, state.label, state.lang, code);
         const el = $('[data-saved]');
         if (!el) return;
         el.textContent = 'Đã lưu nháp';
@@ -373,7 +384,7 @@ export async function render(ctx) {
       },
       onCheck: async (source) => {
         try {
-          return (await api('/api/check', { method: 'POST', body: { source } })).log;
+          return (await api('/api/check', { method: 'POST', body: { source, lang: state.lang } })).log;
         } catch {
           return null;
         }
@@ -390,6 +401,18 @@ export async function render(ctx) {
         warn.classList.toggle('on', wn > 0);
       },
     });
+
+    const langSel = $('[data-lang]');
+    langSel?.addEventListener('change', (e) => {
+      const newLang = e.target.value;
+      if (newLang === state.lang) return;
+      if (state.label && editor.value) saveDraft(cid, state.label, state.lang, editor.value);
+      state.lang = newLang;
+      setLastLang(cid, state.label, newLang);
+      editor.value = readDraft(cid, state.label, state.lang) ?? TEMPLATES[state.lang] ?? TEMPLATES.c;
+      editor.recheck?.();
+    });
+
     if (editor.assist) editor.setAssist?.(false);
     cleanups.push(() => editor.destroy?.());
 
@@ -419,10 +442,13 @@ export async function render(ctx) {
         </div>`;
     }
     async function openProblem(label) {
-      if (state.label && editor.value) saveDraft(cid, state.label, editor.value);
+      if (state.label && editor.value) saveDraft(cid, state.label, state.lang, editor.value);
       state.label = label;
+      state.lang = getLastLang(cid, label) || 'c';
+      const langSel = $('[data-lang]');
+      if (langSel) langSel.value = state.lang;
       drawTabs();
-      editor.value = readDraft(cid, label) ?? TEMPLATE;
+      editor.value = readDraft(cid, label, state.lang) ?? TEMPLATES[state.lang] ?? TEMPLATES.c;
       const p = await api(`/api/contests/${cid}/problems/${encodeURIComponent(label)}`);
       state.problem = p;
       $('[data-statement]').innerHTML = `
@@ -455,7 +481,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
         ? `<div class="exam-st">${s.subtasks.map((st) => `<span class="${st.got ? 'ok' : 'no'}">${st.got ? '✓' : '✗'} ${esc(st.name)} · đúng ${st.passedTests}/${st.tests} test · <b class="mono">${st.got}/${st.points} điểm</b></span>`).join('')}</div>`
         : '';
       return `<div class="exam-sub" data-sub="${s.id}">
-          <div class="exam-sub-head">${badge(s.verdict)}<span>${esc(verdictLabel(s.verdict))}</span><span class="faint mono" style="font-size:12.5px">${s.verdict === 'PENDING' ? '' : statLine(s)}</span><div class="spacer"></div>
+          <div class="exam-sub-head">${badge(s.verdict)}${langBadge(s.lang)}<span>${esc(verdictLabel(s.verdict))}</span><span class="faint mono" style="font-size:12.5px">${s.verdict === 'PENDING' ? '' : statLine(s)}</span><div class="spacer"></div>
           <b class="mono">${s.verdict === 'PENDING' ? 'Đang chấm…' : `${Number((s.score ?? 0).toFixed(2))} điểm`}</b></div>
           ${s.verdict !== 'PENDING' && s.verdict !== 'CE' ? `<span class="faint" style="font-size:12.5px">Đúng ${s.testsPassed}/${s.testCount} test</span>` : ''}
           ${sts}
@@ -472,7 +498,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
             state.subs.length > 1
               ? `<details class="exam-older"><summary>${state.subs.length - 1} lần nộp trước</summary>${state.subs
                   .slice(1)
-                  .map((s) => `<div class="exam-older-row">${badge(s.verdict)}<span class="faint mono">${fmtWhen(s.createdAt)}</span><div class="spacer"></div><b class="mono">${s.verdict === 'PENDING' ? 'Đang chấm…' : `${Number((s.score ?? 0).toFixed(2))} điểm`}</b></div>`)
+                  .map((s) => `<div class="exam-older-row">${badge(s.verdict)}${langBadge(s.lang)}<span class="faint mono">${fmtWhen(s.createdAt)}</span><div class="spacer"></div><b class="mono">${s.verdict === 'PENDING' ? 'Đang chấm…' : `${Number((s.score ?? 0).toFixed(2))} điểm`}</b></div>`)
                   .join('')}</details>`
               : ''
           }`
@@ -496,7 +522,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
       const btn = $('[data-submit]');
       btn.disabled = true;
       try {
-        const { id } = await api(`/api/contests/${cid}/submit`, { method: 'POST', body: { label: state.label, source: editor.value } });
+        const { id } = await api(`/api/contests/${cid}/submit`, { method: 'POST', body: { label: state.label, source: editor.value, lang: state.lang } });
         toast('Đã nộp, đang chấm…');
         await loadSubs();
         const poll = async () => {
@@ -520,7 +546,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
       const out = $('[data-run-result]');
       out.innerHTML = runResultHtml({ loading: true });
       try {
-        const r = await api('/api/run', { method: 'POST', body: { source: editor.value, input: $('[data-run-input]').value } });
+        const r = await api('/api/run', { method: 'POST', body: { source: editor.value, input: $('[data-run-input]').value, lang: state.lang } });
         out.innerHTML = runResultHtml(r);
         if (r.verdict === 'CE') editor.showDiagnostics?.(r.compile_log);
       } catch (err) {
@@ -840,7 +866,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
           .map(
             (r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:${cols}">
               <b class="mono">${r.rank}</b>
-              <span class="rank-user"><span class="ellipsis" style="font-weight:550">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span><small>${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã kết thúc' : 'đang làm bài'}</small></span>
+              <a href="#/profile/${encodeURIComponent(r.username)}" class="rank-user" style="text-decoration:none;color:inherit;" title="Xem hồ sơ ${esc(r.username)}"><span class="ellipsis" style="font-weight:550">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span><small>${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã kết thúc' : 'đang làm bài'}</small></a>
               ${r.cells.map((c, i) => cell(c, b.problems[i])).join('')}
               <b class="right mono">${Number(r.total.toFixed(2))}</b></div>`,
           )

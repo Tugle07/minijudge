@@ -1,15 +1,28 @@
 import { api } from '../api.js';
 import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
-import { highlightC } from '../highlight.js';
-import { badge, diffMeter, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
+import { highlightCode } from '../highlight.js';
+import { badge, diffMeter, esc, fmtWhen, langBadge, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
 import { compileErrorsHtml, resultHtml, runResultHtml } from './problem-result.js';
 
-const TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
+export const TEMPLATES = {
+  c: '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n',
+  cpp: '#include <iostream>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    return 0;\n}\n',
+  py: '# Đọc dữ liệu từ sys.stdin và in ra màn hình\nimport sys\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n',
+};
+
+export const LANG_CONFIG = {
+  c: { label: 'C (C11)', ext: '.c', badge: 'C11 · gcc -O2' },
+  cpp: { label: 'C++ (C++17)', ext: '.cpp', badge: 'C++17 · g++ -O2' },
+  py: { label: 'Python (Python 3)', ext: '.py', badge: 'Python 3.11+' },
+};
+
 const SPINNER_SM = '<span class="spin-sm" aria-hidden="true"></span>';
 const POLL_MS = 800;
-const readDraft = (id) => draftGet(`code-${id}`);
-const saveDraft = (id, code) => draftSet(`code-${id}`, code);
+const readDraft = (id, lang = 'c') => draftGet(`code-${id}-${lang}`) || (lang === 'c' ? draftGet(`code-${id}`) : null);
+const saveDraft = (id, lang, code) => draftSet(`code-${id}-${lang}`, code);
+const getLastLang = (id) => draftGet(`lang-${id}`) || 'c';
+const setLastLang = (id, lang) => draftSet(`lang-${id}`, lang);
 
 const MY_LABEL = { ac: ['Bạn đã AC bài này', 'var(--ac)'], tried: ['Bạn đã nộp, chưa AC', 'var(--wa)'] };
 
@@ -78,7 +91,9 @@ function statementHtml(p, set) {
 export async function render(ctx) {
   const p = await api(`/api/problems/${encodeURIComponent(ctx.arg || '')}`);
   const set = p.set ? await api(`/api/sets/${encodeURIComponent(p.set.id)}`).catch(() => null) : null;
+  const initialLang = getLastLang(p.id) || 'c';
   const state = {
+    lang: initialLang,
     samples: p.samples.map(() => ({ status: 'idle' })),
     tab: ctx.extra === 'history' ? 'history' : 'submit',
     result: { phase: 'idle' },
@@ -98,14 +113,18 @@ export async function render(ctx) {
       <section class="pane-right exam-right" aria-label="Soạn mã và nộp bài">
         <div class="mobile-head narrow-only">
           <button class="link-btn" data-close-editor style="color:var(--fg);height:36px">‹ Đề bài</button>
-          <span class="mono muted" style="font-size:14px">${esc(p.id)}.c</span>
+          <span class="mono muted" style="font-size:14px">${esc(p.id)}${LANG_CONFIG[initialLang]?.ext || '.c'}</span>
           <button class="btn-primary" data-submit style="height:36px;padding:0 14px;font-size:14px">Nộp bài</button>
         </div>
         <header class="toolbar">
-          <span class="lang-chip">C11 · gcc -O2</span>
+          <select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
+            <option value="c" ${state.lang === 'c' ? 'selected' : ''}>C (C11)</option>
+            <option value="cpp" ${state.lang === 'cpp' ? 'selected' : ''}>C++ (C++17)</option>
+            <option value="py" ${state.lang === 'py' ? 'selected' : ''}>Python (Python 3)</option>
+          </select>
           <div class="zoom" role="group" aria-label="Cỡ chữ"><button data-zoom="-1" title="Chữ nhỏ hơn">A−</button><button data-zoom="1" title="Chữ lớn hơn">A+</button></div>
           <button class="file-btn" data-reset title="Xóa code, quay về khung mẫu">Khung mẫu</button>
-          <label class="file-btn">Tải file .c<input type="file" accept=".c,text/x-c,text/plain" data-file /></label>
+          <label class="file-btn" data-upload-label>Tải file ${LANG_CONFIG[state.lang]?.ext || '.c'}<input type="file" accept="${LANG_CONFIG[state.lang]?.ext || '.c'},text/plain" data-file /></label>
           <span class="faint wide-only" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
           <div class="spacer"></div>
           <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài <span class="kbd">Ctrl Enter</span></button>
@@ -157,9 +176,9 @@ export async function render(ctx) {
   const $ = (sel) => ctx.view.querySelector(sel);
   let savedTimer = null;
   const editor = await mountEditor($('[data-editor]'), {
-    value: readDraft(p.id) ?? TEMPLATE,
+    value: readDraft(p.id, state.lang) ?? TEMPLATES[state.lang] ?? TEMPLATES.c,
     onChange: (code) => {
-      saveDraft(p.id, code);
+      saveDraft(p.id, state.lang, code);
       const el = $('[data-saved]');
       if (el) el.textContent = 'Đã lưu nháp';
       clearTimeout(savedTimer);
@@ -175,7 +194,7 @@ export async function render(ctx) {
     },
     onCheck: async (source) => {
       try {
-        return (await api('/api/check', { method: 'POST', body: { source } })).log;
+        return (await api('/api/check', { method: 'POST', body: { source, lang: state.lang } })).log;
       } catch {
         return null;
       }
@@ -243,7 +262,7 @@ export async function render(ctx) {
     for (let i = 0; i < p.samples.length && state.alive; i++) {
       try {
         const input = p.samples[i].input;
-        const r = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input } });
+        const r = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input, lang: state.lang } });
         if (r.verdict === 'CE') {
           editor.showDiagnostics?.(r.compile_log);
           state.samples = state.samples.map(() => ({ status: 'error' }));
@@ -275,7 +294,7 @@ export async function render(ctx) {
     if (out) out.innerHTML = runResultHtml({ loading: true });
     ctx.view.querySelectorAll('[data-run-go]').forEach((b) => (b.disabled = true));
     try {
-      state.run = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input: runInput.value } });
+      state.run = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input: runInput.value, lang: state.lang } });
       if (state.alive && state.run.compile_log) {
         editor.showDiagnostics?.(state.run.compile_log);
       }
@@ -323,11 +342,11 @@ export async function render(ctx) {
         <div class="sub-detail">
           <div class="sub-detail-head">
             <button class="link-btn" data-back-history>‹ Tất cả bài nộp</button>
-            <span class="mono faint" style="font-size:13px">#${s.id} · ${fmtWhen(s.createdAt)}</span>
+            <span class="mono faint" style="font-size:13px">#${s.id} · ${langBadge(s.lang)} · ${fmtWhen(s.createdAt)}</span>
             <button class="btn" data-load-code style="height:30px;font-size:13px">Nạp code này vào trình soạn</button>
           </div>
           <div class="result" style="max-height:none">${resultHtml({ phase: s.verdict === 'PENDING' ? 'judging' : 'done', sub: s }, p.tests)}</div>
-          <pre class="sub-code">${highlightC(s.source).html}</pre>
+          <pre class="sub-code">${highlightCode(s.source, s.lang || 'c').html}</pre>
         </div>`;
       return;
     }
@@ -338,7 +357,10 @@ export async function render(ctx) {
           <div class="history-row clickable" data-sub="${h.id}" role="button" tabindex="0" title="Xem chi tiết và code">
             <span class="mono faint">#${h.id}</span>
             <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
-              <span class="vtext" style="--v:${verdictVar(h.verdict)};font-weight:500">${badge(h.verdict)}${esc(verdictLabel(h.verdict))}</span>
+              <span style="display:flex;align-items:center;gap:6px;">
+                ${langBadge(h.lang)}
+                <span class="vtext" style="--v:${verdictVar(h.verdict)};font-weight:500">${badge(h.verdict)}${esc(verdictLabel(h.verdict))}</span>
+              </span>
               <span class="faint" style="font-size:13px">${fmtWhen(h.created_at)}</span>
             </span>
             <span class="mono muted right" style="font-size:13px">${statLine(h)}</span>
@@ -379,7 +401,7 @@ export async function render(ctx) {
     drawTabs();
     drawResult();
     try {
-      const { id } = await api('/api/submissions', { method: 'POST', body: { problemId: p.id, source: editor.value } });
+      const { id } = await api('/api/submissions', { method: 'POST', body: { problemId: p.id, source: editor.value, lang: state.lang } });
       poll(id);
     } catch (err) {
       state.result = { phase: 'idle' };
@@ -397,12 +419,18 @@ export async function render(ctx) {
     }
     if (t.closest('[data-back-history]')) return (state.detail = null), drawHistory();
     if (t.closest('[data-load-code]')) {
-      const { id, source } = state.detail;
+      const { id, source, lang } = state.detail;
+      if (lang && lang !== state.lang) {
+        state.lang = lang;
+        const lSel = $('[data-lang]');
+        if (lSel) lSel.value = lang;
+        setLastLang(p.id, lang);
+      }
       editor.value = source;
       Object.assign(state, { tab: 'submit', detail: null });
       drawTabs();
       drawHistory();
-      return toast(`Đã nạp code của bài nộp #${id}`);
+      return toast(`Đã nạp code của bài nộp #${id} (${LANG_CONFIG[state.lang]?.label || state.lang})`);
     }
     const goto = t.closest('[data-goto-line]');
     if (goto) {
@@ -412,8 +440,9 @@ export async function render(ctx) {
     const zoom = t.closest('[data-zoom]');
     if (zoom) return editor.zoom(Number(zoom.dataset.zoom));
     if (t.closest('[data-reset]')) {
-      if (editor.value !== TEMPLATE && !confirm('Xóa code hiện tại và quay về khung mẫu?')) return;
-      editor.value = TEMPLATE;
+      const tpl = TEMPLATES[state.lang] || TEMPLATES.c;
+      if (editor.value !== tpl && !confirm(`Xóa code hiện tại và quay về khung mẫu ${LANG_CONFIG[state.lang]?.label || ''}?`)) return;
+      editor.value = tpl;
       return editor.focus();
     }
     if (t.closest('[data-run-samples]')) return runSamples();
@@ -455,9 +484,47 @@ export async function render(ctx) {
     }
   };
   ctx.view.addEventListener('click', onClick);
+
+  const langSelect = $('[data-lang]');
+  if (langSelect) {
+    langSelect.addEventListener('change', (e) => {
+      const newLang = e.target.value;
+      if (newLang === state.lang) return;
+      saveDraft(p.id, state.lang, editor.value);
+      state.lang = newLang;
+      setLastLang(p.id, newLang);
+      const code = readDraft(p.id, newLang) || TEMPLATES[newLang] || TEMPLATES.c;
+      editor.value = code;
+      const cfg = LANG_CONFIG[newLang] || LANG_CONFIG.c;
+      const fileInput = $('[data-file]');
+      if (fileInput) fileInput.accept = `${cfg.ext},text/plain`;
+      const upLabel = $('[data-upload-label]');
+      if (upLabel) upLabel.childNodes[0].nodeValue = `Tải file ${cfg.ext}`;
+      const mobLabel = $('.mobile-head .mono.muted');
+      if (mobLabel) mobLabel.textContent = `${p.id}${cfg.ext}`;
+      toast(`Đã chuyển sang ${cfg.label}`);
+    });
+  }
+
   $('[data-file]').addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const name = file.name.toLowerCase();
+    let detected = null;
+    if (name.endsWith('.cpp') || name.endsWith('.cc') || name.endsWith('.cxx')) detected = 'cpp';
+    else if (name.endsWith('.py')) detected = 'py';
+    else if (name.endsWith('.c')) detected = 'c';
+    if (detected && detected !== state.lang) {
+      state.lang = detected;
+      const lSel = $('[data-lang]');
+      if (lSel) lSel.value = detected;
+      setLastLang(p.id, detected);
+      const cfg = LANG_CONFIG[detected] || LANG_CONFIG.c;
+      const upLabel = $('[data-upload-label]');
+      if (upLabel) upLabel.childNodes[0].nodeValue = `Tải file ${cfg.ext}`;
+      const mobLabel = $('.mobile-head .mono.muted');
+      if (mobLabel) mobLabel.textContent = `${p.id}${cfg.ext}`;
+    }
     editor.value = await file.text();
     toast(`Đã tải ${file.name}`);
     e.target.value = '';
