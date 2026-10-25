@@ -30,9 +30,20 @@ export function createAdminStats(db, catalog) {
            COUNT(DISTINCT CASE WHEN verdict = 'AC' THEN user_id END) AS solved
     FROM submissions WHERE verdict NOT IN ('PENDING', 'IE') GROUP BY problem_id`);
   const acPairs = q("SELECT DISTINCT s.user_id, s.problem_id FROM submissions s JOIN users u ON u.id = s.user_id WHERE s.verdict = 'AC' AND u.role = 'student'");
+  const topStudentsQ = q(`
+    SELECT u.id, u.username, u.full_name AS fullName, u.avatar,
+           COUNT(DISTINCT s.problem_id) AS solved,
+           COUNT(*) AS tries
+    FROM submissions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.verdict = 'AC' AND s.contest_id IS NULL AND u.role = 'student'
+    GROUP BY u.id
+    ORDER BY solved DESC, tries ASC
+    LIMIT 5`);
+  const punchRows = q("SELECT created_at FROM submissions WHERE verdict NOT IN ('PENDING', 'IE') AND created_at >= ?");
   const feed = q(`
-    SELECT s.id, s.problem_id, s.verdict, s.created_at, u.username, u.full_name AS fullName, u.avatar FROM submissions s JOIN users u ON u.id = s.user_id
-    ORDER BY s.id DESC LIMIT 10`);
+    SELECT s.id, s.problem_id, s.verdict, s.time_ms, s.memory_kb, s.created_at, u.username, u.full_name AS fullName, u.avatar FROM submissions s JOIN users u ON u.id = s.user_id
+    ORDER BY s.id DESC LIMIT 12`);
 
   function series(range, rows, r) {
     if (range === 'today') {
@@ -62,6 +73,54 @@ export function createAdminStats(db, catalog) {
         return [s.id, students ? Math.round((done / students) * 100) : 0];
       }),
     );
+  }
+
+  function getPunchCard(sinceMs) {
+    const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
+    const rows = punchRows.all(sinceMs);
+    let max = 0;
+    let peak = { day: 5, hour: 20, count: 0 };
+    for (const r of rows) {
+      const d = new Date(r.created_at + TZ_MS);
+      const day = (d.getUTCDay() + 6) % 7; /* 0=T2, ..., 6=CN */
+      const hour = d.getUTCHours();
+      matrix[day][hour] += 1;
+      if (matrix[day][hour] > max) {
+        max = matrix[day][hour];
+        peak = { day, hour, count: max };
+      }
+    }
+    return { matrix, max, peak, total: rows.length };
+  }
+
+  function getSkillRadar() {
+    const students = countUsers.get().n || 1;
+    const modules = [
+      { key: 'io', name: 'Nhập xuất & Toán tử', sets: ['ch01'] },
+      { key: 'branch', name: 'Cấu trúc rẽ nhánh', sets: ['ch02'] },
+      { key: 'loop', name: 'Vòng lặp & Hình sao', sets: ['ch03'] },
+      { key: 'func', name: 'Hàm con & Số học', sets: ['ch04'] },
+      { key: 'array', name: 'Mảng & Chuỗi ký tự', sets: ['ch06', 'ch07', 'ch08', 'ch09'] },
+      { key: 'ptr', name: 'Con trỏ & Đệ quy', sets: ['ch05', 'ch10', 'ch11'] },
+    ];
+    const setMap = new Map(catalog.sets.map((s) => [s.id, s.problems]));
+    const solvedMap = new Map();
+    for (const { user_id, problem_id } of acPairs.all()) {
+      if (!solvedMap.has(problem_id)) solvedMap.set(problem_id, new Set());
+      solvedMap.get(problem_id).add(user_id);
+    }
+    return modules.map((m) => {
+      const pids = m.sets.flatMap((sid) => setMap.get(sid) || []);
+      const userSet = new Set();
+      for (const pid of pids) {
+        const users = solvedMap.get(pid);
+        if (users) {
+          for (const uid of users) userSet.add(uid);
+        }
+      }
+      const rate = Math.round((userSet.size / students) * 100);
+      return { key: m.key, name: m.name, rate, solvedStudents: userSet.size, totalProblems: pids.length };
+    });
   }
 
   return {
@@ -95,6 +154,9 @@ export function createAdminStats(db, catalog) {
         dist,
         hardest,
         setProgress: catalog.sets.slice(0, 6).map((s) => ({ id: s.id, title: s.title, pct: completion.get(s.id) ?? 0 })),
+        punchCard: getPunchCard(r.from),
+        skills: getSkillRadar(),
+        topStudents: topStudentsQ.all(),
         feed: feed.all().map((f) => ({ ...f, title: catalog.problemMap.get(f.problem_id)?.title ?? f.problem_id })),
       };
     },
