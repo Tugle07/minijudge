@@ -3,11 +3,11 @@ import { avatarColor, esc, go, initials, renderAvatar, toast } from '../ui.js';
 import { confirmDialog, fmtAgo } from './kit.js';
 
 const COLS = [
-  { key: 'username', label: 'Tên đăng nhập', defaultDir: 'asc' },
-  { key: 'role', label: 'Vai trò', defaultDir: 'desc' },
-  { key: 'solved', label: 'Đã giải', num: true, defaultDir: 'desc' },
-  { key: 'last_seen', label: 'Hoạt động cuối', defaultDir: 'desc' },
-  { key: 'locked', label: 'Trạng thái', defaultDir: 'desc' },
+  { key: 'username', label: 'Tên đăng nhập', defaultDir: 'asc', align: 'left', minWidth: '220px' },
+  { key: 'role', label: 'Vai trò', defaultDir: 'desc', align: 'center', width: '130px' },
+  { key: 'solved', label: 'Đã giải', defaultDir: 'desc', align: 'center', width: '110px' },
+  { key: 'last_seen', label: 'Hoạt động cuối', defaultDir: 'desc', align: 'center', width: '160px' },
+  { key: 'locked', label: 'Trạng thái', defaultDir: 'desc', align: 'center', width: '140px' },
 ];
 
 export async function render(ctx) {
@@ -40,8 +40,8 @@ export async function render(ctx) {
       </select>
       <span class="count" data-count style="margin-left:auto"></span>
     </div>
-    <div class="panel">
-      <table class="atable">
+    <div class="panel" style="overflow:auto">
+      <table class="atable" style="min-width:820px">
         <thead data-head></thead>
         <tbody data-rows></tbody>
       </table>
@@ -87,13 +87,21 @@ export async function render(ctx) {
         const arrow = isCurrent ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
         const color = isCurrent ? 'var(--accent, #2563eb)' : 'inherit';
         const weight = isCurrent ? '700' : '600';
-        return `<th class="${col.num ? 'num' : ''}" aria-sort="${isCurrent ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}">
-          <button class="sort" data-sort="${col.key}" style="cursor:pointer;color:${color};font-weight:${weight};display:inline-flex;align-items:center;gap:3px;border:none;background:none;font:inherit;">
+        const isCenter = col.align === 'center';
+        const thStyle = [
+          col.width ? `width:${col.width}` : '',
+          col.minWidth ? `min-width:${col.minWidth}` : '',
+          isCenter ? 'text-align:center' : 'text-align:left',
+          'white-space:nowrap',
+        ].filter(Boolean).join(';');
+        const btnJustify = isCenter ? 'justify-content:center;margin:0 auto;' : 'justify-content:flex-start;';
+        return `<th style="${thStyle}" aria-sort="${isCurrent ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}">
+          <button class="sort" data-sort="${col.key}" style="cursor:pointer;color:${color};font-weight:${weight};display:inline-flex;align-items:center;${btnJustify};gap:4px;border:none;background:none;font:inherit;width:100%;">
             <span>${col.label}</span><span style="font-size:12px;opacity:${isCurrent ? '1' : '0.4'}">${arrow || ' ↕'}</span>
           </button>
         </th>`;
       }).join('')}
-      <th style="width:56px"></th>
+      <th style="width:56px;text-align:center"></th>
     </tr>`;
 
     // Render tbody
@@ -113,11 +121,21 @@ export async function render(ctx) {
               ${me ? '<span class="me-tag">Bạn</span>' : ''}
             </a>
           </td>
-          <td><span style="padding:2px 9px;border-radius:6px;border:1px solid ${admin ? 'color-mix(in oklch, var(--re) 45%, transparent)' : 'var(--line2)'};color:${admin ? 'var(--re)' : 'var(--fg2)'};font-size:12.5px;font-weight:600">${admin ? 'Admin' : 'Sinh viên'}</span></td>
-          <td class="num"><b class="mono" style="font-size:14px">${u.solved}</b></td>
-          <td class="muted">${fmtAgo(u.last_seen)}</td>
-          <td><span style="display:inline-flex;align-items:center;gap:6px;color:${stColor};font-size:13.5px;font-weight:500"><span style="width:7px;height:7px;border-radius:50%;background:currentColor"></span>${u.locked ? 'Bị khóa' : 'Hoạt động'}</span></td>
-          <td class="row-menu">
+          <td style="text-align:center">
+            <span style="display:inline-block;padding:2px 9px;border-radius:6px;border:1px solid ${admin ? 'color-mix(in oklch, var(--re) 45%, transparent)' : 'var(--line2)'};color:${admin ? 'var(--re)' : 'var(--fg2)'};font-size:12.5px;font-weight:600">${admin ? 'Admin' : 'Sinh viên'}</span>
+          </td>
+          <td style="text-align:center">
+            <b class="mono" style="font-size:14.5px">${u.solved}</b>
+          </td>
+          <td class="muted" style="text-align:center;white-space:nowrap">
+            ${fmtAgo(u.last_seen)}
+          </td>
+          <td style="text-align:center;white-space:nowrap">
+            <span style="display:inline-flex;align-items:center;justify-content:center;gap:6px;color:${stColor};font-size:13.5px;font-weight:500">
+              <span style="width:7px;height:7px;border-radius:50%;background:currentColor"></span>${u.locked ? 'Bị khóa' : 'Hoạt động'}
+            </span>
+          </td>
+          <td class="row-menu" style="text-align:center">
             <button class="dots-btn" data-menu aria-haspopup="menu" aria-label="Thao tác">⋯</button>
             <div class="menu" role="menu" hidden>
               <button data-profile="${esc(u.username)}">Xem hồ sơ</button>

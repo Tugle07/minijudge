@@ -22,15 +22,15 @@ export async function render(ctx) {
     </div>
     <div class="panel" style="overflow:auto"><table class="atable" style="min-width:980px">
       <thead><tr>
-        <th style="width:70px;white-space:nowrap">Mã</th>
+        <th style="width:70px;white-space:nowrap;text-align:center">Mã</th>
         <th style="min-width:180px">Tên bài</th>
-        <th style="min-width:200px;white-space:nowrap">Khối</th>
+        <th style="min-width:180px;white-space:nowrap">Khối</th>
         <th style="width:130px;white-space:nowrap">Nguồn</th>
-        <th style="width:90px;white-space:nowrap">Độ khó</th>
-        <th class="num" style="width:60px;white-space:nowrap">Test</th>
-        <th class="num" style="width:75px;white-space:nowrap">Bài nộp</th>
-        <th class="num" style="width:80px;white-space:nowrap">Tỉ lệ AC</th>
-        <th style="width:120px;white-space:nowrap">Trạng thái</th>
+        <th style="width:90px;white-space:nowrap;text-align:center">Độ khó</th>
+        <th style="width:65px;white-space:nowrap;text-align:center">Test</th>
+        <th style="width:75px;white-space:nowrap;text-align:center">Bài nộp</th>
+        <th style="width:85px;white-space:nowrap;text-align:center">Tỉ lệ AC</th>
+        <th style="width:120px;white-space:nowrap;text-align:center">Trạng thái</th>
       </tr></thead>
       <tbody data-rows></tbody></table><div data-empty></div></div>`;
 
@@ -46,15 +46,15 @@ export async function render(ctx) {
     ctx.page.querySelector('[data-rows]').innerHTML = rows
       .map(
         (p) => `<tr class="click" data-open="${esc(p.id)}">
-          <td class="mono muted" style="white-space:nowrap">${esc(p.id)}</td>
+          <td class="mono muted" style="white-space:nowrap;text-align:center">${esc(p.id)}</td>
           <td style="font-weight:500">${esc(p.title)}</td>
           <td class="muted" style="white-space:nowrap">${p.sets.map((s) => esc(s.short)).join(', ') || '—'}</td>
           <td class="muted" style="font-size:13px;white-space:nowrap">${sourceText(p)}</td>
-          <td style="color:${diffColor(p.difficulty)};white-space:nowrap">${esc(p.difficulty)}</td>
-          <td class="num" style="white-space:nowrap">${p.tests}</td>
-          <td class="num" style="white-space:nowrap">${p.submissions}</td>
-          <td class="num" style="white-space:nowrap">${p.acRate}%</td>
-          <td style="white-space:nowrap">${statusPill(p.status)}</td></tr>`,
+          <td style="color:${diffColor(p.difficulty)};white-space:nowrap;text-align:center">${esc(p.difficulty)}</td>
+          <td class="mono" style="white-space:nowrap;text-align:center">${p.tests}</td>
+          <td class="mono" style="white-space:nowrap;text-align:center">${p.submissions}</td>
+          <td class="mono" style="white-space:nowrap;text-align:center">${p.acRate}%</td>
+          <td style="white-space:nowrap;text-align:center">${statusPill(p.status)}</td></tr>`,
       )
       .join('');
     ctx.page.querySelector('[data-empty]').innerHTML = rows.length
