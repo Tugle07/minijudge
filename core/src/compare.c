@@ -29,21 +29,6 @@ int judge_compare_files(const char *expected, const char *actual) {
 
     while (ca != EOF && cb != EOF) {
         if (ca != cb) {
-            /* Xử lý trường hợp đặc biệt ở cuối file:
-             * Một bên kết thúc bằng '\n' rồi tới EOF, bên kia kết thúc trực tiếp bằng EOF (thiếu '\n' cuối). */
-            if (ca == '\n') {
-                while (ca == '\n') ca = get_next_char(fa);
-                if (ca == EOF) {
-                    while (cb == '\n') cb = get_next_char(fb);
-                    if (cb == EOF) goto match;
-                }
-            } else if (cb == '\n') {
-                while (cb == '\n') cb = get_next_char(fb);
-                if (cb == EOF) {
-                    while (ca == '\n') ca = get_next_char(fa);
-                    if (ca == EOF) goto match;
-                }
-            }
             fclose(fa);
             fclose(fb);
             return 0;
@@ -56,14 +41,8 @@ int judge_compare_files(const char *expected, const char *actual) {
     while (ca == '\n') ca = get_next_char(fa);
     while (cb == '\n') cb = get_next_char(fb);
 
-    if (ca != EOF || cb != EOF) {
-        fclose(fa);
-        fclose(fb);
-        return 0;
-    }
-
-match:
+    int ok = (ca == EOF && cb == EOF);
     fclose(fa);
     fclose(fb);
-    return 1;
+    return ok;
 }

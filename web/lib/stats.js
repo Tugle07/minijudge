@@ -24,6 +24,10 @@ export function createStats(db, catalog) {
   const getFirstSubForProb = db.prepare('SELECT MIN(created_at) AS first_at FROM submissions WHERE user_id = ? AND problem_id = ? AND contest_id IS NULL');
   const updateAttemptAc = db.prepare('UPDATE problem_attempts SET ac_at = ?, duration_ms = ? WHERE user_id = ? AND problem_id = ? AND ac_at IS NULL');
   const insertAttemptFull = db.prepare('INSERT OR IGNORE INTO problem_attempts (user_id, problem_id, started_at, ac_at, duration_ms) VALUES (?, ?, ?, ?, ?)');
+  const hasAcSub = db.prepare("SELECT COUNT(*) AS n FROM submissions WHERE user_id = ? AND problem_id = ? AND verdict = 'AC' AND contest_id IS NULL");
+  const earliestAcSub = db.prepare("SELECT MIN(created_at) AS first_at FROM submissions WHERE user_id = ? AND problem_id = ? AND verdict = 'AC' AND contest_id IS NULL");
+  const clearAttemptAc = db.prepare('UPDATE problem_attempts SET ac_at = NULL, duration_ms = NULL WHERE user_id = ? AND problem_id = ?');
+  const syncAttemptAc = db.prepare('UPDATE problem_attempts SET ac_at = ?, duration_ms = ? WHERE user_id = ? AND problem_id = ?');
 
   function recordProblemView(userId, problemId) {
     if (!userId || !problemId) return;
@@ -47,26 +51,46 @@ export function createStats(db, catalog) {
     if (!subId) return;
     try {
       const sub = getSubForAttempt.get(subId);
-      if (!sub || sub.verdict !== 'AC' || sub.contest_id) return;
-      const { user_id, problem_id, created_at } = sub;
-      const existing = getAttempt.get(user_id, problem_id);
-      const acTime = created_at || Date.now();
+      if (!sub || sub.contest_id) return;
+      const { user_id, problem_id, created_at, verdict } = sub;
 
-      if (existing) {
-        if (!existing.ac_at) {
-          let dur = acTime - existing.started_at;
-          if (dur < 10_000) dur = 60_000;
+      if (verdict === 'AC') {
+        const existing = getAttempt.get(user_id, problem_id);
+        const acTime = created_at || Date.now();
+
+        if (existing) {
+          if (!existing.ac_at) {
+            let dur = acTime - existing.started_at;
+            if (dur < 10_000) dur = 60_000;
+            else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+            updateAttemptAc.run(acTime, dur, user_id, problem_id);
+          }
+        } else {
+          const firstRow = getFirstSubForProb.get(user_id, problem_id);
+          const firstAt = firstRow?.first_at || acTime;
+          let dur = acTime - firstAt;
+          if (dur < 30_000) dur = 60_000;
           else if (dur > 2 * 3600_000) dur = 30 * 60_000;
-          updateAttemptAc.run(acTime, dur, user_id, problem_id);
+          const started = acTime - dur;
+          insertAttemptFull.run(user_id, problem_id, started, acTime, dur);
         }
       } else {
-        const firstRow = getFirstSubForProb.get(user_id, problem_id);
-        const firstAt = firstRow?.first_at || acTime;
-        let dur = acTime - firstAt;
-        if (dur < 30_000) dur = 60_000;
-        else if (dur > 2 * 3600_000) dur = 30 * 60_000;
-        const started = acTime - dur;
-        insertAttemptFull.run(user_id, problem_id, started, acTime, dur);
+        /* Xử lý trường hợp Rejudge: bài từ AC đổi thành WA/CE/TLE */
+        const otherAc = hasAcSub.get(user_id, problem_id);
+        if (!otherAc || otherAc.n === 0) {
+          clearAttemptAc.run(user_id, problem_id);
+        } else {
+          const earliest = earliestAcSub.get(user_id, problem_id);
+          if (earliest?.first_at) {
+            const existing = getAttempt.get(user_id, problem_id);
+            if (existing) {
+              let dur = earliest.first_at - existing.started_at;
+              if (dur < 10_000) dur = 60_000;
+              else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+              syncAttemptAc.run(earliest.first_at, dur, user_id, problem_id);
+            }
+          }
+        }
       }
     } catch (e) {
       console.error('recordAcAttempt error:', e);
@@ -124,7 +148,7 @@ export function createStats(db, catalog) {
         MAX(CASE WHEN s.verdict = 'AC' THEN s.created_at ELSE 0 END) AS last_ac_at
       FROM submissions s
       WHERE s.contest_id IS NULL
-        AND s.verdict != 'PENDING'
+        AND ${JUDGED}
         AND s.problem_id IN (${placeholders})
       GROUP BY s.user_id, s.problem_id
     `;
@@ -183,22 +207,21 @@ export function createStats(db, catalog) {
       /* Thời gian làm bài = Tổng thời gian làm từng bài (tính từ khi bấm xem đề đến khi nộp bài đạt AC) */
       let workDurationMs = 0;
       for (const pid of pids) {
+        const pSub = probMap.get(pid);
+        if (!pSub || (!pSub.is_ac && (pSub.best_score || 0) === 0)) continue;
         const att = userAttempts.get(pid);
-        if (att && att.duration_ms > 0) {
+        if (att && att.ac_at && att.duration_ms > 0 && pSub.is_ac) {
           workDurationMs += att.duration_ms;
-        } else {
-          const pSub = probMap.get(pid);
-          if (pSub && pSub.is_ac && pSub.first_ac_at) {
-            let dur = pSub.first_ac_at - pSub.first_sub_at;
-            if (dur < 30_000) dur = 60_000;
-            else if (dur > 2 * 3600_000) dur = 30 * 60_000;
-            workDurationMs += dur;
-          } else if (pSub && (pSub.best_score || 0) > 0) {
-            let dur = pSub.last_score_at - pSub.first_sub_at;
-            if (dur < 30_000) dur = 60_000;
-            else if (dur > 2 * 3600_000) dur = 30 * 60_000;
-            workDurationMs += dur;
-          }
+        } else if (pSub.is_ac && pSub.first_ac_at) {
+          let dur = pSub.first_ac_at - pSub.first_sub_at;
+          if (dur < 30_000) dur = 60_000;
+          else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+          workDurationMs += dur;
+        } else if ((pSub.best_score || 0) > 0) {
+          let dur = pSub.last_score_at - pSub.first_sub_at;
+          if (dur < 30_000) dur = 60_000;
+          else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+          workDurationMs += dur;
         }
       }
 
