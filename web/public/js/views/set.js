@@ -66,22 +66,6 @@ function rankHtml(board) {
   }
   const top3 = board.slice(0, Math.min(3, board.length));
   return `
-    <!-- Thanh quy tắc xếp hạng minh bạch -->
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:color-mix(in oklch, var(--accent) 7%, transparent);border:1px solid color-mix(in oklch, var(--accent) 22%, transparent);border-radius:var(--r-md);font-size:12.5px;color:var(--fg2);margin-bottom:16px;flex-wrap:wrap;">
-      <span style="font-weight:700;color:var(--accent);display:inline-flex;align-items:center;gap:6px;">
-        <span>⚖️</span> Quy tắc xếp hạng:
-      </span>
-      <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:500;">
-        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">1. Điểm số cao nhất</span>
-        <span class="faint">➔</span>
-        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">2. Thời gian làm bài ngắn nhất</span>
-        <span class="faint">➔</span>
-        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">3. Hoàn thành sớm nhất</span>
-        <span class="faint">➔</span>
-        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">4. Số lần nộp ít hơn</span>
-      </div>
-    </div>
-
     <!-- Top 3 Podium -->
     ${renderPodium(top3)}
 
@@ -132,7 +116,6 @@ function rankHtml(board) {
         })
         .join('')}
     </div>
-    <p class="faint" style="margin:14px 0 0;font-size:13px;">Thứ hạng xếp căn cứ minh bạch: <b>Tổng điểm</b> ➔ <b>Thời gian làm bài</b> ➔ <b>Thời điểm hoàn thành</b> ➔ <b>Số lần nộp bài</b>.</p>
   `;
 }
 

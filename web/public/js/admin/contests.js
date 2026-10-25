@@ -550,10 +550,6 @@ async function detail(ctx, id, tab) {
   async function board() {
     const b = await api(`/api/admin/contests/${id}/scoreboard`);
     ctx.page.innerHTML = shell(`
-      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:color-mix(in oklch, var(--accent) 7%, transparent);border:1px solid color-mix(in oklch, var(--accent) 22%, transparent);border-radius:var(--r-md);font-size:12px;color:var(--fg2);margin-bottom:12px;flex-wrap:wrap;">
-        <span style="font-weight:700;color:var(--accent);">⚖️ Quy tắc xếp hạng:</span>
-        <span>1. Điểm số cao nhất ➔ 2. Thời gian làm bài ngắn nhất ➔ 3. Hoàn thành sớm nhất ➔ 4. Số lần nộp ít hơn</span>
-      </div>
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
           <thead><tr>

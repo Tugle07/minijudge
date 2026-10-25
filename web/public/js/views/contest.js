@@ -153,77 +153,29 @@ export async function render(ctx) {
 
           ${contest.description ? `<div class="statement" style="font-size:14.5px;padding:12px 14px;background:var(--bg3);border-radius:var(--r-md);border-left:4px solid var(--accent);">${renderMarkdown(contest.description)}</div>` : ''}
 
-          <!-- Bảng quy định phòng thi chuẩn mực & chính xác -->
-          <div class="exam-rules" style="padding:18px 20px;border-radius:var(--r-md);background:var(--bg3);font-size:14px;line-height:1.65;border:1px solid var(--line2);">
-            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px;">
-              <b style="font-size:15.5px;color:var(--fg);display:flex;align-items:center;gap:8px;">
-                <span style="font-size:18px;">📋</span> QUY ĐỊNH PHÒNG THI &amp; QUY CHẾ LÀM BÀI
+          <!-- Nội quy phòng thi cơ bản -->
+          <div class="exam-rules" style="padding:16px 18px;border-radius:var(--r-md);background:var(--bg3);font-size:14px;line-height:1.6;border:1px solid var(--line2);">
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px;">
+              <b style="font-size:15px;color:var(--fg);display:flex;align-items:center;gap:8px;">
+                <span>📋</span> NỘI QUY PHÒNG THI
               </b>
-              <span class="pill" style="background:color-mix(in oklch, var(--wa) 18%, transparent);color:var(--wa);font-size:11.5px;font-weight:700;">BẮT BUỘC TUÂN THỦ</span>
+              <span class="pill" style="background:color-mix(in oklch, var(--wa) 16%, transparent);color:var(--wa);font-size:11.5px;font-weight:700;">BẮT BUỘC</span>
             </div>
             
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div style="display:flex;gap:10px;">
-                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">1.</span>
-                <div>
-                  <b style="color:var(--fg);">Chế độ Toàn màn hình &amp; Giám sát chống gian lận:</b>
-                  <div class="muted" style="margin-top:2px;">Bài thi bắt buộc thực hiện ở chế độ <b>toàn màn hình (Fullscreen)</b>. Nghiêm cấm mọi hành vi: chuyển tab trình duyệt, đổi cửa sổ ứng dụng (Alt + Tab), thoát toàn màn hình hoặc mở công cụ nhà phát triển (F12/Inspect). Toàn bộ sự kiện rời màn hình bài thi đều được <b>hệ thống ghi nhật ký chi tiết và báo cáo giám thị theo thời gian thực</b>. Mỗi lần vi phạm, máy tính sẽ <b>phát 3 tiếng bíp cảnh báo</b>.</div>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;">
-                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">2.</span>
-                <div>
-                  <b style="color:var(--fg);">Thiết bị làm bài &amp; Duy nhất một phiên đăng nhập:</b>
-                  <div class="muted" style="margin-top:2px;">Mỗi thí sinh chỉ được mở bài thi trên <b>duy nhất 1 máy tính và 1 tab trình duyệt</b>. <b>Tuyệt đối không sử dụng màn hình phụ</b> (cần rút cáp HDMI/VGA máy chiếu hoặc màn hình thứ hai trước khi vào thi). Đăng nhập ở thiết bị hoặc tab thứ hai sẽ bị hệ thống từ chối và tự động khóa bài làm.</div>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;">
-                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">3.</span>
-                <div>
-                  <b style="color:var(--fg);">Quy định Sao chép &amp; Dán mã nguồn (Copy/Paste):</b>
-                  <div class="muted" style="margin-top:2px;">${contest.blockPaste !== false ? 'Thí sinh được phép sao chép / dán nội dung phát sinh trong phòng thi (code tự viết, đề bài, dữ liệu mẫu). Hệ thống <b>tự động xóa bộ nhớ đệm (clipboard) khi vào phòng</b> và <b>chặn toàn bộ hành vi dán mã nguồn từ bên ngoài vào</b>.' : 'Được phép copy/paste mã nguồn.'} Phân hệ luyện tập và lịch sử nộp bài cũ sẽ tạm khóa trong suốt thời gian thi.</div>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;">
-                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">4.</span>
-                <div>
-                  <b style="color:var(--fg);">Cơ chế chấm điểm Subtask (Điểm từng phần):</b>
-                  <div class="muted" style="margin-top:2px;">Mỗi bài thi được chia làm nhiều Subtask (nhóm test). Một Subtask chỉ được tính điểm khi code <b>vượt qua 100% test</b> trong nhóm đó (sai dù chỉ 1 test thì nhóm đó 0 điểm). Điểm bài là tổng các Subtask đạt được; hệ thống tự động <b>lấy kết quả lần nộp cao điểm nhất</b>.</div>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;">
-                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">5.</span>
-                <div>
-                  <b style="color:var(--fg);">Hậu kiểm chống đạo văn (Plagiarism check):</b>
-                  <div class="muted" style="margin-top:2px;">Ngay sau khi ca thi kết thúc, hệ thống sẽ tự động quét đối sánh mã nguồn của toàn bộ thí sinh để phát hiện các bài thi tương đồng hoặc có dấu hiệu sao chép lẫn nhau. Mọi vi phạm gian lận đều bị lập biên bản, hủy bài và nhận điểm 0 theo quy chế đào tạo.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Kiểm tra điều kiện thiết bị -->
-          <div class="exam-checks-box" style="padding:14px 16px;background:var(--bg3);border-radius:var(--r-md);border:1px solid var(--line2);display:flex;flex-direction:column;gap:8px;">
-            <span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Điều kiện kỹ thuật của thiết bị</span>
-            <div class="exam-checks" style="display:flex;flex-direction:column;gap:6px;">
-              ${checks.map(([label, ok, hint]) => `
-                <div class="exam-check ${ok ? 'ok' : 'bad'}" style="display:flex;align-items:center;gap:10px;font-size:14px;">
-                  <span style="font-weight:700;color:${ok ? 'var(--ac)' : 'var(--wa)'};font-size:16px;">${ok ? '✓' : '✗'}</span>
-                  <span>${esc(label)}${!ok && hint ? `<small style="color:var(--wa);margin-left:6px;">(${esc(hint)})</small>` : ''}</span>
-                </div>
-              `).join('')}
-            </div>
+            <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:var(--fg2);">
+              <li>Thí sinh phải làm bài <b>độc lập và nghiêm túc</b>, tuyệt đối tuân thủ hướng dẫn của cán bộ coi thi.</li>
+              <li>Nghiêm cấm mọi hành vi gian lận, trao đổi bài hoặc sử dụng tài liệu, thiết bị trái quy định.</li>
+              <li>Chỉ làm bài trên máy tính được chỉ định trong phòng thi; không tự ý thoát hoặc can thiệp vào hệ thống thi.</li>
+              <li>Hệ thống tự động giám sát toàn bộ tiến trình thi. Mọi vi phạm sẽ bị xử lý kỷ luật theo Quy chế đào tạo.</li>
+            </ul>
           </div>
 
           <!-- Khối Cam kết quy định phòng thi -->
-          <div class="exam-agreement-card" style="padding:16px 18px;background:color-mix(in oklch, var(--accent) 8%, var(--bg2));border:1.5px solid color-mix(in oklch, var(--accent) 35%, var(--line2));border-radius:var(--r-md);display:flex;flex-direction:column;gap:8px;">
-            <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:14.5px;line-height:1.5;user-select:none;">
-              <input type="checkbox" data-agree style="width:20px;height:20px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;" />
+          <div class="exam-agreement-card" style="padding:15px 18px;background:color-mix(in oklch, var(--accent) 8%, var(--bg2));border:1.5px solid color-mix(in oklch, var(--accent) 35%, var(--line2));border-radius:var(--r-md);">
+            <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:14px;line-height:1.5;user-select:none;">
+              <input type="checkbox" data-agree style="width:19px;height:19px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;" />
               <span style="font-weight:600;color:var(--fg);">
-                Tôi xác nhận đã đọc, hiểu rõ và <b style="color:var(--accent);">cam kết thực hiện đúng toàn bộ các quy định phòng thi bên trên</b>. Tôi chịu hoàn toàn trách nhiệm nếu vi phạm quy chế thi.
+                Tôi đã đọc, hiểu rõ nội quy phòng thi và <b style="color:var(--accent);">cam kết tự giác, nghiêm túc thực hiện bài thi</b>. Tôi chịu hoàn toàn trách nhiệm nếu vi phạm quy chế.
               </span>
             </label>
           </div>
@@ -1038,10 +990,6 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
       <div class="board-head">
         <h2 class="section-title">Bảng xếp hạng${live ? ' <span class="board-live">trực tiếp</span>' : ''}</h2>
         <span class="faint" style="font-size:13px">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài, cập nhật mỗi 15 giây` : ''}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:color-mix(in oklch, var(--accent) 7%, transparent);border:1px solid color-mix(in oklch, var(--accent) 22%, transparent);border-radius:var(--r-md);font-size:12px;color:var(--fg2);margin:8px 0 12px;flex-wrap:wrap;">
-        <span style="font-weight:700;color:var(--accent);">⚖️ Quy tắc xếp hạng:</span>
-        <span>1. Điểm số cao nhất ➔ 2. Thời gian làm bài ngắn nhất ➔ 3. Hoàn thành sớm nhất ➔ 4. Số lần nộp ít hơn</span>
       </div>
       <div class="rank-scroll"><div class="table" style="min-width:${48 + 160 + b.problems.length * 66 + 76 + 88 + 80 + 48}px">
         <div class="trow thead" style="grid-template-columns:${cols}">
