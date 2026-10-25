@@ -49,6 +49,7 @@ export function catalogRoutes({ catalog, stats, auth, settings }) {
     const p = catalog.problemMap.get(req.params.id);
     const isAdmin = req.user.role === 'admin';
     if (!p || (!isAdmin && !catalog.isProblemVisible(p))) return res.status(404).json({ error: 'Không tìm thấy đề' });
+    stats.recordProblemView(req.user.id, p.id);
     const set = catalog.sets.find((s) => (isAdmin || catalog.isSetVisible(s)) && s.problems.includes(p.id));
     const { root, solution, ...pub } = p;
     res.json({

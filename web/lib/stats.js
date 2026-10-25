@@ -16,6 +16,63 @@ export function createStats(db, catalog) {
   );
   const myDays = db.prepare(`SELECT created_at FROM submissions WHERE user_id = ? AND contest_id IS NULL AND ${JUDGED}`);
 
+  /* Theo dõi phiên và thời gian làm bài */
+  const getAttempt = db.prepare('SELECT user_id, problem_id, started_at, ac_at, duration_ms FROM problem_attempts WHERE user_id = ? AND problem_id = ?');
+  const insertAttempt = db.prepare('INSERT OR IGNORE INTO problem_attempts (user_id, problem_id, started_at) VALUES (?, ?, ?)');
+  const updateAttemptStart = db.prepare('UPDATE problem_attempts SET started_at = ? WHERE user_id = ? AND problem_id = ? AND ac_at IS NULL');
+  const getSubForAttempt = db.prepare('SELECT id, user_id, problem_id, verdict, contest_id, created_at FROM submissions WHERE id = ?');
+  const getFirstSubForProb = db.prepare('SELECT MIN(created_at) AS first_at FROM submissions WHERE user_id = ? AND problem_id = ? AND contest_id IS NULL');
+  const updateAttemptAc = db.prepare('UPDATE problem_attempts SET ac_at = ?, duration_ms = ? WHERE user_id = ? AND problem_id = ? AND ac_at IS NULL');
+  const insertAttemptFull = db.prepare('INSERT OR IGNORE INTO problem_attempts (user_id, problem_id, started_at, ac_at, duration_ms) VALUES (?, ?, ?, ?, ?)');
+
+  function recordProblemView(userId, problemId) {
+    if (!userId || !problemId) return;
+    try {
+      const existing = getAttempt.get(userId, problemId);
+      const now = Date.now();
+      if (!existing) {
+        insertAttempt.run(userId, problemId, now);
+      } else if (!existing.ac_at) {
+        /* Nếu chưa AC và đã quá 4 tiếng kể từ lần mở trước, làm mới mốc started_at */
+        if (now - existing.started_at > 4 * 3600_000) {
+          updateAttemptStart.run(now, userId, problemId);
+        }
+      }
+    } catch (e) {
+      console.error('recordProblemView error:', e);
+    }
+  }
+
+  function recordAcAttempt(subId) {
+    if (!subId) return;
+    try {
+      const sub = getSubForAttempt.get(subId);
+      if (!sub || sub.verdict !== 'AC' || sub.contest_id) return;
+      const { user_id, problem_id, created_at } = sub;
+      const existing = getAttempt.get(user_id, problem_id);
+      const acTime = created_at || Date.now();
+
+      if (existing) {
+        if (!existing.ac_at) {
+          let dur = acTime - existing.started_at;
+          if (dur < 10_000) dur = 60_000;
+          else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+          updateAttemptAc.run(acTime, dur, user_id, problem_id);
+        }
+      } else {
+        const firstRow = getFirstSubForProb.get(user_id, problem_id);
+        const firstAt = firstRow?.first_at || acTime;
+        let dur = acTime - firstAt;
+        if (dur < 30_000) dur = 60_000;
+        else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+        const started = acTime - dur;
+        insertAttemptFull.run(user_id, problem_id, started, acTime, dur);
+      }
+    } catch (e) {
+      console.error('recordAcAttempt error:', e);
+    }
+  }
+
   function myProblemStatus(userId) {
     const map = new Map();
     for (const r of myStatus.all(userId)) map.set(r.problem_id, r.ac ? 'ac' : 'tried');
@@ -62,6 +119,7 @@ export function createStats(db, catalog) {
         MAX(CASE WHEN s.verdict = 'AC' THEN 1 ELSE 0 END) AS is_ac,
         COUNT(*) AS tries,
         MIN(s.created_at) AS first_sub_at,
+        MIN(CASE WHEN s.verdict = 'AC' THEN s.created_at ELSE NULL END) AS first_ac_at,
         MAX(CASE WHEN COALESCE(s.score, CASE WHEN s.verdict = 'AC' THEN 100 ELSE 0 END) > 0 THEN s.created_at ELSE 0 END) AS last_score_at,
         MAX(CASE WHEN s.verdict = 'AC' THEN s.created_at ELSE 0 END) AS last_ac_at
       FROM submissions s
@@ -73,7 +131,11 @@ export function createStats(db, catalog) {
 
     const perProb = db.prepare(sql).all(...pids);
     const userMap = new Map();
+    const userProbMap = new Map();
     for (const r of perProb) {
+      if (!userProbMap.has(r.user_id)) userProbMap.set(r.user_id, new Map());
+      userProbMap.get(r.user_id).set(r.problem_id, r);
+
       const u = userMap.get(r.user_id) || {
         userId: r.user_id,
         totalScore: 0,
@@ -99,14 +161,48 @@ export function createStats(db, catalog) {
     const userRows = db.prepare(`SELECT id, username, full_name, avatar, role FROM users WHERE id IN (${uPlaceholders})`).all(...userIds);
     const infoMap = new Map(userRows.map((u) => [u.id, u]));
 
+    /* Lấy thời gian làm bài của từng bài tập từ problem_attempts */
+    const attemptRows = db.prepare(`
+      SELECT user_id, problem_id, duration_ms, started_at, ac_at
+      FROM problem_attempts
+      WHERE user_id IN (${uPlaceholders}) AND problem_id IN (${placeholders})
+    `).all(...userIds, ...pids);
+
+    const attemptMap = new Map();
+    for (const a of attemptRows) {
+      if (!attemptMap.has(a.user_id)) attemptMap.set(a.user_id, new Map());
+      attemptMap.get(a.user_id).set(a.problem_id, a);
+    }
+
     const rows = userIds.map((uid) => {
       const stat = userMap.get(uid);
       const info = infoMap.get(uid) || {};
-      const finishAt = stat.lastScoreAt || stat.lastAcAt || 0;
+      const probMap = userProbMap.get(uid) || new Map();
+      const userAttempts = attemptMap.get(uid) || new Map();
+
+      /* Thời gian làm bài = Tổng thời gian làm từng bài (tính từ khi bấm xem đề đến khi nộp bài đạt AC) */
       let workDurationMs = 0;
-      if (finishAt && stat.firstSubAt && finishAt >= stat.firstSubAt) {
-        workDurationMs = Math.max(1000, finishAt - stat.firstSubAt);
+      for (const pid of pids) {
+        const att = userAttempts.get(pid);
+        if (att && att.duration_ms > 0) {
+          workDurationMs += att.duration_ms;
+        } else {
+          const pSub = probMap.get(pid);
+          if (pSub && pSub.is_ac && pSub.first_ac_at) {
+            let dur = pSub.first_ac_at - pSub.first_sub_at;
+            if (dur < 30_000) dur = 60_000;
+            else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+            workDurationMs += dur;
+          } else if (pSub && (pSub.best_score || 0) > 0) {
+            let dur = pSub.last_score_at - pSub.first_sub_at;
+            if (dur < 30_000) dur = 60_000;
+            else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+            workDurationMs += dur;
+          }
+        }
       }
+
+      const finishAt = stat.lastScoreAt || stat.lastAcAt || 0;
       return {
         id: uid,
         username: info.username || '',
@@ -177,5 +273,5 @@ export function createStats(db, catalog) {
     return { rows, myRank };
   }
 
-  return { myProblemStatus, classStats, streak, setLeaderboard };
+  return { myProblemStatus, classStats, streak, setLeaderboard, recordProblemView, recordAcAttempt };
 }

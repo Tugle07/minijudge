@@ -89,6 +89,7 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, setti
       .prepare('INSERT INTO submissions (user_id, problem_id, source, lang, created_at) VALUES (?, ?, ?, ?, ?)')
       .run(req.user.id, problemId, source, lang, Date.now());
     const id = Number(lastInsertRowid);
+    stats.recordProblemView?.(req.user.id, problemId);
     queue.push(id);
     res.status(201).json({ id });
   });

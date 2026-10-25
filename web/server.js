@@ -83,7 +83,10 @@ const queue = createJudgeQueue({
   client: judge,
   concurrency: Math.max(1, Number(process.env.JUDGE_CONCURRENCY) || 1),
   originOf: (id) => catalog.problemMap.get(id)?.origin ?? 'repo',
-  onJudged: (id) => contests.scoreSubmission(id),
+  onJudged: (id) => {
+    contests.scoreSubmission(id);
+    stats.recordAcAttempt(id);
+  },
 });
 if (process.env.BACKUP !== '0') scheduleBackups(db, path.join(DATA_DIR, 'backups'));
 const authLimit = createRateLimit({ windowMs: 15 * 60_000, max: 20, message: 'Thử quá nhiều lần, đợi 15 phút rồi thử lại.' });

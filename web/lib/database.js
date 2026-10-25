@@ -106,6 +106,17 @@ export function openDatabase(file) {
       at         INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_contest_events ON contest_events(contest_id, user_id);
+
+    /* Theo dõi thời gian làm bài: tính từ khi bấm vào đề đến khi nộp AC */
+    CREATE TABLE IF NOT EXISTS problem_attempts (
+      user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      problem_id   TEXT NOT NULL,
+      started_at   INTEGER NOT NULL,
+      ac_at        INTEGER,
+      duration_ms  INTEGER,
+      PRIMARY KEY (user_id, problem_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_problem_attempts_user ON problem_attempts(user_id);
   `);
   migrate(db);
   return db;
@@ -132,4 +143,40 @@ function migrate(db) {
   if (meta.size && !meta.has('subtasks')) db.exec('ALTER TABLE problem_meta ADD COLUMN subtasks TEXT');
   const parts = columnsOf(db, 'contest_participants');
   if (parts.size && !parts.has('device')) db.exec("ALTER TABLE contest_participants ADD COLUMN device TEXT NOT NULL DEFAULT ''");
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS problem_attempts (
+      user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      problem_id   TEXT NOT NULL,
+      started_at   INTEGER NOT NULL,
+      ac_at        INTEGER,
+      duration_ms  INTEGER,
+      PRIMARY KEY (user_id, problem_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_problem_attempts_user ON problem_attempts(user_id);
+  `);
+
+  /* Tự động chuyển đổi dữ liệu lịch sử nếu bảng problem_attempts chưa có */
+  const attemptCount = db.prepare('SELECT COUNT(*) AS n FROM problem_attempts').get().n;
+  if (attemptCount === 0) {
+    const acs = db.prepare(`
+      SELECT user_id, problem_id, MIN(created_at) AS first_at,
+             MIN(CASE WHEN verdict = 'AC' THEN created_at ELSE NULL END) AS ac_at
+      FROM submissions
+      WHERE contest_id IS NULL AND verdict != 'PENDING'
+      GROUP BY user_id, problem_id
+      HAVING ac_at IS NOT NULL
+    `).all();
+    const insertAttempt = db.prepare(`
+      INSERT OR IGNORE INTO problem_attempts (user_id, problem_id, started_at, ac_at, duration_ms)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    for (const r of acs) {
+      let dur = r.ac_at - r.first_at;
+      if (dur < 30_000) dur = 60_000;
+      else if (dur > 2 * 3600_000) dur = 30 * 60_000;
+      const started = r.ac_at - dur;
+      insertAttempt.run(r.user_id, r.problem_id, started, r.ac_at, dur);
+    }
+  }
 }

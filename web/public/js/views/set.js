@@ -76,7 +76,7 @@ function rankHtml(board) {
         <span>Sinh viên</span>
         <span class="right" style="padding-right:8px;">Điểm</span>
         <span>Tiến độ bài</span>
-        <span class="right wide-only" title="Tổng thời gian làm bài từ bài đầu tiên đến khi đạt kết quả">Làm bài</span>
+        <span class="right wide-only" title="Tổng thời gian thực tế làm các bài (tính từ khi bấm xem đề đến khi nộp bài đạt AC)">Làm bài</span>
         <span class="right" title="Thời điểm hoàn thành bài nộp đạt điểm cao nhất">Hoàn thành</span>
         <span class="right wide-only" title="Tổng số lần nộp bài trong khối">Lần nộp</span>
       </div>
