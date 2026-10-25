@@ -73,7 +73,7 @@ export async function render(ctx) {
   }
   await load();
   const tick = setInterval(draw, 1000);
-  const refresh = setInterval(() => load().catch(() => {}), 30_000);
+  const refresh = setInterval(() => load().catch(() => {}), 3000);
   return () => {
     clearInterval(tick);
     clearInterval(refresh);

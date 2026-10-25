@@ -844,9 +844,9 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
         const fresh = await api(`/api/contests/${cid}/results`).catch(() => null);
         const box = ctx.view.querySelector('[data-board]');
         if (fresh && box) box.innerHTML = boardHtml(fresh);
-        if (fresh?.phase === 'running') later(refresh, 15_000);
+        if (fresh?.phase === 'running') later(refresh, 3000);
       };
-      later(refresh, 15_000);
+      later(refresh, 3000);
     }
   }
 

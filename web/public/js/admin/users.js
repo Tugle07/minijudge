@@ -1,35 +1,126 @@
 import { api } from '../api.js';
-import { avatarColor, esc, go, initials, toast } from '../ui.js';
+import { avatarColor, esc, go, initials, renderAvatar, toast } from '../ui.js';
 import { confirmDialog, fmtAgo } from './kit.js';
+
+const COLS = [
+  { key: 'username', label: 'Tên đăng nhập', defaultDir: 'asc' },
+  { key: 'role', label: 'Vai trò', defaultDir: 'desc' },
+  { key: 'solved', label: 'Đã giải', num: true, defaultDir: 'desc' },
+  { key: 'last_seen', label: 'Hoạt động cuối', defaultDir: 'desc' },
+  { key: 'locked', label: 'Trạng thái', defaultDir: 'desc' },
+];
 
 export async function render(ctx) {
   ctx.setHead({ crumb: 'Người dùng', title: 'Người dùng' });
   let users = await api('/api/admin/users');
   let q = '';
+  let roleFilter = 'all';
+  let sortKey = 'username';
+  let sortDir = 'asc';
 
   ctx.page.innerHTML = `
-    <div class="filters"><input class="ctl" data-q placeholder="Tìm người dùng" style="flex:0 1 280px" /><span class="count" data-count></span></div>
-    <div class="panel"><table class="atable">
-      <thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th class="num">Đã giải</th><th>Hoạt động cuối</th><th>Trạng thái</th><th style="width:56px"></th></tr></thead>
-      <tbody data-rows></tbody></table><div data-empty></div></div>`;
+    <div class="filters" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <input class="ctl" data-q placeholder="Tìm người dùng (MSSV, tên)" style="flex:1 1 220px;max-width:300px" />
+      <select class="ctl" data-role-filter aria-label="Lọc theo vai trò" style="flex:0 0 auto">
+        <option value="all">Tất cả vai trò</option>
+        <option value="admin">Admin</option>
+        <option value="student">Sinh viên</option>
+      </select>
+      <select class="ctl" data-sort-select aria-label="Sắp xếp danh sách" style="flex:0 0 auto">
+        <option value="username:asc">Tên đăng nhập (A → Z)</option>
+        <option value="username:desc">Tên đăng nhập (Z → A)</option>
+        <option value="solved:desc">Đã giải (Nhiều nhất ↓)</option>
+        <option value="solved:asc">Đã giải (Ít nhất ↑)</option>
+        <option value="last_seen:desc">Hoạt động cuối (Mới nhất ↓)</option>
+        <option value="last_seen:asc">Hoạt động cuối (Cũ nhất ↑)</option>
+        <option value="role:desc">Vai trò (Admin trước)</option>
+        <option value="role:asc">Vai trò (Sinh viên trước)</option>
+        <option value="locked:desc">Trạng thái (Bị khóa trước)</option>
+        <option value="locked:asc">Trạng thái (Hoạt động trước)</option>
+      </select>
+      <span class="count" data-count style="margin-left:auto"></span>
+    </div>
+    <div class="panel">
+      <table class="atable">
+        <thead data-head></thead>
+        <tbody data-rows></tbody>
+      </table>
+      <div data-empty></div>
+    </div>`;
 
   function draw() {
-    const list = users.filter((u) => !q || u.username.toLowerCase().includes(q) || (u.fullName || '').toLowerCase().includes(q));
+    let list = users.filter((u) => {
+      const matchQ = !q || u.username.toLowerCase().includes(q) || (u.fullName || '').toLowerCase().includes(q);
+      const matchRole = roleFilter === 'all' || u.role === roleFilter;
+      return matchQ && matchRole;
+    });
+
+    // Sắp xếp
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'username') {
+        cmp = a.username.localeCompare(b.username, 'vi');
+      } else if (sortKey === 'role') {
+        const weight = (r) => (r === 'admin' ? 2 : 1);
+        cmp = weight(a.role) - weight(b.role);
+      } else if (sortKey === 'solved') {
+        cmp = (a.solved || 0) - (b.solved || 0);
+      } else if (sortKey === 'last_seen') {
+        cmp = (a.last_seen || 0) - (b.last_seen || 0);
+      } else if (sortKey === 'locked') {
+        cmp = (a.locked || 0) - (b.locked || 0);
+      }
+      if (cmp !== 0) return sortDir === 'asc' ? cmp : -cmp;
+      return a.username.localeCompare(b.username, 'vi');
+    });
+
     ctx.page.querySelector('[data-count]').textContent = `${list.length} người dùng`;
+
+    // Cập nhật giá trị select sắp xếp
+    const sortSel = ctx.page.querySelector('[data-sort-select]');
+    if (sortSel) sortSel.value = `${sortKey}:${sortDir}`;
+
+    // Render thead
+    ctx.page.querySelector('[data-head]').innerHTML = `<tr>
+      ${COLS.map((col) => {
+        const isCurrent = sortKey === col.key;
+        const arrow = isCurrent ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+        const color = isCurrent ? 'var(--accent, #2563eb)' : 'inherit';
+        const weight = isCurrent ? '700' : '600';
+        return `<th class="${col.num ? 'num' : ''}" aria-sort="${isCurrent ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}">
+          <button class="sort" data-sort="${col.key}" style="cursor:pointer;color:${color};font-weight:${weight};display:inline-flex;align-items:center;gap:3px;border:none;background:none;font:inherit;">
+            <span>${col.label}</span><span style="font-size:12px;opacity:${isCurrent ? '1' : '0.4'}">${arrow || ' ↕'}</span>
+          </button>
+        </th>`;
+      }).join('')}
+      <th style="width:56px"></th>
+    </tr>`;
+
+    // Render tbody
     ctx.page.querySelector('[data-rows]').innerHTML = list
       .map((u) => {
         const admin = u.role === 'admin';
         const me = u.username === ctx.me.username;
         const stColor = u.locked ? 'var(--wa)' : 'var(--ac)';
         return `<tr>
-          <td><span style="display:flex;align-items:center;gap:10px"><span class="avatar" style="width:28px;height:28px;font-size:11.5px;background:${avatarColor(u.username)}">${esc(initials(u.username))}</span><span style="display:flex;flex-direction:column"><span class="mono" style="font-weight:500">${esc(u.username)}</span>${u.fullName ? `<span class="faint" style="font-size:12.5px">${esc(u.fullName)}</span>` : ''}</span>${me ? '<span class="me-tag">Bạn</span>' : ''}</span></td>
+          <td>
+            <a href="/#/profile/${encodeURIComponent(u.username)}" target="_blank" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit" title="Xem hồ sơ ${esc(u.username)}">
+              ${renderAvatar(u.username, u.avatar, 28)}
+              <span style="display:flex;flex-direction:column">
+                <span class="mono" style="font-weight:600;color:var(--accent,#2563eb)">${esc(u.username)}</span>
+                ${u.fullName ? `<span class="faint" style="font-size:12.5px">${esc(u.fullName)}</span>` : ''}
+              </span>
+              ${me ? '<span class="me-tag">Bạn</span>' : ''}
+            </a>
+          </td>
           <td><span style="padding:2px 9px;border-radius:6px;border:1px solid ${admin ? 'color-mix(in oklch, var(--re) 45%, transparent)' : 'var(--line2)'};color:${admin ? 'var(--re)' : 'var(--fg2)'};font-size:12.5px;font-weight:600">${admin ? 'Admin' : 'Sinh viên'}</span></td>
-          <td class="num">${u.solved}</td>
+          <td class="num"><b class="mono" style="font-size:14px">${u.solved}</b></td>
           <td class="muted">${fmtAgo(u.last_seen)}</td>
           <td><span style="display:inline-flex;align-items:center;gap:6px;color:${stColor};font-size:13.5px;font-weight:500"><span style="width:7px;height:7px;border-radius:50%;background:currentColor"></span>${u.locked ? 'Bị khóa' : 'Hoạt động'}</span></td>
           <td class="row-menu">
             <button class="dots-btn" data-menu aria-haspopup="menu" aria-label="Thao tác">⋯</button>
             <div class="menu" role="menu" hidden>
+              <button data-profile="${esc(u.username)}">Xem hồ sơ</button>
               ${me ? '' : `<button data-role="${u.id}">${admin ? 'Đổi thành Sinh viên' : 'Đổi thành Admin'}</button>`}
               <button data-reset="${u.id}">Đặt lại mật khẩu</button>
               <button data-subs="${esc(u.username)}">Xem bài nộp</button>
@@ -48,10 +139,43 @@ export async function render(ctx) {
   const userById = (id) => users.find((u) => u.id === Number(id));
 
   ctx.page.addEventListener('input', (e) => {
-    if (e.target.matches('[data-q]')) (q = e.target.value.trim().toLowerCase()), draw();
+    if (e.target.matches('[data-q]')) {
+      q = e.target.value.trim().toLowerCase();
+      draw();
+    }
   });
+
+  ctx.page.addEventListener('change', (e) => {
+    if (e.target.matches('[data-role-filter]')) {
+      roleFilter = e.target.value;
+      draw();
+    }
+    if (e.target.matches('[data-sort-select]')) {
+      const [k, dir] = e.target.value.split(':');
+      sortKey = k;
+      sortDir = dir;
+      draw();
+    }
+  });
+
   ctx.page.addEventListener('click', async (e) => {
     const t = e.target;
+
+    // Click sắp xếp cột bảng
+    const sortBtn = t.closest('[data-sort]');
+    if (sortBtn) {
+      const k = sortBtn.dataset.sort;
+      if (sortKey === k) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortKey = k;
+        const col = COLS.find((c) => c.key === k);
+        sortDir = col?.defaultDir || 'desc';
+      }
+      draw();
+      return;
+    }
+
     const menuBtn = t.closest('[data-menu]');
     if (menuBtn) {
       const m = menuBtn.nextElementSibling;
@@ -59,8 +183,15 @@ export async function render(ctx) {
       m.hidden = !m.hidden;
       return;
     }
+    if (!t.closest('.row-menu')) {
+      ctx.page.querySelectorAll('.row-menu .menu').forEach((x) => (x.hidden = true));
+    }
+
     const pickId = (k) => t.closest(`[data-${k}]`)?.dataset[k];
     try {
+      if (pickId('profile')) {
+        return window.open(`/#/profile/${encodeURIComponent(pickId('profile'))}`, '_blank');
+      }
       if (pickId('role')) {
         const u = userById(pickId('role'));
         await api(`/api/admin/users/${u.id}`, { method: 'PATCH', body: { role: u.role === 'admin' ? 'student' : 'admin' } });
@@ -103,5 +234,26 @@ export async function render(ctx) {
       toast(err.message);
     }
   });
+
   draw();
+
+  const POLL_MS = 5000;
+  let alive = true;
+  const timer = setInterval(async () => {
+    if (!alive) return;
+    const menuOpen = ctx.page.querySelector('.row-menu .menu:not([hidden])');
+    const modalOpen = document.querySelector('.modal-overlay:not([hidden]), dialog[open]');
+    if (menuOpen || modalOpen) return;
+    try {
+      const fresh = await api('/api/admin/users');
+      if (!alive) return;
+      users = fresh;
+      draw();
+    } catch {}
+  }, POLL_MS);
+
+  return () => {
+    alive = false;
+    clearInterval(timer);
+  };
 }

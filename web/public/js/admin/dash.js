@@ -8,7 +8,7 @@ const RANGES = [
   ['30d', '30 ngày'],
 ];
 const RANGE_WORD = { today: 'hôm nay', '7d': '7 ngày', '30d': '30 ngày' };
-const REFRESH_MS = 5000;
+const REFRESH_MS = 3000;
 
 const fmtNum = (n) => Number(n).toLocaleString('vi-VN');
 const delta = (cur, prev, unit = '%', points = false) => {

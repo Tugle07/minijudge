@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { avatarColor, currentTheme, esc, initials } from '../ui.js';
+import { avatarColor, currentTheme, esc, initials, renderAvatar } from '../ui.js';
 import { SKELETON } from './kit.js';
 import * as contestsPage from './contests.js';
 import * as dashPage from './dash.js';
@@ -38,7 +38,7 @@ function shell(active) {
       <a class="side-nav" href="/#/home">Trang sinh viên</a>
       <button class="side-nav" data-theme-toggle><span data-theme-label>${themeLabel()}</span></button>
       <div class="side-user">
-        <span class="avatar" style="background:${avatarColor(me)}">${esc(initials(me))}</span>
+        ${renderAvatar(me, state.me?.avatar, 30)}
         <div style="display:flex;flex-direction:column;min-width:0"><span class="mono" style="font-weight:500;font-size:13.5px">${esc(me)}</span><span class="faint" style="font-size:12.5px">Admin</span></div>
       </div>
     </aside>

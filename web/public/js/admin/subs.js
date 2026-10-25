@@ -43,12 +43,20 @@ export async function render(ctx) {
     </div>`;
   const $ = (s) => ctx.page.querySelector(s);
 
+  let alive = true;
   async function load() {
-    const qs = new URLSearchParams({ ...f, page: String(f.page) });
-    data = await api(`/api/admin/submissions?${qs}`);
-    draw();
     clearTimeout(timer);
-    if (data.rows.some((r) => r.verdict === 'PENDING')) timer = setTimeout(load, 2000);
+    try {
+      const qs = new URLSearchParams({ ...f, page: String(f.page) });
+      const fresh = await api(`/api/admin/submissions?${qs}`);
+      if (!alive) return;
+      data = fresh;
+      draw();
+    } catch {}
+    if (alive) {
+      const drawerOpen = document.querySelector('.drawer:not([hidden]), dialog[open], .modal-overlay:not([hidden])');
+      timer = setTimeout(load, drawerOpen ? 6000 : 3000);
+    }
   }
 
   function draw() {
@@ -173,5 +181,8 @@ export async function render(ctx) {
   });
 
   await load();
-  return () => clearTimeout(timer);
+  return () => {
+    alive = false;
+    clearTimeout(timer);
+  };
 }

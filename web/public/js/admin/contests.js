@@ -583,7 +583,7 @@ async function detail(ctx, id, tab) {
     } catch (err) {
       ctx.page.innerHTML = `<div class="panel pad"><b>Có lỗi</b><span class="muted">${esc(err.message)}</span></div>`;
     }
-    if (tab === 'monitor') timer = setTimeout(draw, 5000);
+    if (tab === 'monitor' || tab === 'board') timer = setTimeout(draw, 3000);
   }
 
   let logTimer = null;

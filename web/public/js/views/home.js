@@ -93,7 +93,6 @@ export async function render(ctx) {
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <span class="title">${esc(s.title)}</span>
-          <span class="muted" style="font-size:14px">${esc(s.desc)}</span>
         </div>
         <div class="foot">
           <div class="foot-line">${diffMeter(s.difficulty)}<span><b class="num">${s.ac}</b>/${s.count} bài</span></div>
@@ -114,7 +113,6 @@ export async function render(ctx) {
         <button class="step-card" data-go="#/set/${encodeURIComponent(s.id)}">
           <span class="step-text">
             <span class="step-title">${esc(s.title)}${current ? '<span class="step-now">đang học</span>' : ''}</span>
-            <span class="muted">${esc(s.desc)}</span>
           </span>
           <span class="step-meta">
             <span><b class="num">${s.ac}</b>/${s.count} bài</span>

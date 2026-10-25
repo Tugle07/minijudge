@@ -96,8 +96,8 @@ export async function render(ctx) {
     draw();
     try {
       const body = { username: user.trim(), password: pw, code };
-      const { username, role } = await api(isLogin ? '/api/login' : '/api/register', { method: 'POST', body });
-      ctx.onLoggedIn(username, role);
+      const res = await api(isLogin ? '/api/login' : '/api/register', { method: 'POST', body });
+      ctx.onLoggedIn(res);
     } catch (err) {
       Object.assign(state, { loading: false, errors: err.fields || {}, general: err.status === 429 ? err.message : '' });
       if (!Object.keys(state.errors).length && !state.general) state.general = err.message;
