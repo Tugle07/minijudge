@@ -3,15 +3,18 @@
 
 #include "judge.h"
 
-static int skip_spaces(FILE *f) {
+static int get_next_char(FILE *f) {
     int c;
-    do {
-        c = fgetc(f);
-    } while (c != EOF && isspace(c));
-    return c;
+    while ((c = fgetc(f)) != EOF) {
+        if (c != '\r') return c; /* Bỏ qua \r (chuẩn hóa Windows line ending CRLF -> LF) */
+    }
+    return EOF;
 }
 
-/* So khớp theo từng token, bỏ qua khác biệt khoảng trắng/xuống dòng (giống checker mặc định của CF). */
+/* So khớp nghiêm ngặt theo từng dòng:
+ * - Nội dung từng dòng và khoảng trắng phải khớp chính xác (không chấp nhận thừa/thiếu khoảng trắng, không dồn dòng).
+ * - Bỏ qua \r của Windows CRLF.
+ * - Cho phép thiếu hoặc thừa ký tự xuống dòng '\n' ở cuối cùng của file (EOF). */
 int judge_compare_files(const char *expected, const char *actual) {
     FILE *fa = fopen(expected, "rb");
     FILE *fb = fopen(actual, "rb");
@@ -21,32 +24,46 @@ int judge_compare_files(const char *expected, const char *actual) {
         return 0;
     }
 
-    int equal = 1;
-    int ca = skip_spaces(fa), cb = skip_spaces(fb);
-    while (ca != EOF || cb != EOF) {
-        if (ca == EOF || cb == EOF) {
-            equal = 0;
-            break;
-        }
-        while (ca != EOF && cb != EOF && !isspace(ca) && !isspace(cb)) {
-            if (ca != cb) {
-                equal = 0;
-                goto done;
+    int ca = get_next_char(fa);
+    int cb = get_next_char(fb);
+
+    while (ca != EOF && cb != EOF) {
+        if (ca != cb) {
+            /* Xử lý trường hợp đặc biệt ở cuối file:
+             * Một bên kết thúc bằng '\n' rồi tới EOF, bên kia kết thúc trực tiếp bằng EOF (thiếu '\n' cuối). */
+            if (ca == '\n') {
+                while (ca == '\n') ca = get_next_char(fa);
+                if (ca == EOF) {
+                    while (cb == '\n') cb = get_next_char(fb);
+                    if (cb == EOF) goto match;
+                }
+            } else if (cb == '\n') {
+                while (cb == '\n') cb = get_next_char(fb);
+                if (cb == EOF) {
+                    while (ca == '\n') ca = get_next_char(fa);
+                    if (ca == EOF) goto match;
+                }
             }
-            ca = fgetc(fa);
-            cb = fgetc(fb);
+            fclose(fa);
+            fclose(fb);
+            return 0;
         }
-        int end_a = (ca == EOF || isspace(ca));
-        int end_b = (cb == EOF || isspace(cb));
-        if (end_a != end_b) {
-            equal = 0;
-            break;
-        }
-        if (ca != EOF) ca = skip_spaces(fa);
-        if (cb != EOF) cb = skip_spaces(fb);
+        ca = get_next_char(fa);
+        cb = get_next_char(fb);
     }
-done:
+
+    /* Bỏ qua các dòng trống / xuống dòng dư ở cuối file */
+    while (ca == '\n') ca = get_next_char(fa);
+    while (cb == '\n') cb = get_next_char(fb);
+
+    if (ca != EOF || cb != EOF) {
+        fclose(fa);
+        fclose(fb);
+        return 0;
+    }
+
+match:
     fclose(fa);
     fclose(fb);
-    return equal;
+    return 1;
 }

@@ -9,3 +9,4 @@ web/data/
 *.db-shm
 .env
 problems/*/sol
+judge-work/
