@@ -91,13 +91,19 @@ export async function render(ctx) {
 
   function route() {
     const { contest } = state.info;
-    if (contest.phase === 'running' && contest.joined && !contest.finished) return state.info.otherSession ? lobby('other') : lobby('resume');
-    if (contest.phase === 'running' && !contest.joined) return lobby('join');
+    const isAdmin = ctx.user?.role === 'admin';
+    if ((contest.phase === 'running' || (isAdmin && contest.phase === 'draft')) && contest.joined && !contest.finished) {
+      return state.info.otherSession ? lobby('other') : lobby('resume');
+    }
+    if ((contest.phase === 'running' || (isAdmin && contest.phase === 'draft')) && !contest.joined) {
+      return lobby('join');
+    }
     if (contest.phase === 'upcoming' || contest.phase === 'draft') return lobby('wait');
     return summary();
   }
 
   /* ---------- Sảnh chờ: luật thi, kiểm tra máy, nhập mã phòng ---------- */
+  const pad = (n) => String(n).padStart(2, '0');
   function lobby(mode) {
     const { contest } = state.info;
     const touchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches;
@@ -106,32 +112,128 @@ export async function render(ctx) {
       ['Trình duyệt hỗ trợ toàn màn hình', Boolean(document.documentElement.requestFullscreen)],
       ['Chỉ dùng một màn hình', !isExtended(), 'Rút màn hình phụ / máy chiếu trước khi vào thi'],
     ];
+
+    const sDate = new Date(contest.startAt);
+    const eDate = new Date(contest.endAt);
+    const timeRange = `${pad(sDate.getHours())}:${pad(sDate.getMinutes())} – ${pad(eDate.getHours())}:${pad(eDate.getMinutes())}`;
+    const dateStr = `${pad(sDate.getDate())}/${pad(sDate.getMonth() + 1)}/${sDate.getFullYear()}`;
+    const durationStr = fmtDuration(contest.endAt - contest.startAt);
+
     ctx.view.innerHTML = `
       <main class="page exam-lobby">
         <button class="link-btn" data-go="#/contests" style="align-self:flex-start">‹ Danh sách cuộc thi</button>
         <div class="exam-lobby-card">
-          <span class="faint" style="font-size:13px">${fmtTime(contest.startAt)} – ${fmtTime(contest.endAt)} · ${fmtDuration(contest.endAt - contest.startAt)} · ${contest.problemCount} bài</span>
-          <h1 class="page-title">${esc(contest.title)}</h1>
-          ${contest.description ? `<div class="statement" style="font-size:15px">${renderMarkdown(contest.description)}</div>` : ''}
-          <div class="exam-rules">
-            <b>Quy định phòng thi</b>
-            <ul>
-              <li>Bài làm ở chế độ <b>toàn màn hình</b>. Thoát toàn màn hình, chuyển tab hay chuyển sang ứng dụng khác đều được <b>ghi lại và báo giám thị</b>.</li>
-              <li>Chỉ mở bài thi ở <b>một tab, một máy</b>. Mở ở tab/máy thứ hai sẽ bị chặn.</li>
-              <li>${contest.blockPaste !== false ? 'Copy/paste trong phòng thi dùng bình thường (code của bạn, đề bài, ví dụ); <b>dán code mang từ bên ngoài vào sẽ bị chặn</b> và ghi lại.' : 'Được copy/paste tự do.'} Phần luyện tập bị khóa trong giờ thi.</li>
-              <li>Mỗi bài chia nhiều subtask (nhóm test). Subtask chỉ được điểm khi <b>đúng tất cả</b> test trong nhóm; sai 1 test thì nhóm đó 0 điểm. Ví dụ subtask 1 gồm test 1–5 (40 điểm): đúng 5/5 được 40, đúng 4/5 được 0. Điểm bài là tổng các subtask đạt được, lấy lần nộp cao điểm nhất.</li>
-              ${contest.beepOnLeave !== false ? '<li>Khi bạn rời bài thi (chuyển tab, đổi cửa sổ, thoát toàn màn hình), máy sẽ <b>phát 3 tiếng bíp</b>. Hãy bật loa ở mức vừa nghe.</li>' : ''}
-              <li>Sau giờ thi, hệ thống so sánh code giữa các thí sinh để phát hiện bài giống nhau.</li>
-            </ul>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="pill" style="background:var(--accent);color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;padding:2px 8px;">Kỳ thi chính thức</span>
+              ${contest.phase === 'draft' ? '<span class="pill" style="background:var(--tle);color:#fff;font-size:12px;font-weight:600;">Chế độ nháp (Admin)</span>' : ''}
+            </div>
+            <h1 class="page-title" style="margin:4px 0 0;font-size:26px;">${esc(contest.title)}</h1>
           </div>
-          <div class="exam-checks">${checks
-            .map(([label, ok, hint]) => `<div class="exam-check ${ok ? 'ok' : 'bad'}"><span>${ok ? '✓' : '✗'}</span><span>${esc(label)}${!ok && hint ? `<small class="faint">${esc(hint)}</small>` : ''}</span></div>`)
-            .join('')}</div>
+
+          <!-- Bảng tóm tắt thông số kỳ thi -->
+          <div class="exam-info-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:12px;padding:16px;background:var(--bg3);border-radius:var(--r-md);border:1px solid var(--line2);">
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Ngày thi</span>
+              <b class="mono" style="font-size:15px;color:var(--fg);">${dateStr}</b>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Khung giờ thi</span>
+              <b class="mono" style="font-size:15px;color:var(--accent);">${timeRange}</b>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Thời lượng</span>
+              <b class="mono" style="font-size:15px;color:var(--fg);">${durationStr}</b>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Số lượng bài</span>
+              <b class="mono" style="font-size:15px;color:var(--fg);">${contest.problemCount} bài lập trình</b>
+            </div>
+          </div>
+
+          ${contest.description ? `<div class="statement" style="font-size:14.5px;padding:12px 14px;background:var(--bg3);border-radius:var(--r-md);border-left:4px solid var(--accent);">${renderMarkdown(contest.description)}</div>` : ''}
+
+          <!-- Bảng quy định phòng thi chuẩn mực & chính xác -->
+          <div class="exam-rules" style="padding:18px 20px;border-radius:var(--r-md);background:var(--bg3);font-size:14px;line-height:1.65;border:1px solid var(--line2);">
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px;">
+              <b style="font-size:15.5px;color:var(--fg);display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">📋</span> QUY ĐỊNH PHÒNG THI &amp; QUY CHẾ LÀM BÀI
+              </b>
+              <span class="pill" style="background:color-mix(in oklch, var(--wa) 18%, transparent);color:var(--wa);font-size:11.5px;font-weight:700;">BẮT BUỘC TUÂN THỦ</span>
+            </div>
+            
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;gap:10px;">
+                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">1.</span>
+                <div>
+                  <b style="color:var(--fg);">Chế độ Toàn màn hình &amp; Giám sát chống gian lận:</b>
+                  <div class="muted" style="margin-top:2px;">Bài thi bắt buộc thực hiện ở chế độ <b>toàn màn hình (Fullscreen)</b>. Nghiêm cấm mọi hành vi: chuyển tab trình duyệt, đổi cửa sổ ứng dụng (Alt + Tab), thoát toàn màn hình hoặc mở công cụ nhà phát triển (F12/Inspect). Toàn bộ sự kiện rời màn hình bài thi đều được <b>hệ thống ghi nhật ký chi tiết và báo cáo giám thị theo thời gian thực</b>. Mỗi lần vi phạm, máy tính sẽ <b>phát 3 tiếng bíp cảnh báo</b>.</div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;">
+                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">2.</span>
+                <div>
+                  <b style="color:var(--fg);">Thiết bị làm bài &amp; Duy nhất một phiên đăng nhập:</b>
+                  <div class="muted" style="margin-top:2px;">Mỗi thí sinh chỉ được mở bài thi trên <b>duy nhất 1 máy tính và 1 tab trình duyệt</b>. <b>Tuyệt đối không sử dụng màn hình phụ</b> (cần rút cáp HDMI/VGA máy chiếu hoặc màn hình thứ hai trước khi vào thi). Đăng nhập ở thiết bị hoặc tab thứ hai sẽ bị hệ thống từ chối và tự động khóa bài làm.</div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;">
+                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">3.</span>
+                <div>
+                  <b style="color:var(--fg);">Quy định Sao chép &amp; Dán mã nguồn (Copy/Paste):</b>
+                  <div class="muted" style="margin-top:2px;">${contest.blockPaste !== false ? 'Thí sinh được phép sao chép / dán nội dung phát sinh trong phòng thi (code tự viết, đề bài, dữ liệu mẫu). Hệ thống <b>tự động xóa bộ nhớ đệm (clipboard) khi vào phòng</b> và <b>chặn toàn bộ hành vi dán mã nguồn từ bên ngoài vào</b>.' : 'Được phép copy/paste mã nguồn.'} Phân hệ luyện tập và lịch sử nộp bài cũ sẽ tạm khóa trong suốt thời gian thi.</div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;">
+                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">4.</span>
+                <div>
+                  <b style="color:var(--fg);">Cơ chế chấm điểm Subtask (Điểm từng phần):</b>
+                  <div class="muted" style="margin-top:2px;">Mỗi bài thi được chia làm nhiều Subtask (nhóm test). Một Subtask chỉ được tính điểm khi code <b>vượt qua 100% test</b> trong nhóm đó (sai dù chỉ 1 test thì nhóm đó 0 điểm). Điểm bài là tổng các Subtask đạt được; hệ thống tự động <b>lấy kết quả lần nộp cao điểm nhất</b>.</div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;">
+                <span style="color:var(--accent);font-weight:700;font-size:14px;flex-shrink:0;">5.</span>
+                <div>
+                  <b style="color:var(--fg);">Hậu kiểm chống đạo văn (Plagiarism check):</b>
+                  <div class="muted" style="margin-top:2px;">Ngay sau khi ca thi kết thúc, hệ thống sẽ tự động quét đối sánh mã nguồn của toàn bộ thí sinh để phát hiện các bài thi tương đồng hoặc có dấu hiệu sao chép lẫn nhau. Mọi vi phạm gian lận đều bị lập biên bản, hủy bài và nhận điểm 0 theo quy chế đào tạo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kiểm tra điều kiện thiết bị -->
+          <div class="exam-checks-box" style="padding:14px 16px;background:var(--bg3);border-radius:var(--r-md);border:1px solid var(--line2);display:flex;flex-direction:column;gap:8px;">
+            <span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Điều kiện kỹ thuật của thiết bị</span>
+            <div class="exam-checks" style="display:flex;flex-direction:column;gap:6px;">
+              ${checks.map(([label, ok, hint]) => `
+                <div class="exam-check ${ok ? 'ok' : 'bad'}" style="display:flex;align-items:center;gap:10px;font-size:14px;">
+                  <span style="font-weight:700;color:${ok ? 'var(--ac)' : 'var(--wa)'};font-size:16px;">${ok ? '✓' : '✗'}</span>
+                  <span>${esc(label)}${!ok && hint ? `<small style="color:var(--wa);margin-left:6px;">(${esc(hint)})</small>` : ''}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Khối Cam kết quy định phòng thi -->
+          <div class="exam-agreement-card" style="padding:16px 18px;background:color-mix(in oklch, var(--accent) 8%, var(--bg2));border:1.5px solid color-mix(in oklch, var(--accent) 35%, var(--line2));border-radius:var(--r-md);display:flex;flex-direction:column;gap:8px;">
+            <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:14.5px;line-height:1.5;user-select:none;">
+              <input type="checkbox" data-agree style="width:20px;height:20px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;" />
+              <span style="font-weight:600;color:var(--fg);">
+                Tôi xác nhận đã đọc, hiểu rõ và <b style="color:var(--accent);">cam kết thực hiện đúng toàn bộ các quy định phòng thi bên trên</b>. Tôi chịu hoàn toàn trách nhiệm nếu vi phạm quy chế thi.
+              </span>
+            </label>
+          </div>
+
           <div data-lobby-action></div>
           <div class="alert" data-error hidden></div>
         </div>
       </main>`;
     const box = ctx.view.querySelector('[data-lobby-action]');
+    const agreeCheck = ctx.view.querySelector('[data-agree]');
     const showError = (msg) => {
       const el = ctx.view.querySelector('[data-error]');
       el.textContent = msg;
@@ -141,28 +243,100 @@ export async function render(ctx) {
     if (mode === 'wait') {
       const draw = () => {
         const left = contest.startAt - now();
-        box.innerHTML = contest.phase === 'draft'
-          ? '<p class="muted">Cuộc thi đang ở chế độ nháp (chỉ Admin thấy).</p>'
-          : `<div class="exam-countdown"><span class="faint">Bắt đầu sau</span><b class="mono">${fmtCountdown(left)}</b></div>`;
+        box.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
+            <div class="exam-countdown" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:20px;border-radius:var(--r-md);background:var(--bg3);border:1px solid var(--line2);">
+              <span class="faint" style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Cuộc thi bắt đầu sau</span>
+              <b class="mono" style="font-size:36px;color:var(--accent);">${fmtCountdown(left)}</b>
+            </div>
+            <p class="faint" style="margin:0;font-size:13.5px;text-align:center;" data-wait-hint>
+              Vui lòng tích ô cam kết ở trên. Khi hết thời gian đếm ngược, ô nhập mã phòng thi sẽ tự động mở để bạn vào thi.
+            </p>
+          </div>`;
         if (left <= 0 && contest.phase !== 'draft') loadInfo().then(route).catch(() => {});
         else if (state.alive) later(draw, 1000);
       };
-      return draw();
+      draw();
+      agreeCheck?.addEventListener('change', () => {
+        const hint = box.querySelector('[data-wait-hint]');
+        if (hint) {
+          if (agreeCheck.checked) {
+            hint.style.color = 'var(--ac)';
+            hint.innerHTML = '✓ Đã xác nhận cam kết. Khi hết giờ đếm ngược, bạn có thể nhập mã phòng thi ngay.';
+          } else {
+            hint.style.color = '';
+            hint.innerHTML = 'Vui lòng tích ô cam kết ở trên. Khi hết thời gian đếm ngược, ô nhập mã phòng thi sẽ tự động mở để bạn vào thi.';
+          }
+        }
+      });
+      return;
     }
+
     if (!contest.allowed) {
       box.innerHTML = '<p class="bad-text">Tài khoản của bạn không có trong danh sách thí sinh. Báo giám thị nếu đây là nhầm lẫn.</p>';
       return;
     }
+
     const other = mode === 'other';
+    const isJoin = mode === 'join';
     box.innerHTML = `
-      <form class="exam-join" data-join>
-        ${mode === 'join' && contest.needCode ? '<label class="field"><span>Mã phòng thi (giám thị đọc tại lớp)</span><input class="input mono" data-code autocomplete="off" required style="text-transform:uppercase" /></label>' : ''}
+      <form class="exam-join" data-join style="display:flex;flex-direction:column;gap:14px;margin-top:4px;">
+        ${contest.needCode ? `
+          <div data-code-section style="display:flex;flex-direction:column;gap:6px;opacity:0.45;pointer-events:none;transition:opacity 0.2s ease;">
+            <label class="field" style="margin:0;">
+              <span style="font-weight:600;font-size:14.5px;">Mã phòng thi <span class="faint" style="font-weight:normal;font-size:13px;">(giám thị công bố tại phòng thi)</span></span>
+              <input class="input mono" data-code autocomplete="off" placeholder="NHẬP MÃ PHÒNG THI" style="text-transform:uppercase;font-size:16px;letter-spacing:0.08em;font-weight:700;height:46px;" disabled required />
+            </label>
+            <span data-code-hint style="font-size:13px;color:var(--wa);display:flex;align-items:center;gap:6px;">
+              ⚠️ Bạn cần tích chọn ô cam kết quy định ở trên để mở khóa ô nhập mã phòng thi.
+            </span>
+          </div>
+        ` : ''}
+
         ${other ? '<p class="bad-text" style="margin:0">Bài thi của bạn đang mở ở một thiết bị/tab khác. Đóng nơi đó rồi bấm Tiếp tục, hoặc báo giám thị mở khóa.</p>' : ''}
-        <button class="btn-primary" type="submit" style="height:44px">${mode === 'join' ? 'Vào phòng thi (bật toàn màn hình)' : 'Tiếp tục làm bài'}</button>
+
+        <button class="btn-primary" type="submit" data-join-btn style="height:46px;font-size:15px;font-weight:600;" disabled>
+          ${isJoin ? (contest.needCode ? 'Xác nhận mã &amp; Vào phòng thi (Toàn màn hình)' : 'Vào phòng thi (bật toàn màn hình)') : mode === 'resume' ? 'Tiếp tục làm bài' : 'Vào phòng thi (Chế độ xem trước Admin)'}
+        </button>
+
+        ${contest.phase === 'draft' ? '<p class="faint" style="margin:0;font-size:13px;text-align:center;">🛠️ Cuộc thi đang ở chế độ nháp (chỉ Admin thấy). Bạn có thể vào xem trước đề và giao diện làm bài.</p>' : ''}
       </form>`;
-    box.querySelector('[data-join]').addEventListener('submit', async (e) => {
+
+    const codeSection = box.querySelector('[data-code-section]');
+    const codeInput = box.querySelector('[data-code]');
+    const codeHint = box.querySelector('[data-code-hint]');
+    const joinBtn = box.querySelector('[data-join-btn]');
+
+    agreeCheck?.addEventListener('change', () => {
+      const ok = agreeCheck.checked;
+      if (codeSection) {
+        codeSection.style.opacity = ok ? '1' : '0.45';
+        codeSection.style.pointerEvents = ok ? 'auto' : 'none';
+      }
+      if (codeInput) {
+        codeInput.disabled = !ok;
+        if (ok) setTimeout(() => codeInput.focus(), 50);
+      }
+      if (codeHint) {
+        if (ok) {
+          codeHint.style.color = 'var(--ac)';
+          codeHint.innerHTML = '✓ Đã xác nhận cam kết. Hãy nhập mã phòng thi do giám thị đọc để bắt đầu.';
+        } else {
+          codeHint.style.color = 'var(--wa)';
+          codeHint.innerHTML = '⚠️ Bạn cần tích chọn ô cam kết quy định ở trên để mở ô nhập mã phòng thi.';
+        }
+      }
+      if (joinBtn) {
+        joinBtn.disabled = !ok;
+      }
+    });
+
+    box.querySelector('[data-join]')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       showError('');
+      if (!agreeCheck?.checked) {
+        return showError('Bạn cần tích chọn cam kết thực hiện đúng quy chế thi trước khi vào phòng.');
+      }
       if (contest.blockMultiScreen && isExtended()) return showError('Máy đang nối nhiều màn hình. Rút màn hình phụ rồi vào lại.');
       unlockAudio();
       /* Xóa clipboard khi bắt đầu làm bài: code copy sẵn từ trước không còn để dán. Cần lúc người dùng vừa bấm nút. */

@@ -83,7 +83,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     const me = contests.participant(c.id, req.user.id);
     const out = { now: Date.now(), contest: publicContest(c, req.user, me), problems: [], total: 0, allowedLangs: settings?.allowedLangs || ['c'] };
     const phase = contests.phase(c);
-    if (me && (phase === 'running' || phase === 'ended')) {
+    if (me && (phase === 'running' || phase === 'ended' || req.user.role === 'admin')) {
       const best = new Map(
         db
           .prepare(`SELECT problem_id, MAX(score) AS score, COUNT(*) AS n FROM submissions WHERE contest_id = ? AND user_id = ? GROUP BY problem_id`)
@@ -108,7 +108,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     const c = load(req, res);
     if (!c) return;
     const phase = contests.phase(c);
-    if (phase !== 'running') return res.status(409).json({ error: phase === 'upcoming' ? 'Chưa đến giờ thi' : 'Cuộc thi đã kết thúc' });
+    if (phase !== 'running' && req.user.role !== 'admin') return res.status(409).json({ error: phase === 'upcoming' ? 'Chưa đến giờ thi' : 'Cuộc thi đã kết thúc' });
     if (!allowed(c, req.user)) return res.status(403).json({ error: 'Tài khoản của bạn không có trong danh sách thí sinh' });
     if (!ipOk(c, req.clientIp)) return res.status(403).json({ error: 'Chỉ được vào thi bằng mạng của phòng thi' });
     const { code, extended, touch } = req.body ?? {};
