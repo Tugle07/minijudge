@@ -85,7 +85,18 @@ export async function render(ctx) {
               </div>
             </div>
           </td>
-          <td><span class="mono muted" style="margin-right:6px">${esc(r.problem_id)}</span>${esc(r.title)}</td>
+          <td>
+            <div style="display:inline-flex;align-items:center;gap:6px;max-width:280px;">
+              <a href="/#/problem/${encodeURIComponent(r.problem_id)}" target="_blank" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;min-width:0;" class="ellipsis" title="Xem đề bài ${esc(r.problem_id)} · ${esc(r.title)} (tab mới)">
+                <span class="mono" style="color:var(--accent);font-weight:600;">${esc(r.problem_id)}</span>
+                <span style="font-weight:500;" class="ellipsis">${esc(r.title)}</span>
+                <span class="faint" style="font-size:11px;opacity:0.7;flex-shrink:0;">↗</span>
+              </a>
+              <a href="#/probs/${encodeURIComponent(r.problem_id)}" style="color:var(--fg3);text-decoration:none;font-size:11px;opacity:0.75;padding:1px 5px;border-radius:4px;border:1px solid var(--line2);flex-shrink:0;" title="Chỉnh sửa bài này trong trang Admin">
+                Sửa
+              </a>
+            </div>
+          </td>
           <td>${vText(r.verdict)}</td>
           <td class="num muted">${r.verdict === 'CE' || r.time_ms == null ? '—' : `${r.verdict === 'TLE' ? '> ' : ''}${r.time_ms} ms`}</td>
           <td class="num muted">${r.verdict === 'CE' || r.memory_kb == null ? '—' : `${r.memory_kb} KB`}</td></tr>`,
@@ -124,7 +135,17 @@ export async function render(ctx) {
               ${s.fullName ? `<span class="mono faint" style="font-size:12px">(${esc(s.username)})</span>` : ''}
             </div>
           </div>
-          <div style="display:flex;flex-direction:column"><span class="faint" style="font-size:12.5px">Bài</span><span>${esc(s.problemId)} · ${esc(s.title)}</span></div>
+          <div style="display:flex;flex-direction:column">
+            <span class="faint" style="font-size:12.5px">Bài</span>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+              <a href="/#/problem/${encodeURIComponent(s.problemId)}" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Xem trang đề bài (tab mới)">
+                ${esc(s.problemId)} · ${esc(s.title)} <span style="font-size:11px">↗</span>
+              </a>
+              <a href="#/probs/${encodeURIComponent(s.problemId)}" class="link-btn faint" style="font-size:12px;text-decoration:underline;" title="Chỉnh sửa bài này trong trang Admin">
+                [Sửa bài]
+              </a>
+            </div>
+          </div>
           <div style="display:flex;flex-direction:column"><span class="faint" style="font-size:12.5px">Thời điểm</span><span class="mono">${fmtDateTime(s.createdAt)}</span></div>
         </div>
         ${tests || s.compileLog ? `<div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">${tests}${s.compileLog ? `<pre class="celog" style="border:0;border-radius:0;max-height:160px">${esc(s.compileLog)}</pre>` : ''}</div>` : ''}

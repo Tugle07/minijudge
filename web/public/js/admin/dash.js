@@ -85,7 +85,9 @@ function feedRow(f) {
       ${renderAvatar(f.username, f.avatar, 26, f.fullName)}
       <span style="min-width:0;display:flex;flex-direction:column;flex:1">
         <span class="ellipsis" style="font-weight:600;font-size:13.5px">${esc(f.fullName || f.username)}${f.fullName ? ` <span class="mono faint" style="font-size:11.5px;font-weight:normal">(${esc(f.username)})</span>` : ''}</span>
-        <span class="muted ellipsis" style="font-size:12.5px">${esc(f.problem_id)} · ${esc(f.title)}</span>
+        <a href="/#/problem/${encodeURIComponent(f.problem_id)}" target="_blank" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" class="muted ellipsis" title="Xem đề bài ${esc(f.problem_id)} · ${esc(f.title)} (tab mới)">
+          <span class="mono" style="color:var(--accent);font-weight:600;">${esc(f.problem_id)}</span> · ${esc(f.title)} <span class="faint" style="font-size:10px;">↗</span>
+        </a>
       </span>
       <b class="vbadge" style="--v:${verdictVar(f.verdict)};min-width:40px;line-height:22px" title="${esc(verdictLabel(f.verdict))}">${verdictAbbr(f.verdict)}</b>
     </div>`;
@@ -143,7 +145,13 @@ export async function render(ctx) {
             ${
               d.hardest.length
                 ? `<table class="atable"><thead><tr><th>Bài</th><th class="num">Số người thử</th><th class="num">Đã giải</th><th class="num">Tỉ lệ AC</th></tr></thead><tbody>
-              ${d.hardest.map((h) => `<tr><td><span class="mono muted" style="margin-right:8px">${esc(h.id)}</span>${esc(h.title)}</td><td class="num">${h.tried}</td><td class="num">${h.solved}</td><td class="num" style="color:var(--wa)">${h.rate}%</td></tr>`).join('')}
+              ${d.hardest.map((h) => `<tr><td>
+                <a href="/#/problem/${encodeURIComponent(h.id)}" target="_blank" style="color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;" title="Xem đề bài ${esc(h.id)} · ${esc(h.title)} (tab mới)">
+                  <span class="mono" style="color:var(--accent);font-weight:600;">${esc(h.id)}</span>
+                  <span style="font-weight:500;">${esc(h.title)}</span>
+                  <span class="faint" style="font-size:11px;">↗</span>
+                </a>
+              </td><td class="num">${h.tried}</td><td class="num">${h.solved}</td><td class="num" style="color:var(--wa)">${h.rate}%</td></tr>`).join('')}
               </tbody></table>`
                 : '<p class="faint" style="margin:0;padding:18px">Chưa đủ dữ liệu (cần ít nhất 2 người thử một bài).</p>'
             }
