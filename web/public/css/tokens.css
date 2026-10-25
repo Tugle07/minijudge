@@ -43,11 +43,17 @@
   --snu: oklch(0.83 0.12 70);  --scm: oklch(0.62 0.01 262); --sp: oklch(0.77 0.12 245); --sfn: oklch(0.86 0.09 95);
   color-scheme: dark;
 }
+@font-face {
+  font-family: 'CodeAsterisk';
+  src: local('Consolas'), local('Menlo'), local('Monaco'), local('Liberation Mono'), local('DejaVu Sans Mono'), local('Courier New');
+  unicode-range: U+002A; /* Chỉ thay thế riêng ký tự dấu hoa thị / dấu nhân '*' để tránh ngôi sao 5 cánh của JetBrains Mono */
+}
+
 :root {
   --ring: var(--accent);
   --tint: 14%;
   --font-ui: 'Be Vietnam Pro', system-ui, sans-serif;
-  --font-code: 'JetBrains Mono', ui-monospace, monospace;
+  --font-code: 'CodeAsterisk', 'JetBrains Mono', ui-monospace, monospace;
   --text-xs: 12.5px; --text-sm: 14px; --text-md: 15px; --text-lg: 17px;
   --text-xl: 24px; --text-2xl: 28px; --text-3xl: 38px;
   --leading: 1.55;

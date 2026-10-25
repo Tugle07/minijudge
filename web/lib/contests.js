@@ -128,7 +128,7 @@ export function createContests(db, catalog) {
     problems: db.prepare('SELECT * FROM contest_problems WHERE contest_id = ? ORDER BY position'),
     participant: db.prepare('SELECT * FROM contest_participants WHERE contest_id = ? AND user_id = ?'),
     participants: db.prepare(
-      `SELECT p.*, u.username, u.full_name FROM contest_participants p JOIN users u ON u.id = p.user_id WHERE p.contest_id = ? ORDER BY u.username`,
+      `SELECT p.*, u.username, u.full_name, u.avatar FROM contest_participants p JOIN users u ON u.id = p.user_id WHERE p.contest_id = ? ORDER BY u.username`,
     ),
     lockedProblems: db.prepare(
       `SELECT DISTINCT cp.problem_id FROM contest_problems cp JOIN contests c ON c.id = cp.contest_id
@@ -190,13 +190,21 @@ export function createContests(db, catalog) {
     });
   }
 
-  /* Gọi sau khi judge xong một bài nộp: tính điểm theo subtask của bài trong cuộc thi. */
+  /* Gọi sau khi judge xong một bài nộp: tính điểm theo subtask của bài trong cuộc thi hoặc bài luyện tập. */
   function scoreSubmission(id) {
     const sub = q.subForScore.get(id);
-    if (!sub || sub.contest_id == null || sub.verdict === 'PENDING') return;
-    const prob = problemsOf(sub.contest_id).find((p) => p.problemId === sub.problem_id);
-    if (!prob) return;
-    const { score, detail } = scoreTests(prob.subtasks, JSON.parse(sub.tests_json || '[]'), sub.verdict);
+    if (!sub || sub.verdict === 'PENDING') return;
+    let subtasks = [];
+    if (sub.contest_id != null) {
+      const prob = problemsOf(sub.contest_id).find((p) => p.problemId === sub.problem_id);
+      if (!prob) return;
+      subtasks = prob.subtasks;
+    } else {
+      const p = catalog.problemMap.get(sub.problem_id);
+      if (!p) return;
+      subtasks = p.subtasks && p.subtasks.length ? p.subtasks : defaultSubtasks(p.tests ?? 1);
+    }
+    const { score, detail } = scoreTests(subtasks, JSON.parse(sub.tests_json || '[]'), sub.verdict);
     q.saveScore.run(score, JSON.stringify(detail), id);
   }
 
@@ -219,7 +227,7 @@ export function createContests(db, catalog) {
         }
         return { label: p.label, score, tries: b?.tries ?? 0 };
       });
-      return { userId: u.user_id, username: u.username, fullName: u.full_name || '', total, lastAt: last ? last - (c?.startAt ?? 0) : null, cells };
+      return { userId: u.user_id, username: u.username, fullName: u.full_name || '', avatar: u.avatar || '', total, lastAt: last ? last - (c?.startAt ?? 0) : null, cells };
     });
     rows.sort((a, b) => b.total - a.total || (a.lastAt ?? Infinity) - (b.lastAt ?? Infinity) || a.username.localeCompare(b.username));
     let rank = 0;
@@ -248,6 +256,7 @@ export function createContests(db, catalog) {
         userId: p.user_id,
         username: p.username,
         fullName: p.full_name || '',
+        avatar: p.avatar || '',
         joinedAt: p.joined_at,
         finishedAt: p.finished_at,
         ip: p.ip,
@@ -269,7 +278,7 @@ export function createContests(db, catalog) {
   function similar(contestId, threshold = 0.8) {
     const finals = db
       .prepare(
-        `SELECT s.id, s.user_id, u.username, s.problem_id, s.source, s.score FROM submissions s JOIN users u ON u.id = s.user_id
+        `SELECT s.id, s.user_id, u.username, u.full_name AS fullName, s.problem_id, s.source, s.score FROM submissions s JOIN users u ON u.id = s.user_id
          WHERE s.contest_id = ? AND s.verdict NOT IN ('PENDING', 'CE', 'IE')
          ORDER BY s.user_id, s.problem_id, s.score DESC, s.id DESC`,
       )
@@ -289,8 +298,8 @@ export function createContests(db, catalog) {
               label: labels.get(pid) ?? pid,
               problemId: pid,
               similarity: Math.round(sim * 100),
-              a: { username: list[i].username, submissionId: list[i].id, score: list[i].score },
-              b: { username: list[j].username, submissionId: list[j].id, score: list[j].score },
+              a: { username: list[i].username, fullName: list[i].fullName || '', submissionId: list[i].id, score: list[i].score },
+              b: { username: list[j].username, fullName: list[j].fullName || '', submissionId: list[j].id, score: list[j].score },
             });
           }
         }

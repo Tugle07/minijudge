@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
-import { badge, esc, fmtWhen, langBadge, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
+import { badge, esc, fmtWhen, langBadge, renderAvatar, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
 import { compileErrorsHtml, runResultHtml } from './problem-result.js';
 import { fmtCountdown, fmtDuration, fmtTime } from './contests.js';
 
@@ -1045,7 +1045,13 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
           .map(
             (r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:${cols}">
               <b class="mono">${r.rank}</b>
-              <a href="#/profile/${encodeURIComponent(r.username)}" class="rank-user" style="text-decoration:none;color:inherit;" title="Xem hồ sơ ${esc(r.username)}"><span class="ellipsis" style="font-weight:550">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span><small>${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã kết thúc' : 'đang làm bài'}</small></a>
+              <a href="#/profile/${encodeURIComponent(r.username)}" class="rank-user" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:8px;" title="Xem hồ sơ ${esc(r.fullName || r.username)}">
+                ${renderAvatar(r.username, r.avatar, 26, r.fullName)}
+                <div style="display:flex;flex-direction:column;min-width:0;">
+                  <span class="ellipsis" style="font-weight:600">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span>
+                  <small class="muted" style="font-size:11.5px;">${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã kết thúc' : 'đang làm bài'}</small>
+                </div>
+              </a>
               ${r.cells.map((c, i) => cell(c, b.problems[i])).join('')}
               <b class="right mono">${Number(r.total.toFixed(2))}</b></div>`,
           )

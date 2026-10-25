@@ -26,7 +26,7 @@ function parseCookies(header = '') {
 
 export function createAuth(db, { secureCookie = false } = {}) {
   const findSession = db.prepare(`
-    SELECT u.id, u.username, u.role FROM sessions s JOIN users u ON u.id = s.user_id
+    SELECT u.id, u.username, u.role, u.full_name, u.avatar FROM sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ? AND s.expires_at > ? AND u.locked = 0`);
   const touch = db.prepare('UPDATE users SET last_seen = ? WHERE id = ?');
   const lastTouch = new Map();

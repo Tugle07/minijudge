@@ -160,8 +160,8 @@ export async function render(ctx) {
       <div class="pf-head card-box" style="padding:20px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:18px;min-width:0;flex:1;">
           <div class="pf-avatar-wrapper" style="position:relative;width:76px;height:76px;flex:none;">
-            <div data-avatar-display style="width:76px;height:76px;cursor:${isSelf ? 'pointer' : 'default'}" title="${isSelf ? 'Bấm để đổi ảnh đại diện' : esc(p.username)}">
-              ${renderAvatar(p.username, p.avatar, 76)}
+            <div data-avatar-display style="width:76px;height:76px;cursor:${isSelf ? 'pointer' : 'default'}" title="${isSelf ? 'Bấm để đổi ảnh đại diện' : esc(p.fullName || p.username)}">
+              ${renderAvatar(p.username, p.avatar, 76, p.fullName)}
             </div>
             ${isSelf ? `<button class="pf-avatar-edit-badge" data-avatar-open title="Đổi ảnh đại diện">📷</button>` : ''}
           </div>
@@ -297,7 +297,7 @@ export async function render(ctx) {
           <!-- Preview -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;background:var(--bg3);border-radius:var(--r-md);">
             <div data-preview-avatar style="width:84px;height:84px;border-radius:50%;overflow:hidden;display:grid;place-items:center;">
-              ${renderAvatar(p.username, p.avatar, 84)}
+              ${renderAvatar(p.username, p.avatar, 84, p.fullName)}
             </div>
             <span class="faint" style="font-size:12px;">Xem trước hiển thị</span>
           </div>
@@ -370,7 +370,7 @@ export async function render(ctx) {
 
     const updatePreview = (val) => {
       tempAvatar = val;
-      previewBox.innerHTML = renderAvatar(p.username, val, 84);
+      previewBox.innerHTML = renderAvatar(p.username, val, 84, p.fullName);
     };
 
     ctx.view.querySelectorAll('[data-avatar-open]').forEach((btn) => {
@@ -427,7 +427,7 @@ export async function render(ctx) {
       try {
         await api('/api/me/avatar', { method: 'PUT', body: { avatar: tempAvatar } });
         p.avatar = tempAvatar;
-        ctx.view.querySelector('[data-avatar-display]').innerHTML = renderAvatar(p.username, tempAvatar, 76);
+        ctx.view.querySelector('[data-avatar-display]').innerHTML = renderAvatar(p.username, tempAvatar, 76, p.fullName);
         window.updateUserAvatar?.(tempAvatar);
         avatarDialog.close();
         toast('Đã cập nhật ảnh đại diện thành công!');

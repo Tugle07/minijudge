@@ -123,7 +123,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     const where = [];
     const args = [];
     const { user, problem, set, verdict, date } = req.query;
-    if (user) where.push('u.username LIKE ?') && args.push(`%${String(user).slice(0, 30)}%`);
+    if (user) where.push('(u.username LIKE ? OR u.full_name LIKE ?)') && args.push(`%${String(user).slice(0, 30)}%`, `%${String(user).slice(0, 30)}%`);
     if (problem && problem !== 'all') where.push('s.problem_id = ?') && args.push(String(problem));
     if (set && set !== 'all') {
       const pids = catalog.setMap.get(String(set))?.problems ?? [];
@@ -145,7 +145,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     const total = db.prepare(`SELECT COUNT(*) AS n ${base}`).get(...args).n;
     const rows = db
       .prepare(
-        `SELECT s.id, s.problem_id, s.verdict, s.time_ms, s.memory_kb, s.tests_passed, s.test_count, COALESCE(s.lang, 'c') AS lang, s.created_at, u.username
+        `SELECT s.id, s.problem_id, s.verdict, s.time_ms, s.memory_kb, s.tests_passed, s.test_count, COALESCE(s.lang, 'c') AS lang, s.created_at, u.username, u.full_name AS fullName, u.avatar
          ${base} ORDER BY ${sortCol} ${dir}, s.id DESC LIMIT ${PAGE} OFFSET ${page * PAGE}`,
       )
       .all(...args);
@@ -154,12 +154,14 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
 
   r.get('/submissions/:id', (req, res) => {
     const row = db
-      .prepare('SELECT s.*, u.username FROM submissions s JOIN users u ON u.id = s.user_id WHERE s.id = ?')
+      .prepare('SELECT s.*, u.username, u.full_name AS fullName, u.avatar FROM submissions s JOIN users u ON u.id = s.user_id WHERE s.id = ?')
       .get(Number(req.params.id));
     if (!row) return res.status(404).json({ error: 'Không tìm thấy bài nộp' });
     res.json({
       id: row.id,
       username: row.username,
+      fullName: row.fullName || '',
+      avatar: row.avatar || '',
       problemId: row.problem_id,
       title: catalog.problemMap.get(row.problem_id)?.title ?? row.problem_id,
       verdict: row.verdict,

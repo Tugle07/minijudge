@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { highlightC } from '../highlight.js';
-import { badge, esc, toast, verdictLabel, verdictVar } from '../ui.js';
+import { badge, esc, renderAvatar, toast, verdictLabel, verdictVar } from '../ui.js';
 import { confirmDialog, fmtDateTime, openDrawer } from './kit.js';
 
 const VERDICTS = ['AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'PENDING'];
@@ -74,7 +74,17 @@ export async function render(ctx) {
           <td><input type="checkbox" data-sel="${r.id}" ${sel.has(r.id) ? 'checked' : ''} aria-label="Chọn bài nộp" /></td>
           <td><button class="link-btn mono" data-open="${r.id}" style="color:var(--fg);font-weight:500;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px">#${r.id}</button></td>
           <td class="mono muted" style="white-space:nowrap">${fmtDateTime(r.created_at)}</td>
-          <td class="mono">${esc(r.username)}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${renderAvatar(r.username, r.avatar, 26, r.fullName)}
+              <div style="display:flex;flex-direction:column;min-width:0;">
+                <a href="/#/profile/${encodeURIComponent(r.username)}" target="_blank" style="font-weight:600;font-size:13.5px;color:inherit;text-decoration:none;" class="ellipsis" title="Xem hồ sơ ${esc(r.fullName || r.username)}">
+                  ${esc(r.fullName || r.username)}
+                </a>
+                <span class="mono faint" style="font-size:11.5px;">${esc(r.username)}</span>
+              </div>
+            </div>
+          </td>
           <td><span class="mono muted" style="margin-right:6px">${esc(r.problem_id)}</span>${esc(r.title)}</td>
           <td>${vText(r.verdict)}</td>
           <td class="num muted">${r.verdict === 'CE' || r.time_ms == null ? '—' : `${r.verdict === 'TLE' ? '> ' : ''}${r.time_ms} ms`}</td>
@@ -106,7 +116,14 @@ export async function render(ctx) {
       title: `<b class="mono" style="font-weight:600;font-size:16px">#${s.id}</b>${vText(s.verdict)}`,
       html: `
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:14px">
-          <div style="display:flex;flex-direction:column"><span class="faint" style="font-size:12.5px">Người nộp</span><span class="mono">${esc(s.username)}</span></div>
+          <div style="display:flex;flex-direction:column">
+            <span class="faint" style="font-size:12.5px">Người nộp</span>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+              ${renderAvatar(s.username, s.avatar, 22, s.fullName)}
+              <b style="font-weight:600">${esc(s.fullName || s.username)}</b>
+              ${s.fullName ? `<span class="mono faint" style="font-size:12px">(${esc(s.username)})</span>` : ''}
+            </div>
+          </div>
           <div style="display:flex;flex-direction:column"><span class="faint" style="font-size:12.5px">Bài</span><span>${esc(s.problemId)} · ${esc(s.title)}</span></div>
           <div style="display:flex;flex-direction:column"><span class="faint" style="font-size:12.5px">Thời điểm</span><span class="mono">${fmtDateTime(s.createdAt)}</span></div>
         </div>

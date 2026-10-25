@@ -38,8 +38,11 @@ function shell(active) {
       <a class="side-nav" href="/#/home">Trang sinh viên</a>
       <button class="side-nav" data-theme-toggle><span data-theme-label>${themeLabel()}</span></button>
       <div class="side-user">
-        ${renderAvatar(me, state.me?.avatar, 30)}
-        <div style="display:flex;flex-direction:column;min-width:0"><span class="mono" style="font-weight:500;font-size:13.5px">${esc(me)}</span><span class="faint" style="font-size:12.5px">Admin</span></div>
+        ${renderAvatar(me, state.me?.avatar, 30, state.me?.fullName)}
+        <div style="display:flex;flex-direction:column;min-width:0">
+          <span style="font-weight:600;font-size:13.5px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(state.me?.fullName || me)}</span>
+          <span class="mono faint" style="font-size:11.5px">${esc(me)} · Admin</span>
+        </div>
       </div>
     </aside>
     <div class="admin-body">

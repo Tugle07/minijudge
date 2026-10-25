@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, toast } from '../ui.js';
+import { esc, renderAvatar, toast } from '../ui.js';
 import { confirmDialog, fmtDateTime, openDrawer, pill } from './kit.js';
 
 const PHASE = {
@@ -514,17 +514,25 @@ async function detail(ctx, id, tab) {
         <table class="atable">
           <thead><tr><th>Thí sinh</th><th>Trạng thái</th><th class="vcount-col" title="Mỗi lần rời bài tính 1 lần, dù trình duyệt báo nhiều tín hiệu cùng lúc">Số lần vi phạm</th><th title="Số tín hiệu từng loại mà trình duyệt ghi nhận">Chi tiết</th><th class="num">Điểm</th><th>Thiết bị · IP</th><th></th></tr></thead>
           <tbody>${ps
-            .sort((a, b) => b.violations - a.violations || a.username.localeCompare(b.username))
+            .sort((a, b) => b.violations - a.violations || (a.fullName || a.username).localeCompare(b.fullName || b.username))
             .map((p) => {
               const st = p.finishedAt ? pill('Đã nộp', 'var(--fg3)') : !p.online ? pill('Mất kết nối', 'var(--tle)') : !p.fullscreen || !p.visible ? pill('Rời bài thi', 'var(--wa)') : pill('Đang làm', 'var(--ac)');
               return `<tr>
-                <td class="mono"><button class="link-btn" style="color:var(--fg)" data-log="${esc(p.username)}" title="Lọc nhật ký của thí sinh này">${esc(p.username)}</button>${p.fullName ? `<div class="faint" style="font-size:12.5px;font-family:var(--font-ui)">${esc(p.fullName)}</div>` : ''}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    ${renderAvatar(p.username, p.avatar, 32, p.fullName)}
+                    <div style="display:flex;flex-direction:column;min-width:0;">
+                      <button class="link-btn" style="color:var(--fg);font-weight:600;font-size:13.5px;text-align:left;padding:0;" data-log="${esc(p.username)}" title="Lọc nhật ký của thí sinh này">${esc(p.fullName || p.username)}</button>
+                      <div class="mono faint" style="font-size:11.5px;margin-top:2px;">MSSV: ${esc(p.username)}</div>
+                    </div>
+                  </div>
+                </td>
                 <td>${st}${p.extended ? ' ' + pill('2 màn hình', 'var(--wa)') : ''}</td>
                 <td class="vcount-col"><b class="vtotal ${p.violations >= 5 ? 'hi' : p.violations ? 'mid' : ''}">${p.violations}</b></td>
                 <td class="vdetail">${VIOLATION_COLS.filter(([k]) => p.events[k]).map(([k, l, tip]) => `<span title="${tip}">${l} <b>${p.events[k]}</b></span>`).join('') || '<span class="faint">Không có</span>'}</td>
                 <td class="num">${num(p.total)}</td>
                 <td style="font-size:12.5px"><span style="${p.device && p.device !== 'desktop' ? 'color:var(--wa);font-weight:600' : ''}">${esc(DEVICE_TEXT[p.device] || '—')}</span><div class="mono faint">${esc(p.ip || '')}</div></td>
-                <td><button class="btn-line" style="height:28px;font-size:12.5px" data-unlock="${p.userId}" data-name="${esc(p.username)}" title="Cho vào lại từ máy/tab khác">Mở khóa</button></td>
+                <td><button class="btn-line" style="height:28px;font-size:12.5px" data-unlock="${p.userId}" data-name="${esc(p.fullName || p.username)}" title="Cho vào lại từ máy/tab khác">Mở khóa</button></td>
               </tr>`;
             })
             .join('')}</tbody>
@@ -545,7 +553,20 @@ async function detail(ctx, id, tab) {
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
           <thead><tr><th class="num" style="width:50px">#</th><th>Thí sinh</th>${b.problems.map((p) => `<th class="num" title="${esc(p.title)}">${esc(p.label)} <span class="faint">/${p.points}</span></th>`).join('')}<th class="num">Tổng</th></tr></thead>
-          <tbody>${b.rows.map((r) => `<tr><td class="num">${r.rank}</td><td class="mono">${esc(r.username)}${r.fullName ? ` <span class="faint" style="font-family:var(--font-ui)">${esc(r.fullName)}</span>` : ''}</td>${r.cells.map((x) => `<td class="num" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}<td class="num" style="font-weight:600">${num(r.total)}</td></tr>`).join('')}</tbody>
+          <tbody>${b.rows.map((r) => `<tr>
+            <td class="num">${r.rank}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${renderAvatar(r.username, r.avatar, 26, r.fullName)}
+                <div style="display:flex;flex-direction:column;min-width:0;">
+                  <span style="font-weight:600;font-size:13.5px">${esc(r.fullName || r.username)}</span>
+                  <span class="mono faint" style="font-size:11.5px">MSSV: ${esc(r.username)}</span>
+                </div>
+              </div>
+            </td>
+            ${r.cells.map((x) => `<td class="num" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}
+            <td class="num" style="font-weight:600">${num(r.total)}</td>
+          </tr>`).join('')}</tbody>
         </table>
         ${b.rows.length ? '' : '<div class="empty">Chưa có thí sinh.</div>'}
       </div>
@@ -568,7 +589,23 @@ async function detail(ctx, id, tab) {
         <table class="atable">
           <thead><tr><th>Bài</th><th class="num">Giống</th><th>Thí sinh 1</th><th>Thí sinh 2</th><th></th></tr></thead>
           <tbody>${s.pairs
-            .map((p) => `<tr><td class="mono">${esc(p.label)}</td><td class="num" style="color:${p.similarity >= 90 ? 'var(--wa)' : 'var(--tle)'};font-weight:600">${p.similarity}%</td><td class="mono">${esc(p.a.username)} <span class="faint">(${num(p.a.score)}đ)</span></td><td class="mono">${esc(p.b.username)} <span class="faint">(${num(p.b.score)}đ)</span></td><td><button class="btn-line" style="height:28px;font-size:12.5px" data-compare="${p.a.submissionId}:${p.b.submissionId}">So sánh code</button></td></tr>`)
+            .map((p) => `<tr>
+              <td class="mono">${esc(p.label)}</td>
+              <td class="num" style="color:${p.similarity >= 90 ? 'var(--wa)' : 'var(--tle)'};font-weight:600">${p.similarity}%</td>
+              <td>
+                <div style="display:flex;flex-direction:column;">
+                  <span style="font-weight:600;font-size:13.5px">${esc(p.a.fullName || p.a.username)}</span>
+                  <span class="mono faint" style="font-size:11.5px">${esc(p.a.username)} · ${num(p.a.score)}đ</span>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;flex-direction:column;">
+                  <span style="font-weight:600;font-size:13.5px">${esc(p.b.fullName || p.b.username)}</span>
+                  <span class="mono faint" style="font-size:11.5px">${esc(p.b.username)} · ${num(p.b.score)}đ</span>
+                </div>
+              </td>
+              <td><button class="btn-line" style="height:28px;font-size:12.5px" data-compare="${p.a.submissionId}:${p.b.submissionId}">So sánh code</button></td>
+            </tr>`)
             .join('')}</tbody>
         </table>
         ${s.pairs.length ? '' : `<div class="empty">Không có cặp bài nào giống từ ${threshold}% trở lên.</div>`}

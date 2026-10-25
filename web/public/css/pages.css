@@ -163,7 +163,7 @@
 }
 
 /* ---------- Danh sách bài trong khối ---------- */
-.set-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: flex-end; }
+.set-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: flex-start; }
 .set-progress { flex: 0 1 320px; display: flex; flex-direction: column; gap: 8px; }
 .set-progress .progress { height: 8px; }
 .set-cols { grid-template-columns: 24px 64px minmax(0, 1fr) 130px 130px 72px; }
@@ -195,6 +195,13 @@
 .hm-cell.l4 { background: var(--accent); }
 
 .pf-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.pf-avatar-edit-badge {
+  position: absolute; right: -2px; bottom: -2px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg2); border: 1px solid var(--line); display: grid; place-items: center;
+  cursor: pointer; font-size: 13px; box-shadow: var(--shadow); transition: transform 0.15s;
+}
+.pf-avatar-edit-badge:hover { transform: scale(1.15); background: var(--bg3); }
+.avatar-preset-btn:hover { border-color: var(--accent) !important; transform: scale(1.1); }
 .pf-box-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .pf-box-head > b { font-weight: 650; }
 .pf-box-head > span { font-size: 13px; }

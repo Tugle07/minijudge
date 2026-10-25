@@ -31,7 +31,7 @@ export function createAdminStats(db, catalog) {
     FROM submissions WHERE verdict NOT IN ('PENDING', 'IE') GROUP BY problem_id`);
   const acPairs = q("SELECT DISTINCT s.user_id, s.problem_id FROM submissions s JOIN users u ON u.id = s.user_id WHERE s.verdict = 'AC' AND u.role = 'student'");
   const feed = q(`
-    SELECT s.id, s.problem_id, s.verdict, s.created_at, u.username FROM submissions s JOIN users u ON u.id = s.user_id
+    SELECT s.id, s.problem_id, s.verdict, s.created_at, u.username, u.full_name AS fullName, u.avatar FROM submissions s JOIN users u ON u.id = s.user_id
     ORDER BY s.id DESC LIMIT 10`);
 
   function series(range, rows, r) {

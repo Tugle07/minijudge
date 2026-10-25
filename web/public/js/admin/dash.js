@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, verdictAbbr, verdictLabel, verdictVar } from '../ui.js';
+import { esc, renderAvatar, verdictAbbr, verdictLabel, verdictVar } from '../ui.js';
 import { pad } from './kit.js';
 
 const RANGES = [
@@ -80,9 +80,13 @@ function donutHtml(dist) {
 function feedRow(f) {
   const d = new Date(f.created_at);
   return `
-    <div class="feed-row">
-      <span class="mono faint" style="font-size:13px">${pad(d.getHours())}:${pad(d.getMinutes())}</span>
-      <span style="min-width:0;display:flex;flex-direction:column"><span class="mono ellipsis" style="font-weight:500;font-size:13.5px">${esc(f.username)}</span><span class="muted ellipsis" style="font-size:13px">${esc(f.problem_id)} · ${esc(f.title)}</span></span>
+    <div class="feed-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);">
+      <span class="mono faint" style="font-size:12.5px;min-width:38px">${pad(d.getHours())}:${pad(d.getMinutes())}</span>
+      ${renderAvatar(f.username, f.avatar, 26, f.fullName)}
+      <span style="min-width:0;display:flex;flex-direction:column;flex:1">
+        <span class="ellipsis" style="font-weight:600;font-size:13.5px">${esc(f.fullName || f.username)}${f.fullName ? ` <span class="mono faint" style="font-size:11.5px;font-weight:normal">(${esc(f.username)})</span>` : ''}</span>
+        <span class="muted ellipsis" style="font-size:12.5px">${esc(f.problem_id)} · ${esc(f.title)}</span>
+      </span>
       <b class="vbadge" style="--v:${verdictVar(f.verdict)};min-width:40px;line-height:22px" title="${esc(verdictLabel(f.verdict))}">${verdictAbbr(f.verdict)}</b>
     </div>`;
 }

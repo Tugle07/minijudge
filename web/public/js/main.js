@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { clearDrafts, setDraftOwner } from './drafts.js';
-import { avatarColor, currentTheme, esc, go, initials, themeButton, themeText } from './ui.js';
+import { avatarColor, currentTheme, esc, go, initials, renderAvatar, themeButton, themeText } from './ui.js';
 import * as authView from './views/auth.js';
 import * as contestView from './views/contest.js';
 import * as contestsView from './views/contests.js';
@@ -37,7 +37,17 @@ function toggleTheme() {
   document.querySelectorAll('[data-act="theme"]').forEach((b) => (b.textContent = themeText()));
 }
 
+let currentNav = 'home';
+
+window.updateUserAvatar = (avatar) => {
+  if (app.user) {
+    app.user.avatar = avatar;
+    if (!topbar.hidden) renderTopbar(currentNav);
+  }
+};
+
 function renderTopbar(active) {
+  currentNav = active;
   const name = app.user.username;
   topbar.innerHTML = `
     <button class="brand" data-go="#/home"><span class="logo-mark" aria-hidden="true"></span><span class="logo-text">MiniJudge</span></button>
@@ -46,11 +56,11 @@ function renderTopbar(active) {
     ${themeButton()}
     <div class="user-menu">
       <button class="avatar-btn" aria-haspopup="menu" aria-expanded="false" data-act="menu">
-        <span class="avatar" style="background:${avatarColor(name)}">${esc(initials(name))}</span>
-        <span class="mono wide-only" style="font-size:13px">${esc(name)}</span>
+        ${renderAvatar(name, app.user?.avatar, 26, app.user?.fullName)}
+        <span class="wide-only" style="font-size:13px;font-weight:550;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(app.user?.fullName || name)}</span>
       </button>
       <div class="menu" role="menu" hidden>
-        <div class="menu-label">${app.user.role === 'admin' ? 'Admin' : 'Sinh viên'} · ${esc(name)}</div>
+        <div class="menu-label">${app.user.role === 'admin' ? 'Admin' : 'Sinh viên'} · <b>${esc(app.user?.fullName || name)}</b>${app.user?.fullName ? ` <small class="mono faint">(${esc(name)})</small>` : ''}</div>
         <div class="narrow-only">${NAV.map(([k, label]) => `<button role="menuitem" style="width:100%" data-go="#/${k}">${label}</button>`).join('')}<hr /></div>
         ${app.user.role === 'admin' ? '<button role="menuitem" data-act="admin">Quản trị</button>' : ''}
         <button role="menuitem" data-act="profile">Hồ sơ</button>
@@ -89,9 +99,23 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-function onLoggedIn(username, role = 'student') {
-  app.user = { username, role };
-  setDraftOwner(username);
+function onLoggedIn(userOrName, role = 'student', avatar = '', fullName = '') {
+  if (userOrName && typeof userOrName === 'object') {
+    app.user = {
+      username: userOrName.username,
+      role: userOrName.role || 'student',
+      avatar: userOrName.avatar || '',
+      fullName: userOrName.fullName || '',
+    };
+  } else {
+    app.user = {
+      username: userOrName,
+      role,
+      avatar,
+      fullName,
+    };
+  }
+  setDraftOwner(app.user.username);
   go('#/home');
 }
 

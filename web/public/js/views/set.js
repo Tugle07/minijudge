@@ -28,7 +28,7 @@ function renderPodium(topUsers) {
               ${u.isMe ? '<span style="background:var(--accent);color:#fff;font-size:11px;padding:1px 6px;border-radius:4px;font-weight:600;">Bạn</span>' : ''}
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
-              ${renderAvatar(u.username, u.avatar, 42)}
+              ${renderAvatar(u.username, u.avatar, 42, u.fullName)}
               <div style="display:flex;flex-direction:column;min-width:0;">
                 <b class="ellipsis" style="font-size:14.5px;">${esc(u.fullName || u.username)}</b>
                 <span class="mono faint" style="font-size:12.5px;">${esc(u.username)}</span>
@@ -77,8 +77,8 @@ function rankHtml(board) {
           return `
             <div class="trow" style="grid-template-columns: 52px minmax(160px, 1.4fr) 110px minmax(130px, 1.2fr) 75px 125px; align-items:center; ${isMeStyle}">
               <span style="display:flex;justify-content:center;">${rankBadge(u.rank)}</span>
-              <a href="#/profile/${encodeURIComponent(u.username)}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;min-width:0;" title="Xem hồ sơ ${esc(u.username)}">
-                ${renderAvatar(u.username, u.avatar, 32)}
+              <a href="#/profile/${encodeURIComponent(u.username)}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;min-width:0;" title="Xem hồ sơ ${esc(u.fullName || u.username)}">
+                ${renderAvatar(u.username, u.avatar, 32, u.fullName)}
                 <div style="display:flex;flex-direction:column;min-width:0;">
                   <div style="display:flex;align-items:center;gap:6px;">
                     <b class="ellipsis" style="font-size:14px;color:var(--accent);">${esc(u.fullName || u.username)}</b>

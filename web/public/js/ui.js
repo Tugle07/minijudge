@@ -76,14 +76,44 @@ export const statLine = (s) =>
 
 /* Avatar trung tính: chữ viết tắt là đủ phân biệt, không cần mỗi người một màu. */
 export const avatarColor = () => 'var(--bg3)';
-export const initials = (name) => (name ? String(name).slice(0, 2).toUpperCase() : '?');
-
-export function renderAvatar(name = '', avatar = '', size = 26) {
-  const safeName = String(name || '');
-  if (avatar && (avatar.startsWith('data:image/') || avatar.startsWith('http://') || avatar.startsWith('https://'))) {
-    return `<img class="avatar" src="${esc(avatar)}" alt="${esc(safeName)}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:inline-block;vertical-align:middle;" />`;
+export const initials = (name = '', fullName = '') => {
+  const target = String(fullName || '').trim() || String(name || '').trim();
+  if (!target) return '?';
+  const words = target.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const w1 = words[words.length - 2];
+    const w2 = words[words.length - 1];
+    return ((w1[0] || '') + (w2[0] || '')).toUpperCase();
   }
-  return `<span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.max(9, Math.round(size * 0.42))}px;background:${avatarColor()};display:inline-grid;place-items:center;border-radius:50%;vertical-align:middle;">${esc(initials(safeName))}</span>`;
+  if (words.length === 1) {
+    const w = words[0];
+    return w.slice(0, 2).toUpperCase();
+  }
+  return String(name).slice(0, 2).toUpperCase() || '?';
+};
+
+export function renderAvatar(nameOrUser = '', avatar = '', size = 26, fullName = '') {
+  let name = '';
+  let av = avatar;
+  let fn = fullName;
+  let sz = size;
+  if (typeof nameOrUser === 'object' && nameOrUser !== null) {
+    name = nameOrUser.username || nameOrUser.name || '';
+    av = nameOrUser.avatar || (typeof avatar === 'string' ? avatar : '') || '';
+    fn = nameOrUser.fullName || nameOrUser.full_name || fullName || '';
+    if (typeof avatar === 'number') sz = avatar;
+  } else {
+    name = String(nameOrUser || '');
+    if (typeof avatar === 'number') {
+      sz = avatar;
+      av = '';
+    }
+  }
+  const safeName = fn || name;
+  if (av && (av.startsWith('data:image/') || av.startsWith('http://') || av.startsWith('https://'))) {
+    return `<img class="avatar" src="${esc(av)}" alt="${esc(safeName)}" style="width:${sz}px;height:${sz}px;object-fit:cover;border-radius:50%;display:inline-block;vertical-align:middle;flex-shrink:0;" />`;
+  }
+  return `<span class="avatar" style="width:${sz}px;height:${sz}px;font-size:${Math.max(9, Math.round(sz * 0.42))}px;background:${avatarColor()};display:inline-grid;place-items:center;border-radius:50%;vertical-align:middle;font-weight:600;flex-shrink:0;">${esc(initials(name, fn))}</span>`;
 }
 
 /* Markdown + công thức $...$ (KaTeX). Tách công thức ra trước để marked không phá dấu _ và \. */

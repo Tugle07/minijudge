@@ -112,11 +112,11 @@ export async function render(ctx) {
         const stColor = u.locked ? 'var(--wa)' : 'var(--ac)';
         return `<tr>
           <td>
-            <a href="/#/profile/${encodeURIComponent(u.username)}" target="_blank" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit" title="Xem hồ sơ ${esc(u.username)}">
-              ${renderAvatar(u.username, u.avatar, 28)}
+            <a href="/#/profile/${encodeURIComponent(u.username)}" target="_blank" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit" title="Xem hồ sơ ${esc(u.fullName || u.username)}">
+              ${renderAvatar(u.username, u.avatar, 30, u.fullName)}
               <span style="display:flex;flex-direction:column">
-                <span class="mono" style="font-weight:600;color:var(--accent,#2563eb)">${esc(u.username)}</span>
-                ${u.fullName ? `<span class="faint" style="font-size:12.5px">${esc(u.fullName)}</span>` : ''}
+                <span style="font-weight:600;font-size:13.5px;color:var(--accent,#2563eb)">${esc(u.fullName || u.username)}</span>
+                <span class="mono faint" style="font-size:11.5px">MSSV: ${esc(u.username)}</span>
               </span>
               ${me ? '<span class="me-tag">Bạn</span>' : ''}
             </a>
