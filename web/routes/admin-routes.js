@@ -171,6 +171,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
       testCount: row.test_count,
       tests: row.tests_json ? JSON.parse(row.tests_json) : [],
       compileLog: row.compile_log,
+      failOutput: row.fail_output || null,
       source: row.source,
       createdAt: row.created_at,
     });

@@ -149,6 +149,7 @@ export async function render(ctx) {
           <div style="display:flex;flex-direction:column"><span class="faint" style="font-size:12.5px">Thời điểm</span><span class="mono">${fmtDateTime(s.createdAt)}</span></div>
         </div>
         ${tests || s.compileLog ? `<div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">${tests}${s.compileLog ? `<pre class="celog" style="border:0;border-radius:0;max-height:160px">${esc(s.compileLog)}</pre>` : ''}</div>` : ''}
+        ${s.failOutput ? `<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:12px;font-weight:600;color:var(--wa);text-transform:uppercase;letter-spacing:.04em">Kết quả in ra của thí sinh (Gây sai test):</span><pre class="celog" style="border:1px solid color-mix(in oklch, var(--wa) 40%, var(--line));background:color-mix(in oklch, var(--wa) 6%, var(--bg2));color:var(--fg);max-height:140px;white-space:pre-wrap;font-size:13px;">${esc(s.failOutput)}</pre></div>` : ''}
         <span style="font-size:12.5px;font-weight:600;color:var(--fg3);text-transform:uppercase;letter-spacing:.04em">Mã nguồn</span>
         <pre class="sub-code" tabindex="0" style="background:var(--bg2);max-height:none">${highlightC(s.source).html}</pre>`,
       footer: '<button class="btn-dark" data-rejudge-one>Chấm lại</button>',
