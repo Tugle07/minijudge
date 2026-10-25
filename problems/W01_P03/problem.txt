@@ -1,0 +1,6 @@
+title=Cước vận tải đa chặng
+time_ms=1000
+memory_mb=256
+tests=6
+difficulty=Trung bình
+samples=1,2

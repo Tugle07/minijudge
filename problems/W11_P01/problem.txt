@@ -1,0 +1,6 @@
+title=Phân luồng cấp cứu bệnh viện
+time_ms=1000
+memory_mb=256
+tests=2
+difficulty=Khá
+samples=1,2

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "points": 10,
+    "tests": "1-2",
+    "note": "Hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "Tọa độ dương, cọc theo thứ tự vòng tròn",
+    "points": 50,
+    "tests": "3-12",
+    "note": "Tìm x_min, x_max, y_min, y_max và tính toán"
+  },
+  {
+    "name": "Tọa độ âm, thứ tự 4 cọc bị xáo trộn",
+    "points": 25,
+    "tests": "13-17",
+    "note": "Kiểm tra tập hợp 4 đỉnh phải đúng 4 góc (x_min, y_min)..."
+  },
+  {
+    "name": "Cọc trùng nhau, hình vuông nghiêng, diện tích = 0",
+    "points": 15,
+    "tests": "18-20",
+    "note": "Phát hiện INVALID chính xác"
+  }
+]

@@ -1,26 +1,26 @@
 [
   {
     "name": "Ví dụ trong đề",
-    "tests": "1-2",
     "points": 10,
-    "note": "Đúng ví dụ đã cho — hiểu đề, đọc/ghi đúng định dạng"
+    "tests": "1-2",
+    "note": "Hiểu đề, đọc/ghi đúng định dạng ma trận"
   },
   {
     "name": "2 ≤ n, m ≤ 6",
-    "tests": "3-12",
     "points": 50,
-    "note": "Ma trận nhỏ — thử 4 hướng vẫn kịp"
+    "tests": "3-12",
+    "note": "Ma trận nhỏ, lồng 2 vòng lặp và kiểm tra hàng chẵn/lẻ"
   },
   {
-    "name": "7 ≤ n, m ≤ 25",
-    "tests": "13-17",
+    "name": "7 ≤ n, m ≤ 50",
     "points": 25,
-    "note": "Vẫn 4 hướng, chú ý điều kiện đổi hướng"
+    "tests": "13-17",
+    "note": "Kích thước tổng quát, in đủ hàng cột đúng thứ tự"
   },
   {
-    "name": "1 × m, n × 1, 1 × 1, 50 × 50",
-    "tests": "18-20",
+    "name": "Ma trận suy biến: 1 × m, n × 1, 1 × 1",
     "points": 15,
-    "note": "Ma trận suy biến: quên kiểm tra biên sẽ in sai"
+    "tests": "18-20",
+    "note": "Xử lý biên ma trận 1 hàng hoặc 1 cột"
   }
 ]

@@ -4,4 +4,8 @@ web/node_modules/
 web/data/
 *.exe
 *.o
+*.db
+*.db-wal
+*.db-shm
 .env
+problems/*/sol

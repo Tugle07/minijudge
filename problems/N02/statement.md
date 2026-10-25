@@ -1,7 +1,7 @@
-Cho đáy $a$ và chiều cao $h$ của một tam giác. Hãy tính diện tích $S = \dfrac{a \cdot h}{2}$.
+Cho độ dài cạnh đáy $a$ và chiều cao tương ứng $h$ của một hình tam giác. Hãy viết chương trình tính diện tích của hình tam giác đó.
 
 ### Input
-Một dòng gồm hai số nguyên dương $a, h$ ($1 \le a, h \le 10^6$).
+Một dòng duy nhất chứa hai số thực dương $a$ và $h$ ($0 < a, h \le 10^4$).
 
 ### Output
-Diện tích làm tròn **2 chữ số thập phân**.
+In ra diện tích của hình tam giác, làm tròn lấy đúng **2 chữ số thập phân**.

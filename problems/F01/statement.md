@@ -1,7 +1,7 @@
-An, Bình và Chi chơi trò **"ai cao điểm nhất"**: ba bạn tung xúc xắc lớn, mỗi bạn ghi lại điểm của mình (có thể âm nếu bị phạt). Hãy giúp trọng tài tìm ra **số điểm cao nhất** trong ba bạn.
+Ba bạn An, Bình và Chi tham gia một trò chơi truyền hình giải đố tính điểm. Mỗi câu trả lời đúng được cộng điểm, nhưng nếu trả lời sai hoặc phạm quy sẽ bị trừ điểm phạt (điểm tổng kết của mỗi bạn có thể là số âm). Hãy giúp ban giám khảo tìm ra **số điểm cao nhất** trong ba bạn.
 
 ### Input
-Một dòng gồm ba số nguyên $a, b, c$ ($-10^9 \le a, b, c \le 10^9$) — lần lượt là điểm của An, Bình và Chi.
+Một dòng gồm ba số nguyên $a, b, c$ ($-10^9 \le a, b, c \le 10^9$) — lần lượt là điểm số của An, Bình và Chi.
 
 ### Output
-Một số nguyên duy nhất: điểm cao nhất.
+Một số nguyên duy nhất: số điểm cao nhất.

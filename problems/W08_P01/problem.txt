@@ -1,0 +1,6 @@
+title=Viết tắt từ quá dài
+time_ms=1000
+memory_mb=256
+tests=4
+difficulty=Dễ
+samples=1,2

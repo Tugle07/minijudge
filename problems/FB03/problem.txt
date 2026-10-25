@@ -1,0 +1,6 @@
+title=Quy đổi thời gian vũ trụ
+time_ms=1000
+memory_mb=256
+tests=20
+difficulty=Dễ
+samples=1,2

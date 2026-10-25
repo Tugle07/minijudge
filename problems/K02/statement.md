@@ -1,9 +1,13 @@
-Cho hai số nguyên $a, b$ ($b \ne 0$). In ra kết quả của các biểu thức C: `a / b`, `a % b` (với $a, b$ kiểu `int`) và phép chia số thực `(double)a / b`.
+Cho hai số nguyên $a$ và $b$ ($b \ne 0$). Hãy thực hiện các phép toán chia sau:
+1. Thương của phép chia nguyên.
+2. Số dư của phép chia nguyên.
+3. Kết quả chính xác của phép chia số thực, làm tròn lấy 3 chữ số phần thập phân.
 
 ### Input
-Hai số nguyên $a, b$ ($|a|, |b| \le 10^9$, $b \ne 0$).
+Hai số nguyên $a$ và $b$ trên một dòng ($|a|, |b| \le 10^9, b \ne 0$).
 
 ### Output
-- Dòng 1: giá trị `a / b`.
-- Dòng 2: giá trị `a % b`.
-- Dòng 3: giá trị `(double)a / b`, làm tròn 3 chữ số thập phân.
+In ra đúng 3 dòng:
+- Dòng 1: Thương nguyên của $a$ chia cho $b$.
+- Dòng 2: Số dư của $a$ chia cho $b$.
+- Dòng 3: Kết quả của phép chia số thực, làm tròn đúng 3 chữ số thập phân.

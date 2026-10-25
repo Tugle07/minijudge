@@ -1,0 +1,3 @@
+- Dùng biến `temp = N` và `rev = 0`.
+- Vòng lặp `while (temp > 0)`: `rev = rev * 10 + (temp % 10); temp /= 10;`.
+- So sánh `rev == N`. Bắt buộc khai báo kiểu `long long` cho cả N, temp và rev để tránh tràn số khi N có 18 chữ số!

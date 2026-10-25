@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "points": 10,
+    "tests": "1-2",
+    "note": "Hiểu đề, đọc/ghi đúng định dạng %02d"
+  },
+  {
+    "name": "0 ≤ T < 86400 (D = 0)",
+    "points": 50,
+    "tests": "3-12",
+    "note": "Chưa quá 1 ngày, toán tử / và % cơ bản, kiểu int"
+  },
+  {
+    "name": "86400 ≤ T ≤ 10^15",
+    "points": 25,
+    "tests": "13-17",
+    "note": "Vượt kiểu int, bắt buộc dùng long long và %lld"
+  },
+  {
+    "name": "T = 0, tròn ngày, tròn giờ, tròn phút",
+    "points": 15,
+    "tests": "18-20",
+    "note": "T = 0 in 0 d 00:00:00; các trường hợp biên giây/phút = 0"
+  }
+]

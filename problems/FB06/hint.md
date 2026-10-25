@@ -1,0 +1,4 @@
+- Tìm min_x, max_x trong 4 hoành độ, min_y, max_y trong 4 tung độ.
+- Nếu min_x == max_x hoặc min_y == max_y => INVALID.
+- 4 điểm nhập vào phải khớp chính xác 1-1 với 4 góc: (min_x, min_y), (min_x, max_y), (max_x, min_y), (max_x, max_y). Nếu có điểm nào không thuộc tập hợp này hoặc bị trùng lặp => INVALID.
+- Nếu hợp lệ: Chu vi = 2 * ((max_x - min_x) + (max_y - min_y)); Diện tích = (max_x - min_x) * (max_y - min_y).

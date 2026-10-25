@@ -1,0 +1,6 @@
+title=Chia kẹo liên hoan lớp
+time_ms=1000
+memory_mb=256
+tests=5
+difficulty=Dễ
+samples=1,2

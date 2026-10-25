@@ -1,6 +1,6 @@
-title=Ma trận xoắn ốc
+title=Ma trận Ziczac
 time_ms=1000
 memory_mb=256
 tests=20
-difficulty=Khó
+difficulty=Trung bình
 samples=1,2

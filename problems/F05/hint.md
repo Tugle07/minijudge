@@ -1,1 +1,6 @@
-Khai `int a[55][55] = {0};` — giá trị 0 tức là ô chưa điền. Dùng 4 hướng: `dx[4] = {0, 1, 0, -1}, dy[4] = {1, 0, -1, 0}` và biến `d = 0`. Với mỗi `v` từ 1 tới `n*m`: gán `a[x][y] = v`, thử bước `(x + dx[d], y + dy[d])`; nếu ra ngoài hoặc ô đã điền thì `d = (d + 1) % 4` rồi bước lại. Khi `n = 1` hoặc `m = 1` thì chỉ đi một hướng — thuật toán trên tự xử lý đúng, không cần `if` riêng.
+- Khai báo ma trận 2 chiều `int a[55][55]`.
+- Biến đếm `val = 1`.
+- Vòng lặp `i` từ 0 đến `n - 1`:
+  + Nếu `i % 2 == 0`: duyệt cột `j` từ 0 đến `m - 1`, gán `a[i][j] = val++`.
+  + Nếu `i % 2 != 0`: duyệt cột `j` từ `m - 1` giảm dần về 0, gán `a[i][j] = val++`.
+- Cuối cùng in ma trận ra màn hình.

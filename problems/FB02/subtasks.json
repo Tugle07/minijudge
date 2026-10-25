@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ví dụ trong đề",
+    "points": 10,
+    "tests": "1-2",
+    "note": "Hiểu đề, đọc/ghi đúng định dạng"
+  },
+  {
+    "name": "1 ≤ N ≤ 10^8",
+    "points": 50,
+    "tests": "3-12",
+    "note": "Vòng lặp tách chữ số và đảo số cơ bản, kiểu int"
+  },
+  {
+    "name": "10^8 < N ≤ 10^18",
+    "points": 25,
+    "tests": "13-17",
+    "note": "Bắt buộc dùng long long, tránh tràn số khi đảo"
+  },
+  {
+    "name": "N = 0, số âm, số tận cùng bằng 0",
+    "points": 15,
+    "tests": "18-20",
+    "note": "N = 0 in YES; số âm in NO; 120 in NO (đảo thành 21)"
+  }
+]

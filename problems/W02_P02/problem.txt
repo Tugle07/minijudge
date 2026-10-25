@@ -1,0 +1,6 @@
+title=Phân loại tam giác
+time_ms=1000
+memory_mb=256
+tests=5
+difficulty=Dễ
+samples=1,2

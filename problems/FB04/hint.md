@@ -1,0 +1,3 @@
+- Một số x là số chính phương trong [L, R] khi và chỉ khi x = k^2 với `ceil(sqrt(L)) <= k <= floor(sqrt(R))`.
+- Do đó, số lượng số chính phương = `end - start + 1` (nếu start <= end, ngược lại là 0).
+- Dùng hàm `ceil(sqrt(L))` và `floor(sqrt(R))` trong thư viện `math.h`, độ phức tạp O(1) đạt trọn điểm!
