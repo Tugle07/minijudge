@@ -69,6 +69,27 @@ export function fmtWhen(ms) {
   return `${hm}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
 }
 
+/* Định dạng thời lượng làm bài: "24p 15s", "1h 10p" */
+export function fmtWorkTime(ms) {
+  if (!ms || ms <= 0) return '—';
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    const remM = m % 60;
+    return `${h}h ${remM}p`;
+  }
+  return `${m}p ${pad(s)}s`;
+}
+
+/* Định dạng giờ đồng hồ chính xác: "14:28:15" */
+export function fmtClock(ms) {
+  if (!ms) return '—';
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 export const statLine = (s) =>
   s.verdict === 'CE' || s.verdict === 'PENDING' || s.verdict === 'IE'
     ? '—'

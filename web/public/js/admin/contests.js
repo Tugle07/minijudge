@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, renderAvatar, toast } from '../ui.js';
+import { esc, fmtClock, fmtWorkTime, renderAvatar, toast } from '../ui.js';
 import { confirmDialog, fmtDateTime, openDrawer, pill } from './kit.js';
 
 const PHASE = {
@@ -550,9 +550,21 @@ async function detail(ctx, id, tab) {
   async function board() {
     const b = await api(`/api/admin/contests/${id}/scoreboard`);
     ctx.page.innerHTML = shell(`
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:color-mix(in oklch, var(--accent) 7%, transparent);border:1px solid color-mix(in oklch, var(--accent) 22%, transparent);border-radius:var(--r-md);font-size:12px;color:var(--fg2);margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-weight:700;color:var(--accent);">⚖️ Quy tắc xếp hạng:</span>
+        <span>1. Điểm số cao nhất ➔ 2. Thời gian làm bài ngắn nhất ➔ 3. Hoàn thành sớm nhất ➔ 4. Số lần nộp ít hơn</span>
+      </div>
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
-          <thead><tr><th class="num" style="width:50px">#</th><th>Thí sinh</th>${b.problems.map((p) => `<th class="num" title="${esc(p.title)}">${esc(p.label)} <span class="faint">/${p.points}</span></th>`).join('')}<th class="num">Tổng</th></tr></thead>
+          <thead><tr>
+            <th class="num" style="width:50px">#</th>
+            <th>Thí sinh</th>
+            ${b.problems.map((p) => `<th class="num" title="${esc(p.title)}">${esc(p.label)} <span class="faint">/${p.points}</span></th>`).join('')}
+            <th class="num">Tổng</th>
+            <th class="num" title="Thời gian làm bài thực tế từ lúc vào phòng">Làm bài</th>
+            <th style="text-align:center" title="Thời điểm hoàn thành bài nộp đạt điểm">Hoàn thành</th>
+            <th class="num" title="Tổng số lần nộp bài">Nộp</th>
+          </tr></thead>
           <tbody>${b.rows.map((r) => `<tr>
             <td class="num">${r.rank}</td>
             <td>
@@ -565,7 +577,10 @@ async function detail(ctx, id, tab) {
               </div>
             </td>
             ${r.cells.map((x) => `<td class="num" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}
-            <td class="num" style="font-weight:600">${num(r.total)}</td>
+            <td class="num" style="font-weight:700;color:var(--accent);font-size:14.5px;">${num(r.total)}</td>
+            <td class="num mono faint" style="font-size:12.5px;">${fmtWorkTime(r.workDurationMs)}</td>
+            <td class="faint" style="font-size:12px;text-align:center;">${r.finishAt ? fmtClock(r.finishAt) : '—'}</td>
+            <td class="num mono muted" style="font-size:12.5px;">${r.totalTries ?? 0}</td>
           </tr>`).join('')}</tbody>
         </table>
         ${b.rows.length ? '' : '<div class="empty">Chưa có thí sinh.</div>'}

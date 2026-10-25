@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { diffMeter, esc, fmtWhen, pillStyle, renderAvatar, setStatus } from '../ui.js';
+import { diffMeter, esc, fmtWhen, fmtWorkTime, pillStyle, renderAvatar, setStatus } from '../ui.js';
 
 const MY = {
   ac: ['✓', 'ac', 'Đã Accepted'],
@@ -42,6 +42,14 @@ function renderPodium(topUsers) {
               <span class="muted">Đã giải:</span>
               <span class="num" style="color:var(--ac);font-weight:600;">${u.solved} / ${u.total} AC</span>
             </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+              <span class="muted">Làm bài:</span>
+              <span class="mono" style="font-weight:500;">⏱️ ${fmtWorkTime(u.workDurationMs)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+              <span class="muted">Hoàn thành:</span>
+              <span class="faint">${fmtWhen(u.finishAt || u.lastScoreAt)}</span>
+            </div>
           </a>`;
       }).join('')}
     </div>`;
@@ -58,24 +66,41 @@ function rankHtml(board) {
   }
   const top3 = board.slice(0, Math.min(3, board.length));
   return `
+    <!-- Thanh quy tắc xếp hạng minh bạch -->
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:color-mix(in oklch, var(--accent) 7%, transparent);border:1px solid color-mix(in oklch, var(--accent) 22%, transparent);border-radius:var(--r-md);font-size:12.5px;color:var(--fg2);margin-bottom:16px;flex-wrap:wrap;">
+      <span style="font-weight:700;color:var(--accent);display:inline-flex;align-items:center;gap:6px;">
+        <span>⚖️</span> Quy tắc xếp hạng:
+      </span>
+      <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:500;">
+        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">1. Điểm số cao nhất</span>
+        <span class="faint">➔</span>
+        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">2. Thời gian làm bài ngắn nhất</span>
+        <span class="faint">➔</span>
+        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">3. Hoàn thành sớm nhất</span>
+        <span class="faint">➔</span>
+        <span class="pill" style="background:var(--bg2);padding:2px 8px;border-radius:4px;border:1px solid var(--line);">4. Số lần nộp ít hơn</span>
+      </div>
+    </div>
+
     <!-- Top 3 Podium -->
     ${renderPodium(top3)}
 
     <!-- Bảng xếp hạng toàn khối -->
     <div class="table" role="table">
-      <div class="trow thead" style="grid-template-columns: 52px minmax(160px, 1.4fr) 110px minmax(130px, 1.2fr) 75px 125px; font-weight:600;" role="row">
+      <div class="trow thead" style="grid-template-columns: 50px minmax(170px, 1.4fr) 95px minmax(110px, 1fr) 100px 115px 65px; font-weight:600;" role="row">
         <span style="text-align:center;">Hạng</span>
         <span>Sinh viên</span>
         <span class="right" style="padding-right:8px;">Điểm</span>
         <span>Tiến độ bài</span>
-        <span class="right wide-only">Lần nộp</span>
-        <span class="right">Gần nhất</span>
+        <span class="right wide-only" title="Tổng thời gian làm bài từ bài đầu tiên đến khi đạt kết quả">Làm bài</span>
+        <span class="right" title="Thời điểm hoàn thành bài nộp đạt điểm cao nhất">Hoàn thành</span>
+        <span class="right wide-only" title="Tổng số lần nộp bài trong khối">Lần nộp</span>
       </div>
       ${board
         .map((u) => {
           const isMeStyle = u.isMe ? 'background:color-mix(in oklch, var(--accent) 9%, transparent);' : '';
           return `
-            <div class="trow" style="grid-template-columns: 52px minmax(160px, 1.4fr) 110px minmax(130px, 1.2fr) 75px 125px; align-items:center; ${isMeStyle}">
+            <div class="trow" style="grid-template-columns: 50px minmax(170px, 1.4fr) 95px minmax(110px, 1fr) 100px 115px 65px; align-items:center; ${isMeStyle}">
               <span style="display:flex;justify-content:center;">${rankBadge(u.rank)}</span>
               <a href="#/profile/${encodeURIComponent(u.username)}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;min-width:0;" title="Xem hồ sơ ${esc(u.fullName || u.username)}">
                 ${renderAvatar(u.username, u.avatar, 32, u.fullName)}
@@ -100,13 +125,14 @@ function rankHtml(board) {
                   <div style="width:${u.pct}%;"></div>
                 </div>
               </div>
+              <span class="right mono muted wide-only" style="font-size:12.5px;">${fmtWorkTime(u.workDurationMs)}</span>
+              <span class="right faint" style="font-size:12.5px;">${fmtWhen(u.finishAt || u.lastScoreAt)}</span>
               <span class="right mono muted wide-only">${u.submissions}</span>
-              <span class="right faint" style="font-size:12.5px;">${fmtWhen(u.lastScoreAt || u.lastAcAt)}</span>
             </div>`;
         })
         .join('')}
     </div>
-    <p class="faint" style="margin:14px 0 0;font-size:13px;">Thứ hạng xếp theo tổng điểm subtest giảm dần, ưu tiên số bài AC và người đạt điểm sớm hơn khi bằng điểm.</p>
+    <p class="faint" style="margin:14px 0 0;font-size:13px;">Thứ hạng xếp căn cứ minh bạch: <b>Tổng điểm</b> ➔ <b>Thời gian làm bài</b> ➔ <b>Thời điểm hoàn thành</b> ➔ <b>Số lần nộp bài</b>.</p>
   `;
 }
 

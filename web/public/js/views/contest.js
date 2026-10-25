@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
-import { badge, esc, fmtWhen, langBadge, renderAvatar, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
+import { badge, esc, fmtClock, fmtWhen, fmtWorkTime, langBadge, renderAvatar, renderMarkdown, statLine, toast, verdictLabel } from '../ui.js';
 import { compileErrorsHtml, runResultHtml } from './problem-result.js';
 import { fmtCountdown, fmtDuration, fmtTime } from './contests.js';
 
@@ -1025,7 +1025,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
   }
 
   function boardHtml(b) {
-    const cols = `48px minmax(170px,1fr) repeat(${b.problems.length},72px) 84px`;
+    const cols = `48px minmax(160px,1.4fr) repeat(${b.problems.length},66px) 76px 88px 80px 48px`;
     const max = b.problems.reduce((s, p) => s + p.points, 0);
     const live = b.phase === 'running';
     const working = b.rows.filter((r) => !r.finished).length;
@@ -1037,10 +1037,22 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
     return `
       <div class="board-head">
         <h2 class="section-title">Bảng xếp hạng${live ? ' <span class="board-live">trực tiếp</span>' : ''}</h2>
-        <span class="faint" style="font-size:13px">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài, cập nhật mỗi 15 giây` : ''} · bằng điểm thì ai đạt điểm đó sớm hơn xếp trên</span>
+        <span class="faint" style="font-size:13px">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài, cập nhật mỗi 15 giây` : ''}</span>
       </div>
-      <div class="rank-scroll"><div class="table" style="min-width:${48 + 170 + b.problems.length * 72 + 84 + 64}px">
-        <div class="trow thead" style="grid-template-columns:${cols}"><span>#</span><span>Thí sinh</span>${b.problems.map((p) => `<span class="right" title="${esc(p.title)}">${esc(p.label)} <small class="faint">/${p.points}</small></span>`).join('')}<span class="right">Tổng /${max}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:color-mix(in oklch, var(--accent) 7%, transparent);border:1px solid color-mix(in oklch, var(--accent) 22%, transparent);border-radius:var(--r-md);font-size:12px;color:var(--fg2);margin:8px 0 12px;flex-wrap:wrap;">
+        <span style="font-weight:700;color:var(--accent);">⚖️ Quy tắc xếp hạng:</span>
+        <span>1. Điểm số cao nhất ➔ 2. Thời gian làm bài ngắn nhất ➔ 3. Hoàn thành sớm nhất ➔ 4. Số lần nộp ít hơn</span>
+      </div>
+      <div class="rank-scroll"><div class="table" style="min-width:${48 + 160 + b.problems.length * 66 + 76 + 88 + 80 + 48}px">
+        <div class="trow thead" style="grid-template-columns:${cols}">
+          <span>#</span>
+          <span>Thí sinh</span>
+          ${b.problems.map((p) => `<span class="right" title="${esc(p.title)}">${esc(p.label)} <small class="faint">/${p.points}</small></span>`).join('')}
+          <span class="right">Tổng</span>
+          <span class="right" title="Thời gian làm bài thực tế từ lúc vào phòng thi">Làm bài</span>
+          <span class="right" title="Thời điểm hoàn thành bài thi hoặc nộp bài đạt điểm">Hoàn thành</span>
+          <span class="right" title="Tổng số lần nộp bài">Nộp</span>
+        </div>
         ${b.rows
           .map(
             (r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:${cols}">
@@ -1049,11 +1061,15 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
                 ${renderAvatar(r.username, r.avatar, 26, r.fullName)}
                 <div style="display:flex;flex-direction:column;min-width:0;">
                   <span class="ellipsis" style="font-weight:600">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span>
-                  <small class="muted" style="font-size:11.5px;">${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã kết thúc' : 'đang làm bài'}</small>
+                  <small class="muted" style="font-size:11.5px;">${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã nộp kết thúc' : 'đang làm bài'}</small>
                 </div>
               </a>
               ${r.cells.map((c, i) => cell(c, b.problems[i])).join('')}
-              <b class="right mono">${Number(r.total.toFixed(2))}</b></div>`,
+              <b class="right mono" style="color:var(--accent);font-size:14.5px;">${Number(r.total.toFixed(2))}</b>
+              <span class="right mono faint" style="font-size:12px;">${fmtWorkTime(r.workDurationMs)}</span>
+              <span class="right faint" style="font-size:12px;">${r.finishAt ? fmtClock(r.finishAt) : '—'}</span>
+              <span class="right mono muted" style="font-size:12px;">${r.totalTries ?? 0}</span>
+            </div>`,
           )
           .join('') || '<div class="empty">Chưa có thí sinh.</div>'}
       </div></div>`;

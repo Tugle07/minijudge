@@ -61,6 +61,7 @@ export function createStats(db, catalog) {
         MAX(COALESCE(s.score, CASE WHEN s.verdict = 'AC' THEN 100 ELSE 0 END)) AS best_score,
         MAX(CASE WHEN s.verdict = 'AC' THEN 1 ELSE 0 END) AS is_ac,
         COUNT(*) AS tries,
+        MIN(s.created_at) AS first_sub_at,
         MAX(CASE WHEN COALESCE(s.score, CASE WHEN s.verdict = 'AC' THEN 100 ELSE 0 END) > 0 THEN s.created_at ELSE 0 END) AS last_score_at,
         MAX(CASE WHEN s.verdict = 'AC' THEN s.created_at ELSE 0 END) AS last_ac_at
       FROM submissions s
@@ -78,12 +79,14 @@ export function createStats(db, catalog) {
         totalScore: 0,
         solved: 0,
         tries: 0,
+        firstSubAt: r.first_sub_at || 0,
         lastScoreAt: 0,
         lastAcAt: 0,
       };
       u.totalScore += r.best_score || 0;
       if (r.is_ac) u.solved += 1;
       u.tries += r.tries || 0;
+      if (!u.firstSubAt || (r.first_sub_at && r.first_sub_at < u.firstSubAt)) u.firstSubAt = r.first_sub_at;
       if (r.last_score_at > u.lastScoreAt) u.lastScoreAt = r.last_score_at;
       if (r.last_ac_at > u.lastAcAt) u.lastAcAt = r.last_ac_at;
       userMap.set(r.user_id, u);
@@ -99,6 +102,11 @@ export function createStats(db, catalog) {
     const rows = userIds.map((uid) => {
       const stat = userMap.get(uid);
       const info = infoMap.get(uid) || {};
+      const finishAt = stat.lastScoreAt || stat.lastAcAt || 0;
+      let workDurationMs = 0;
+      if (finishAt && stat.firstSubAt && finishAt >= stat.firstSubAt) {
+        workDurationMs = Math.max(1000, finishAt - stat.firstSubAt);
+      }
       return {
         id: uid,
         username: info.username || '',
@@ -111,22 +119,47 @@ export function createStats(db, catalog) {
         total: pids.length,
         pct: pids.length ? Math.round((stat.solved / pids.length) * 100) : 0,
         submissions: stat.tries,
-        lastScoreAt: stat.lastScoreAt || stat.lastAcAt,
+        workDurationMs,
+        finishAt,
+        lastScoreAt: finishAt,
         lastAcAt: stat.lastAcAt,
         isMe: uid === currentUserId,
       };
     });
 
-    rows.sort((a, b) =>
-      b.score - a.score ||
-      b.solved - a.solved ||
-      (a.lastScoreAt || Infinity) - (b.lastScoreAt || Infinity) ||
-      a.username.localeCompare(b.username)
-    );
+    /* Quy tắc xếp hạng:
+     * 1. Điểm số: cao hơn xếp trên
+     * 2. Số bài giải được (AC): nhiều hơn xếp trên
+     * 3. Thời gian làm bài: ngắn hơn xếp trên
+     * 4. Thời điểm hoàn thành: sớm hơn xếp trên
+     * 5. Số lần nộp: ít hơn xếp trên
+     * 6. Thứ tự bảng chữ cái
+     */
+    rows.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.solved !== a.solved) return b.solved - a.solved;
+      if (a.score > 0 && b.score > 0) {
+        const aDur = a.workDurationMs || Infinity;
+        const bDur = b.workDurationMs || Infinity;
+        if (aDur !== bDur) return aDur - bDur;
+      }
+      const aFin = a.finishAt || Infinity;
+      const bFin = b.finishAt || Infinity;
+      if (aFin !== bFin) return aFin - bFin;
+      if (a.submissions !== b.submissions) return a.submissions - b.submissions;
+      return (a.fullName || a.username).localeCompare(b.fullName || b.username);
+    });
 
     let rank = 0;
     rows.forEach((r, i) => {
-      if (i === 0 || r.score !== rows[i - 1].score || r.solved !== rows[i - 1].solved || r.lastScoreAt !== rows[i - 1].lastScoreAt) {
+      if (
+        i === 0 ||
+        r.score !== rows[i - 1].score ||
+        r.solved !== rows[i - 1].solved ||
+        r.workDurationMs !== rows[i - 1].workDurationMs ||
+        r.finishAt !== rows[i - 1].finishAt ||
+        r.submissions !== rows[i - 1].submissions
+      ) {
         rank = i + 1;
       }
       r.rank = rank;

@@ -215,8 +215,15 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
         .join(' | ');
     };
     const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const head = ['Hạng', 'Tài khoản', 'Họ tên', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Số vi phạm', 'Chi tiết vi phạm'];
-    const lines = [head, ...rows.map((r) => [r.rank, r.username, r.fullName, ...r.cells.map((x) => x.score ?? 0), r.total, violations.get(r.userId) ?? 0, note(r.userId)])];
+    const fmtMs = (ms) => {
+      if (!ms || ms <= 0) return '—';
+      const sec = Math.round(ms / 1000);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}m ${s}s`;
+    };
+    const head = ['Hạng', 'Tài khoản', 'Họ tên', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Thời gian làm bài', 'Thời điểm hoàn thành', 'Tổng số lần nộp', 'Số vi phạm', 'Chi tiết vi phạm'];
+    const lines = [head, ...rows.map((r) => [r.rank, r.username, r.fullName, ...r.cells.map((x) => x.score ?? 0), r.total, fmtMs(r.workDurationMs), r.finishAt ? vnTime(r.finishAt) : '—', r.totalTries ?? 0, violations.get(r.userId) ?? 0, note(r.userId)])];
     const name = `ket-qua-cuoc-thi-${c.id}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);

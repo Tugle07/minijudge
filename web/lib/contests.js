@@ -208,7 +208,14 @@ export function createContests(db, catalog) {
     q.saveScore.run(score, JSON.stringify(detail), id);
   }
 
-  /* Bảng điểm: mỗi thí sinh mỗi bài lấy lần nộp điểm cao nhất; bằng điểm thì ai đạt điểm đó sớm hơn xếp trên. */
+  /* Bảng điểm kỳ thi:
+   * Tiêu chí xếp hạng minh bạch:
+   * 1. Tổng điểm cao nhất (total DESC)
+   * 2. Thời gian làm bài ngắn nhất (workDurationMs ASC: tính từ lúc joined_at đến lúc đạt điểm cao nhất hoặc bấm kết thúc)
+   * 3. Thời điểm hoàn thành sớm nhất (finishAt ASC: ai nộp bài xong trước theo mốc giờ thực tế)
+   * 4. Số lần nộp ít hơn (totalTries ASC: độ chuẩn xác cao hơn)
+   * 5. Thứ tự bảng chữ cái (Họ tên / MSSV)
+   */
   function scoreboard(contestId) {
     const c = get(contestId);
     const problems = problemsOf(contestId);
@@ -218,23 +225,83 @@ export function createContests(db, catalog) {
     const rows = people.map((u) => {
       let total = 0;
       let last = 0;
+      let totalTries = 0;
       const cells = problems.map((p) => {
         const b = best.get(`${u.user_id}:${p.problemId}`);
         const score = b?.score ?? null;
+        const tries = b?.tries ?? 0;
+        totalTries += tries;
         if (score) {
           total += score;
           last = Math.max(last, at.get(`${u.user_id}:${p.problemId}`) || 0);
         }
-        return { label: p.label, score, tries: b?.tries ?? 0 };
+        return { label: p.label, score, tries };
       });
-      return { userId: u.user_id, username: u.username, fullName: u.full_name || '', avatar: u.avatar || '', total, lastAt: last ? last - (c?.startAt ?? 0) : null, cells };
+
+      // Mốc thời gian hoàn thành: thời điểm nộp bài đạt điểm tối đa (hoặc finished_at nếu nộp xong bài thi)
+      const finishAt = u.finished_at || (last > 0 ? last : null);
+
+      // Thời gian làm bài thực tế (ms):
+      let workDurationMs = 0;
+      if (finishAt && u.joined_at) {
+        workDurationMs = Math.max(1000, finishAt - u.joined_at);
+      } else if (last > 0 && u.joined_at) {
+        workDurationMs = Math.max(1000, last - u.joined_at);
+      }
+
+      return {
+        userId: u.user_id,
+        username: u.username,
+        fullName: u.full_name || '',
+        avatar: u.avatar || '',
+        total,
+        workDurationMs,
+        finishAt,
+        totalTries,
+        finished: Boolean(u.finished_at),
+        joinedAt: u.joined_at,
+        lastAt: last ? last - (c?.startAt ?? 0) : null,
+        cells,
+      };
     });
-    rows.sort((a, b) => b.total - a.total || (a.lastAt ?? Infinity) - (b.lastAt ?? Infinity) || a.username.localeCompare(b.username));
+
+    rows.sort((a, b) => {
+      // 1. Điểm: cao hơn xếp trên
+      if (b.total !== a.total) return b.total - a.total;
+
+      // 2. Thời gian làm bài: ngắn hơn xếp trên (chỉ so khi có điểm > 0)
+      if (a.total > 0 && b.total > 0) {
+        const aDur = a.workDurationMs || Infinity;
+        const bDur = b.workDurationMs || Infinity;
+        if (aDur !== bDur) return aDur - bDur;
+      }
+
+      // 3. Thời điểm hoàn thành: sớm hơn xếp trên
+      const aFin = a.finishAt || Infinity;
+      const bFin = b.finishAt || Infinity;
+      if (aFin !== bFin) return aFin - bFin;
+
+      // 4. Số lần nộp: ít hơn xếp trên
+      if (a.totalTries !== b.totalTries) return a.totalTries - b.totalTries;
+
+      // 5. Bảng chữ cái
+      return (a.fullName || a.username).localeCompare(b.fullName || b.username);
+    });
+
     let rank = 0;
     rows.forEach((r, i) => {
-      if (i === 0 || r.total !== rows[i - 1].total || r.lastAt !== rows[i - 1].lastAt) rank = i + 1;
+      if (
+        i === 0 ||
+        r.total !== rows[i - 1].total ||
+        r.workDurationMs !== rows[i - 1].workDurationMs ||
+        r.finishAt !== rows[i - 1].finishAt ||
+        r.totalTries !== rows[i - 1].totalTries
+      ) {
+        rank = i + 1;
+      }
       r.rank = rank;
     });
+
     return { problems: problems.map(({ label, title, points, problemId }) => ({ label, title, points, problemId })), rows };
   }
 
