@@ -22,6 +22,7 @@ const readDraft = (cid, label, lang = 'c') => draftGet(`exam-${cid}-${label}-${l
 const saveDraft = (cid, label, lang, code) => draftSet(`exam-${cid}-${label}-${lang}`, code);
 const getLastLang = (cid, label) => draftGet(`exam-lang-${cid}-${label}`) || 'c';
 const setLastLang = (cid, label, lang) => draftSet(`exam-lang-${cid}-${label}`, lang);
+const pad = (n) => String(n).padStart(2, '0');
 const isFullscreen = () => Boolean(document.fullscreenElement);
 
 /* 3 tiếng bíp khi thí sinh rời bài thi (Web Audio, không cần file âm thanh).
@@ -103,7 +104,6 @@ export async function render(ctx) {
   }
 
   /* ---------- Sảnh chờ: luật thi, kiểm tra máy, nhập mã phòng ---------- */
-  const pad = (n) => String(n).padStart(2, '0');
   function lobby(mode) {
     const { contest } = state.info;
     const touchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches;
