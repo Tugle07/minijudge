@@ -252,7 +252,11 @@
 .vdist-legend b { color: var(--fg); font-family: var(--font-code); font-weight: 600; }
 
 .rank-cols { grid-template-columns: 52px minmax(180px, 1fr) 150px repeat(var(--cols, 1), minmax(52px, 80px)) 120px; }
-.rank-scroll { overflow-x: auto; }
+.rank-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--line2) var(--bg3); }
+.rank-scroll::-webkit-scrollbar { height: 8px; }
+.rank-scroll::-webkit-scrollbar-track { background: var(--bg3); border-radius: 4px; }
+.rank-scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
+.rank-scroll::-webkit-scrollbar-thumb:hover { background: var(--fg3); }
 .rank-table { min-width: calc(52px + 180px + 150px + var(--cols, 1) * 52px + 120px + 48px); }
 .rank-user { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
 .rank-user small { font-size: 12.5px; color: var(--fg3); }

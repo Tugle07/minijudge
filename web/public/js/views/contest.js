@@ -821,7 +821,11 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
         if (e.data?.from === tabId) return;
         if (e.data?.t === 'ping' && !state.blocked) channel.postMessage({ t: 'pong', from: tabId });
         if (e.data?.t === 'pong') {
-          state.blocked = { title: 'Bài thi đã mở ở một tab khác', body: 'Chỉ được làm bài ở một tab. Hãy đóng tab này và quay về tab đang làm bài.' };
+          state.blocked = {
+            title: 'Bài thi đã mở ở một tab khác',
+            body: 'Chỉ được làm bài ở một tab. Hãy đóng các tab khác rồi bấm nút bên dưới để tiếp tục.',
+            action: '<button class="btn-primary" style="margin-top:8px" onclick="location.reload()">Đã đóng tab khác — Tải lại bài thi</button>',
+          };
           violation('second_tab', 'Mở bài thi ở tab thứ hai', 'bài thi đang được mở ở một tab thứ hai');
           guardState();
         }
@@ -946,20 +950,27 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
   async function summary() {
     const { contest } = state.info;
     const info = state.info;
+    const isAdmin = ctx.user?.role === 'admin';
     let board = null;
     if (contest.canSeeBoard) board = await api(`/api/contests/${cid}/results`).catch(() => null);
     ctx.view.innerHTML = `
-      <main class="page" style="max-width:900px">
+      <main class="page" style="max-width:1240px">
         <button class="link-btn" data-go="#/contests" style="align-self:flex-start">‹ Danh sách cuộc thi</button>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <h1 class="page-title">${esc(contest.title)}</h1>
-          <p class="muted" style="margin:0">${contest.phase === 'ended' ? 'Cuộc thi đã kết thúc.' : 'Bạn đã nộp bài và kết thúc.'} ${contest.joined ? '' : 'Bạn không tham gia cuộc thi này.'}</p>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h1 class="page-title" style="margin:0">${esc(contest.title)}</h1>
+            ${isAdmin ? '<span class="pill" style="background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:600;">Xem trước Admin</span>' : ''}
+          </div>
+          <p class="muted" style="margin:0">${contest.phase === 'ended' ? 'Cuộc thi đã kết thúc.' : 'Bạn đã nộp bài và kết thúc.'} ${contest.joined ? '' : isAdmin ? 'Bạn không tham gia thi với tư cách thí sinh.' : 'Bạn không tham gia cuộc thi này.'}</p>
         </div>
         ${info.problems.length ? `
-          <div class="table" role="table">
-            <div class="trow thead exam-sum-cols"><span>Bài</span><span>Tên bài</span><span class="right">Số lần nộp</span><span class="right">Điểm</span></div>
-            ${info.problems.map((p) => `<div class="trow exam-sum-cols"><b class="mono">${esc(p.label)}</b><span class="ellipsis">${esc(p.title)}</span><span class="right mono muted">${p.tries}</span><b class="right mono">${scoreText(p.myScore, p.points)}</b></div>`).join('')}
-            <div class="trow exam-sum-cols"><span></span><b>Tổng điểm</b><span></span><b class="right mono" style="font-size:16px">${Number(info.total.toFixed(2))}/${info.problems.reduce((s, p) => s + p.points, 0)}</b></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h2 class="section-title" style="margin:0">Kết quả bài làm của bạn</h2>
+            <div class="table" role="table" style="max-width:800px">
+              <div class="trow thead exam-sum-cols"><span>Bài</span><span>Tên bài</span><span class="right">Số lần nộp</span><span class="right">Điểm</span></div>
+              ${info.problems.map((p) => `<div class="trow exam-sum-cols"><b class="mono">${esc(p.label)}</b><span class="ellipsis">${esc(p.title)}</span><span class="right mono muted">${p.tries}</span><b class="right mono">${scoreText(p.myScore, p.points)}</b></div>`).join('')}
+              <div class="trow exam-sum-cols"><span></span><b>Tổng điểm</b><span></span><b class="right mono" style="font-size:16px">${Number(info.total.toFixed(2))}/${info.problems.reduce((s, p) => s + p.points, 0)}</b></div>
+            </div>
           </div>` : ''}
         <div data-board>${board ? boardHtml(board) : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Bảng xếp hạng hiện sau khi bạn hoàn tất bài làm.</p>'}</div>
       </main>`;
@@ -977,7 +988,8 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
   }
 
   function boardHtml(b) {
-    const cols = `48px minmax(160px,1.4fr) repeat(${b.problems.length},66px) 76px 88px 80px 48px`;
+    const cols = `48px minmax(180px,1.4fr) repeat(${b.problems.length},68px) 84px 88px 88px 52px`;
+    const minW = 48 + 180 + b.problems.length * 68 + 84 + 88 + 88 + 52 + (b.problems.length + 5) * 12 + 32;
     const max = b.problems.reduce((s, p) => s + p.points, 0);
     const live = b.phase === 'running';
     const working = b.rows.filter((r) => !r.finished).length;
@@ -991,7 +1003,8 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
         <h2 class="section-title">Bảng xếp hạng${live ? ' <span class="board-live">trực tiếp</span>' : ''}</h2>
         <span class="faint" style="font-size:13px">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài, cập nhật mỗi 15 giây` : ''}</span>
       </div>
-      <div class="rank-scroll"><div class="table" style="min-width:${48 + 160 + b.problems.length * 66 + 76 + 88 + 80 + 48}px">
+      <div class="rank-scroll" style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <div class="table" style="min-width:${minW}px;width:100%;">
         <div class="trow thead" style="grid-template-columns:${cols}">
           <span>#</span>
           <span>Thí sinh</span>
