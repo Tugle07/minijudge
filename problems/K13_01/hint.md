@@ -1,1 +1,1 @@
-Duyệt mảng, tìm các phần tử $a_i < 0$. Nếu đếm được ít nhất 1 ngày lỗ, tính trung bình `(double)sum / count` và in `%.2lf`. Nếu không có ngày nào âm (`count == 0`), in `NONE`.
+Duyệt mảng để đếm số lượng và tính tổng các phần tử âm. Nếu có ít nhất một phần tử âm, tính trung bình cộng (chú ý ép kiểu số thực để không bị chia nguyên) và in ra 2 chữ số thập phân; nếu không có thì in `NONE`.
