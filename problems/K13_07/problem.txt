@@ -1,4 +1,4 @@
-title=K13_07: Giám sát chuỗi ùn tắc giao thông
+title=K13_07: Đoạn liên tiếp bằng nhau dài nhất
 time_ms=1000
 memory_mb=256
 tests=11

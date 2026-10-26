@@ -1,6 +1,6 @@
-Đội ngũ kỹ sư công trình thuộc trường Đại học Giao thông Vận tải Phân hiệu UTC2 tiến hành kiểm định độ ổn định của một nhịp cầu thép. Thiết bị cảm biến đo cao độ chịu lực tại $n$ mốc đo cách đều nhau dọc thân cầu (đánh số từ $0$ đến $n-1$).
+Cho một mảng gồm $n$ số nguyên (đánh số chỉ số từ $0$ đến $n-1$).
 
-Để đảm bảo kết cấu dầm cầu phân bổ ứng suất cân bằng tuyệt đối qua trụ trung tâm, chuỗi số liệu đo đạc bắt buộc phải có tính chất **đối xứng hoàn hảo** (tức là mốc thứ $i$ phải có cao độ bằng mốc đối xứng $n - 1 - i$ qua tâm). Hãy lập trình kiểm định chuỗi số liệu: in `YES` nếu nhịp cầu đạt chuẩn đối xứng, ngược lại in `NO`.
+Mảng được gọi là đối xứng nếu đọc xuôi hay đọc ngược đều có giá trị giống nhau (tức là $a_i = a_{n - 1 - i}$ với mọi $0 \le i < n$). Hãy viết chương trình kiểm tra xem mảng đã cho có đối xứng hay không: in ra `YES` nếu đối xứng, ngược lại in `NO`.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

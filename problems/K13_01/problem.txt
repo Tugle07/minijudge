@@ -1,4 +1,4 @@
-title=K13_01: Báo cáo ngày thua lỗ
+title=K13_01: Báo cáo doanh thu thua lỗ cho sếp
 time_ms=1000
 memory_mb=256
 tests=11

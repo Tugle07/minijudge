@@ -1,4 +1,4 @@
-title=K13_06: Lọc dữ liệu cảm biến bụi mịn
+title=K13_06: Xử lý tệp tin và lọc tín hiệu lỗi X
 time_ms=1000
 memory_mb=256
 tests=11

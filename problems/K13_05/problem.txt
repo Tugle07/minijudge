@@ -1,4 +1,4 @@
-title=K13_05: Kiểm định nhịp dầm cầu đối xứng
+title=K13_05: Kiểm tra mảng đối xứng
 time_ms=1000
 memory_mb=256
 tests=11

@@ -1,6 +1,8 @@
-Hệ thống camera AI giám sát giao thông tại nút giao trọng điểm ghi nhận mức độ lưu thông qua $n$ khung giờ liên tiếp trong ngày (mỗi mức độ được mã hóa bằng một số nguyên $a_i$).
+Cho mảng $a$ gồm $n$ số nguyên ban đầu (đánh số chỉ số từ $0$ đến $n-1$).
 
-Để tối ưu hóa chu kỳ chuyển đèn tín hiệu giao thông, trung tâm điều hành cần phát hiện **chuỗi thời gian liên tiếp dài nhất mà tình trạng giao thông giữ nguyên không đổi** (các phần tử liên tiếp bằng nhau). Hãy xác định **vị trí bắt đầu** (chỉ số từ $0$) và **độ dài** của chuỗi thời gian ổn định dài nhất đó trên chuỗi dữ liệu ban đầu. Nếu có nhiều khoảng thời gian cùng đạt độ dài kỷ lục như nhau, hãy ưu tiên chọn chuỗi xuất hiện sớm nhất.
+Hãy tìm đoạn con gồm các phần tử liên tiếp có giá trị bằng nhau có độ dài lớn nhất trong mảng ban đầu.
+
+In ra hai số nguyên cách nhau bởi dấu cách: **vị trí bắt đầu** (chỉ số từ $0$) và **độ dài** của đoạn liên tiếp đó. Nếu có nhiều đoạn cùng đạt độ dài lớn nhất, hãy lấy đoạn xuất hiện đầu tiên (chỉ số bắt đầu nhỏ nhất).
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

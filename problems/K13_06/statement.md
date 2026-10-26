@@ -1,10 +1,10 @@
-Trạm quan trắc không khí tự động đặt tại ngã tư giao thông thu nhận $n$ mẫu chỉ số bụi mịn $PM2.5$. Do cảm biến quang học thỉnh thoảng bị kẹt bụi hoặc xung điện, nó phát ra mã đo lỗi có giá trị đúng bằng số nguyên $x$.
+Hệ thống cần bạn xử lý tệp tin gồm $n$ giá trị số nguyên trước khi đưa vào phân tích. Vì bụi kẹt ở đầu đọc cảm biến nên làm cho đầu ghi thêm các tín hiệu bị sai có giá trị bằng $x$ vào trong chuỗi dữ liệu.
 
-Trước khi gửi dữ liệu lên biểu đồ phân tích môi trường của thành phố, hệ thống cần:
-1. **Sắp xếp** toàn bộ dãy dữ liệu theo thứ tự tăng dần (yêu cầu tự cài đặt thuật toán sắp xếp).
-2. **Loại bỏ triệt để** mọi mẫu đo bị lỗi có giá trị bằng $x$.
+Việc của bạn là:
+1. **Sắp xếp lại** chuỗi dữ liệu theo thứ tự tăng dần (yêu cầu tự cài đặt thuật toán sắp xếp).
+2. **Lọc ra** và loại bỏ toàn bộ các tín hiệu làm sai có giá trị bằng $x$ ra khỏi chuỗi dữ liệu.
 
-In ra chuỗi dữ liệu sạch sau khi xử lý. Nếu tất cả các mẫu đo trong đợt quan trắc đều bị lỗi (sau khi xóa mảng không còn phần tử nào), hãy in ra `EMPTY` để kích hoạt còi bảo trì cảm biến.
+In ra chuỗi dữ liệu còn lại sau khi xử lý (cách nhau bởi dấu cách). Nếu sau khi lọc mảng không còn phần tử nào, in ra `EMPTY`.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

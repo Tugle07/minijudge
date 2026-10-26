@@ -1,4 +1,4 @@
-title=K13_02: Gói tin bảo mật IoT
+title=K13_02: Phát hiện tệp tin chứa mã độc
 time_ms=1000
 memory_mb=256
 tests=11

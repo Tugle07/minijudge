@@ -1,6 +1,6 @@
-Một chuỗi cửa hàng tiện lợi thống kê tình hình tài chính trong $n$ ngày liên tiếp. Trong danh sách kết quả kinh doanh, số nguyên dương thể hiện ngày có lợi nhuận, còn số nguyên âm thể hiện ngày bị thua lỗ.
+Bạn cần phải báo cáo tình hình tài chính cho sếp sau chuỗi $n$ ngày kinh doanh liên tiếp. Trong danh sách doanh thu hàng ngày, số nguyên dương thể hiện ngày có lãi, còn số nguyên âm thể hiện ngày bị thua lỗ.
 
-Để chuẩn bị báo cáo tài chính cho ban giám đốc, bạn hãy giúp cửa hàng tính **mức lỗ trung bình** trong các ngày kinh doanh bị thua lỗ (làm tròn đúng 2 chữ số thập phân). Nếu trong toàn bộ đợt khảo sát cửa hàng kinh doanh thuận lợi và không có bất kỳ ngày nào bị lỗ, hãy in ra `NONE`.
+Sếp yêu cầu bạn tính **mức thua lỗ trung bình** của các ngày làm ăn thua lỗ (trung bình cộng các phần tử âm) và in ra làm tròn đúng 2 chữ số thập phân (`%.2lf`). Nếu trong đợt này công ty không có ngày nào bị lỗ, hãy in ra `NONE`.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

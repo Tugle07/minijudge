@@ -1,4 +1,4 @@
-title=K13_03: Đỉnh tải trạm sạc xe điện
+title=K13_03: Công suất tiêu thụ trạm sạc điện
 time_ms=1000
 memory_mb=256
 tests=11

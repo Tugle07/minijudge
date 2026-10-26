@@ -1,6 +1,6 @@
-Một trạm cảm biến IoT thông minh thu thập và truyền $n$ gói tin dữ liệu về máy chủ trung tâm. Mỗi gói tin được gắn một mã số nhận diện nguyên $a_i$.
+Một đợt truyền tin gửi về hệ thống gồm $n$ gói tệp tin, mỗi gói được đại diện bởi một số nguyên $a_i$. 
 
-Theo giao thức an ninh mạng của hệ thống, các gói tin có mã số là **số nguyên tố** sẽ được chuyển thẳng vào luồng mã hóa đặc biệt để chống nghe lén. Bạn hãy viết chương trình đếm xem trong đợt truyền này có bao nhiêu gói tin được bảo vệ.
+Theo tình báo an ninh mạng biết được, các tệp tin chứa mã độc là các tệp tin được đại diện bởi một **số nguyên tố**. Bạn hãy lập trình đếm xem trong đợt truyền tin này có bao nhiêu tệp tin chứa mã độc để kịp thời cách ly và cảnh báo.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

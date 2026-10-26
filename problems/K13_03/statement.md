@@ -1,6 +1,6 @@
-Trung tâm quản lý năng lượng giám sát công suất tiêu thụ điện tại một trạm sạc xe điện thông minh qua $n$ mốc thời gian trong ngày (chỉ số mốc từ $0$ đến $n-1$). 
+Để tránh làm mất điện khi các xe đang sạc, ban quản lý trạm sạc điện cần giám sát công suất tiêu thụ điện tại $n$ mốc thời gian trong ngày (được đánh số chỉ số từ $0$ đến $n-1$).
 
-Để tính toán phương án nâng cấp máy biến áp dự phòng, kỹ sư vận hành cần xác định **công suất đỉnh lớn nhất** từng đạt được trong ngày và **thời điểm (vị trí mốc đo) cuối cùng** xuất hiện công suất đỉnh đó.
+Bên ban quản lý cần phải biết được **công suất tiêu thụ lớn nhất là bao nhiêu** để tránh làm quá tải đường dây điện khiến mất điện, đồng thời cần biết **mốc thời gian (vị trí cuối cùng)** đạt mức công suất đỉnh đó để lên phương án điều tiết tải. Hãy in ra công suất lớn nhất và vị trí cuối cùng đạt công suất đó.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).
