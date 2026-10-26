@@ -180,54 +180,140 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     if (!c) return;
     const { problems, rows } = contests.scoreboard(c.id);
     const violations = new Map(contests.monitor(c.id).map((m) => [m.userId, m.violations]));
-    /* Cột cuối: liệt kê từng loại vi phạm, số lần, giờ xảy ra và chi tiết ghi nhận. */
-    const byUser = new Map();
-    const evs = db
-      .prepare(`SELECT user_id, type, detail, at FROM contest_events WHERE contest_id = ? AND type IN (${[...VIOLATIONS, 'tab_visible'].map(() => '?').join(',')}) ORDER BY at, id`)
-      .all(c.id, ...VIOLATIONS, 'tab_visible');
-    const lastAway = new Map();
-    for (const e of evs) {
-      /* "Quay lại sau X giây" gắn vào lần rời ngay trước đó của cùng thí sinh. */
-      if (e.type === 'tab_visible') {
-        const prev = lastAway.get(e.user_id);
-        if (prev) prev.back = e.detail;
-        lastAway.delete(e.user_id);
-        continue;
-      }
-      const m = byUser.get(e.user_id) ?? new Map();
-      m.set(e.type, [...(m.get(e.type) ?? []), e]);
-      byUser.set(e.user_id, m);
-      if (e.type === 'tab_hidden' || e.type === 'blur') lastAway.set(e.user_id, e);
+
+    const allEvs = db
+      .prepare('SELECT user_id, type, detail, at FROM contest_events WHERE contest_id = ? ORDER BY at, id')
+      .all(c.id);
+
+    const userEvs = new Map();
+    for (const e of allEvs) {
+      const list = userEvs.get(e.user_id) ?? [];
+      list.push(e);
+      userEvs.set(e.user_id, list);
     }
-    const note = (userId) => {
-      const m = byUser.get(userId);
-      if (!m) return 'Không vi phạm';
-      return VIOLATIONS.filter((t) => m.has(t))
-        .map((t) => {
-          const list = m.get(t);
-          const label = VIOLATION_TEXT[t] || t;
-          const items = list.map((e) => {
-            const notes = [e.detail && e.detail !== label ? e.detail : '', e.back ? e.back.toLowerCase() : ''].filter(Boolean);
-            return `${vnTime(e.at)}${notes.length ? ` (${notes.join(', ')})` : ''}`;
-          });
-          return `${label} ×${list.length}: ${items.join('; ')}`;
-        })
-        .join(' | ');
+
+    const pasteNote = (userId) => {
+      const list = (userEvs.get(userId) ?? []).filter((e) => e.type === 'paste_blocked');
+      if (!list.length) return '0';
+      const items = list.map((e) => `${vnTime(e.at)} (${e.detail || 'Dán code'})`);
+      return `${list.length} lần: ${items.join('; ')}`;
     };
+
+    const awayNote = (userId) => {
+      const evs = userEvs.get(userId) ?? [];
+      const records = [];
+      let totalSec = 0;
+      let cur = null;
+      for (const e of evs) {
+        if (e.type === 'tab_hidden' || e.type === 'blur') {
+          if (!cur) cur = { start: e.at, type: e.type, detail: e.detail, sec: 0 };
+        } else if (e.type === 'tab_visible' && cur) {
+          const m = String(e.detail || '').match(/(\d+)\s*giây/);
+          const sec = m ? parseInt(m[1], 10) : 0;
+          cur.sec = sec;
+          totalSec += sec;
+          records.push(cur);
+          cur = null;
+        }
+      }
+      if (cur) records.push(cur);
+      if (!records.length) return '0';
+      const items = records.map((a) => (a.sec > 0 ? `${vnTime(a.start)} (rời ${a.sec}s)` : `${vnTime(a.start)} (${a.detail || 'Rời trang'})`));
+      return `${records.length} lần (Tổng ${totalSec}s): ${items.join('; ')}`;
+    };
+
+    const fullscreenNote = (userId) => {
+      const list = (userEvs.get(userId) ?? []).filter((e) => e.type === 'fullscreen_exit');
+      if (!list.length) return '0';
+      const grouped = [];
+      let lastT = 0;
+      for (const f of list) {
+        if (f.at - lastT > 2000) {
+          grouped.push(f);
+          lastT = f.at;
+        }
+      }
+      return `${grouped.length} lần: ${grouped.map((f) => vnTime(f.at)).join(', ')}`;
+    };
+
+    const secondTabNote = (userId) => {
+      const list = (userEvs.get(userId) ?? []).filter((e) => e.type === 'second_tab' || e.type === 'rejoin');
+      if (!list.length) return '0';
+      const items = [];
+      let lastSt = 0;
+      let count = 0;
+      for (const s of list) {
+        if (s.type === 'second_tab') {
+          if (s.at - lastSt > 2000) {
+            count++;
+            items.push(`Mở tab thứ 2 lúc ${vnTime(s.at)}`);
+            lastSt = s.at;
+          }
+        } else if (s.type === 'rejoin') {
+          count++;
+          items.push(`Đăng nhập lại lúc ${vnTime(s.at)} (${s.detail})`);
+        }
+      }
+      return `${count} lần: ${items.join('; ')}`;
+    };
+
+    const othersNote = (userId) => {
+      const list = (userEvs.get(userId) ?? []).filter((e) => e.type === 'devtools_key' || e.type === 'multi_screen');
+      if (!list.length) return '0';
+      const items = list.map((o) => (o.type === 'devtools_key' ? `Phím ${o.detail || 'F12'} lúc ${vnTime(o.at)}` : `${o.detail || 'Nhiều màn hình'} lúc ${vnTime(o.at)}`));
+      return `${list.length} lần: ${items.join('; ')}`;
+    };
+
     const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const fmtMs = (ms) => {
       if (!ms || ms <= 0) return '—';
       const sec = Math.round(ms / 1000);
       const m = Math.floor(sec / 60);
       const s = sec % 60;
-      return `${m}m ${s}s`;
+      return `${m}p ${s}s`;
     };
-    const head = ['Hạng', 'Tài khoản', 'Họ tên', ...problems.map((p) => `${p.label} (${p.points})`), 'Tổng điểm', 'Thời gian làm bài', 'Thời điểm hoàn thành', 'Tổng số lần nộp', 'Số vi phạm', 'Chi tiết vi phạm'];
-    const lines = [head, ...rows.map((r) => [r.rank, r.username, r.fullName, ...r.cells.map((x) => x.score ?? 0), r.total, fmtMs(r.workDurationMs), r.finishAt ? vnTime(r.finishAt) : '—', r.totalTries ?? 0, violations.get(r.userId) ?? 0, note(r.userId)])];
+
+    const head = [
+      'Hạng',
+      'MSSV / Tài khoản',
+      'Họ và tên',
+      ...problems.map((p) => `${p.label} (${p.points}đ)`),
+      'Tổng điểm',
+      'Thời gian làm bài',
+      'Thời điểm hoàn thành',
+      'Số lần nộp',
+      'Vi phạm Copy/Dán code',
+      'Rời tab / Chuyển cửa sổ',
+      'Thoát toàn màn hình',
+      'Mở tab khác / Login khác',
+      'Vi phạm khác (F12/DevTools)',
+      'Tổng số vi phạm',
+    ];
+
+    const lines = [
+      head,
+      ...rows.map((r) => [
+        r.rank,
+        r.username,
+        r.fullName,
+        ...r.cells.map((x) => x.score ?? 0),
+        r.total,
+        fmtMs(r.workDurationMs),
+        r.finishAt ? vnTime(r.finishAt) : '—',
+        r.totalTries ?? 0,
+        pasteNote(r.userId),
+        awayNote(r.userId),
+        fullscreenNote(r.userId),
+        secondTabNote(r.userId),
+        othersNote(r.userId),
+        violations.get(r.userId) ?? 0,
+      ]),
+    ];
+
     const name = `ket-qua-cuoc-thi-${c.id}.csv`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
-    res.send(`﻿${lines.map((l) => l.map(cell).join(',')).join('\r\n')}\r\n`);
+    res.send(`\uFEFF${lines.map((l) => l.map(cell).join(',')).join('\r\n')}\r\n`);
   });
 
   r.get('/contests/:id/similarity', (req, res) => {
