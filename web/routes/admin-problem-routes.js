@@ -83,6 +83,80 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
     );
   });
 
+  /* Thao tác hàng loạt (batch operations): xuất bản, nháp, xóa thùng rác, gán vào khối */
+  r.post('/problems/batch', (req, res) => {
+    const { action, ids, setId } = req.body ?? {};
+    if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'Chưa chọn bài nào' });
+
+    if (action === 'publish' || action === 'draft') {
+      const status = action === 'publish' ? 'pub' : 'draft';
+      for (const id of ids) {
+        const p = catalog.problemMap.get(id);
+        if (p && p.status !== 'deleted') {
+          if (status === 'pub' && p.origin === 'custom' && store.listTests(p.id).length === 0) continue;
+          upsertMeta.run(p.id, status, p.tags, p.solution, Date.now());
+        }
+      }
+      catalog.reload();
+      return res.json({ ok: true, count: ids.length });
+    }
+
+    if (action === 'delete') {
+      for (const id of ids) {
+        const p = catalog.problemMap.get(id);
+        if (!p) continue;
+        const busy = openContests.all(p.id, Date.now()).map((c) => c.title);
+        if (busy.length) continue;
+        for (const row of setRows.all()) {
+          const data = JSON.parse(row.data);
+          if (Array.isArray(data.problems) && data.problems.includes(p.id)) {
+            saveSet.run(JSON.stringify({ ...data, problems: data.problems.filter((x) => x !== p.id) }), row.id);
+          }
+        }
+        upsertMeta.run(p.id, 'deleted', p.tags, p.solution, Date.now());
+      }
+      catalog.reload();
+      return res.json({ ok: true, count: ids.length });
+    }
+
+    if (action === 'restore') {
+      for (const id of ids) {
+        const p = catalog.problemMap.get(id);
+        if (p && p.status === 'deleted') {
+          upsertMeta.run(p.id, 'draft', p.tags, p.solution, Date.now());
+        }
+      }
+      catalog.reload();
+      return res.json({ ok: true, count: ids.length });
+    }
+
+    if (action === 'set_add' && setId) {
+      const row = db.prepare('SELECT id, data FROM problem_sets WHERE id = ?').get(setId);
+      if (row) {
+        const data = JSON.parse(row.data);
+        const cur = Array.isArray(data.problems) ? data.problems : [];
+        const combined = Array.from(new Set([...cur, ...ids]));
+        saveSet.run(JSON.stringify({ ...data, problems: combined }), row.id);
+        catalog.reload();
+      }
+      return res.json({ ok: true, count: ids.length });
+    }
+
+    if (action === 'set_remove' && setId) {
+      const row = db.prepare('SELECT id, data FROM problem_sets WHERE id = ?').get(setId);
+      if (row) {
+        const data = JSON.parse(row.data);
+        const cur = Array.isArray(data.problems) ? data.problems : [];
+        const filtered = cur.filter((x) => !ids.includes(x));
+        saveSet.run(JSON.stringify({ ...data, problems: filtered }), row.id);
+        catalog.reload();
+      }
+      return res.json({ ok: true, count: ids.length });
+    }
+
+    res.status(400).json({ error: 'Hành động không hợp lệ' });
+  });
+
   r.get('/problems/:id', (req, res) => {
     const p = find(req, res);
     if (p) res.json(detail(p));
