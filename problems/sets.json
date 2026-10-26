@@ -425,5 +425,31 @@
       "F05",
       "F06"
     ]
+  },
+  {
+    "id": "kt-mang-b",
+    "num": "KT-B",
+    "short": "Kiểm tra: Mảng B",
+    "title": "Bài kiểm tra thực hành — Chuyên đề Mảng B (7 câu)",
+    "group": "Luyện thi & Đánh giá năng lực",
+    "desc": "Bộ 7 bài kiểm tra kỹ năng thao tác mảng: trung bình cộng có điều kiện, số nguyên tố, min/max, mảng đối xứng, sắp xếp & xóa phần tử, đoạn liên tiếp bằng nhau.",
+    "tags": [
+      "kiểm tra",
+      "mảng 1 chiều",
+      "giữa kỳ",
+      "thực hành"
+    ],
+    "difficulty": "Trung bình",
+    "status": "open",
+    "hue": 210,
+    "problems": [
+      "K13_01",
+      "K13_02",
+      "K13_03",
+      "K13_04",
+      "K13_05",
+      "K13_06",
+      "K13_07"
+    ]
   }
 ]

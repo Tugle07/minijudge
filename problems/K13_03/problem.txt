@@ -1,0 +1,6 @@
+title=Mảng B3: Giá trị lớn nhất & vị trí cuối cùng
+time_ms=1000
+memory_mb=256
+tests=11
+difficulty=Dễ
+samples=1,2

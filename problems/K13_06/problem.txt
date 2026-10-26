@@ -1,0 +1,6 @@
+title=Mảng B6: Sắp xếp tăng dần và xóa phần tử X
+time_ms=1000
+memory_mb=256
+tests=11
+difficulty=Trung bình
+samples=1,2

@@ -1,0 +1,30 @@
+Cho mảng $a$ gồm $n$ số nguyên. Kiểm tra xem mảng có đối xứng không ($a_i = a_{n-1-i}$ với mọi $0 \le i < n$). In `YES` nếu đối xứng, ngược lại in `NO`.
+
+### Dữ liệu vào (Input)
+- Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).
+- Dòng 2: $n$ số nguyên cách nhau bởi dấu cách ($|a_i| \le 1000$).
+
+### Dữ liệu ra (Output)
+In ra `YES` nếu mảng đối xứng, `NO` nếu không đối xứng.
+
+### Ví dụ 1
+**Input:**
+```text
+10
+4 -2 9 16 -5 1 3 7 -2 25
+```
+**Output:**
+```text
+NO
+```
+
+### Ví dụ 2
+**Input:**
+```text
+3
+5 5 5
+```
+**Output:**
+```text
+YES
+```
