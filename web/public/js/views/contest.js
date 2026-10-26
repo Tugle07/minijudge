@@ -85,7 +85,7 @@ export async function render(ctx) {
     state.offset = state.info.now - Date.now();
     return state.info;
   }
-  const report = (type, detail = '') => api(`/api/contests/${cid}/events`, { method: 'POST', body: { type, detail: String(detail) } }).catch(() => {});
+  const report = (type, detail = '') => (state.preview ? Promise.resolve() : api(`/api/contests/${cid}/events`, { method: 'POST', body: { type, detail: String(detail) } }).catch(() => {}));
 
   await loadInfo();
   route();
@@ -93,6 +93,11 @@ export async function render(ctx) {
   function route() {
     const { contest } = state.info;
     const isAdmin = ctx.user?.role === 'admin';
+    const isPreviewParam = new URLSearchParams(window.location.hash.split('?')[1] || '').get('preview') === '1';
+
+    if (isAdmin && isPreviewParam) {
+      return exam(true);
+    }
     if ((contest.phase === 'running' || (isAdmin && contest.phase === 'draft')) && contest.joined && !contest.finished) {
       return state.info.otherSession ? lobby('other') : lobby('resume');
     }
@@ -180,6 +185,14 @@ export async function render(ctx) {
             </label>
           </div>
 
+          ${ctx.user?.role === 'admin' ? `
+            <div style="padding:14px 18px;border-radius:var(--r-md);background:var(--bg3);border:1.5px dashed var(--accent);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:10px 0;">
+              <div>
+                <b style="color:var(--accent);font-size:14.5px;display:flex;align-items:center;gap:6px;"><span>👁️</span> Chế độ xem trước phòng thi (Admin)</b>
+                <div class="faint" style="font-size:13px;margin-top:2px;">Xem trước giao diện làm bài, đọc đề, subtask và chạy thử code như thí sinh (không tính điểm, không khóa màn hình).</div>
+              </div>
+              <button type="button" class="btn-primary" data-admin-preview style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:8px 16px;white-space:nowrap;">Vào xem trước phòng thi</button>
+            </div>` : ''}
           <div data-lobby-action></div>
           <div class="alert" data-error hidden></div>
         </div>
@@ -191,6 +204,11 @@ export async function render(ctx) {
       el.textContent = msg;
       el.hidden = !msg;
     };
+
+    ctx.view.querySelector('[data-admin-preview]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      exam(true);
+    });
 
     if (mode === 'wait') {
       const draw = () => {
@@ -307,7 +325,8 @@ export async function render(ctx) {
   }
 
   /* ---------- Phòng thi ---------- */
-  async function exam() {
+  async function exam(isPreview = false) {
+    state.preview = isPreview;
     const { contest, problems } = state.info;
     const allowedLangs = Array.isArray(state.info.allowedLangs) && state.info.allowedLangs.length ? state.info.allowedLangs : ['c'];
     state.allowedLangs = allowedLangs;
@@ -315,14 +334,22 @@ export async function render(ctx) {
     state.lang = getLastLang(cid, state.label) || 'c';
     if (!allowedLangs.includes(state.lang)) state.lang = allowedLangs[0];
     ctx.view.innerHTML = `
+      ${isPreview ? `
+        <div class="exam-preview-bar" style="background:#0f172a;color:#f1f5f9;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155;font-size:13px;position:sticky;top:0;z-index:9999;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="pill" style="background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;padding:2px 8px;">XEM TRƯỚC (ADMIN)</span>
+            <span>Bạn đang xem trước giao diện thi của thí sinh. Đề bài, test mẫu và biên dịch chạy thử bình thường · Không khóa màn hình, không tính điểm.</span>
+          </div>
+          <button class="btn-line" data-exit-preview style="color:#fff;border-color:#64748b;height:28px;font-size:12px;padding:0 12px;display:inline-flex;align-items:center;">‹ Thoát xem trước</button>
+        </div>` : ''}
       <div class="exam" data-exam>
         <header class="exam-bar">
-          <b class="exam-title ellipsis">${esc(contest.title)}</b>
+          <b class="exam-title ellipsis">${esc(contest.title)}${isPreview ? ' <span class="pill" style="background:var(--accent);color:#fff;font-size:11px;margin-left:6px">Xem trước</span>' : ''}</b>
           <div class="spacer"></div>
           <span class="exam-guard" data-guard title="Trạng thái giám sát"></span>
           <span class="exam-vcount" data-vcount hidden></span>
           <span class="exam-clock mono" data-clock></span>
-          <button class="btn exam-finish" data-finish>Nộp bài &amp; kết thúc</button>
+          ${isPreview ? '<button class="btn-line" data-exit-preview style="height:32px;font-size:12.5px;">Thoát xem trước</button>' : '<button class="btn exam-finish" data-finish>Nộp bài &amp; kết thúc</button>'}
         </header>
         <nav class="exam-rail" data-tabs aria-label="Danh sách bài thi"></nav>
         <div class="exam-notice" data-notice role="alert" aria-live="assertive" hidden></div>
@@ -649,6 +676,10 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
 
     async function submit() {
       if (state.ending) return;
+      if (state.preview) {
+        toast('Chế độ xem trước: Mã nguồn không lưu vào kết quả thi thật. Hãy bấm "Chạy thử" để kiểm tra bài làm.', 'var(--accent)');
+        return;
+      }
       if (!editor.value.trim()) return toast('Mã nguồn đang trống');
       const btn = $('[data-submit]');
       btn.disabled = true;
@@ -689,6 +720,15 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
     let hiddenAt = 0;
     let blurAt = 0;
     function guardState() {
+      if (state.preview) {
+        const guard = $('[data-guard]');
+        if (guard) {
+          guard.className = 'exam-guard ok';
+          guard.textContent = '● Xem trước';
+          guard.title = 'Chế độ xem trước dành cho Admin';
+        }
+        return;
+      }
       const fs = isFullscreen();
       const visible = !document.hidden;
       const ok = fs && visible && !state.blocked;
@@ -818,7 +858,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
     const channel = 'BroadcastChannel' in window ? new BroadcastChannel(`mj-exam-${cid}`) : null;
     if (channel) {
       channel.onmessage = (e) => {
-        if (e.data?.from === tabId) return;
+        if (state.preview || e.data?.from === tabId) return;
         if (e.data?.t === 'ping' && !state.blocked) channel.postMessage({ t: 'pong', from: tabId });
         if (e.data?.t === 'pong') {
           state.blocked = {
@@ -844,7 +884,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
     }
 
     async function heartbeat() {
-      if (!state.alive || state.blocked) return;
+      if (!state.alive || state.blocked || state.preview) return;
       try {
         await api(`/api/contests/${cid}/heartbeat`, { method: 'POST', body: { fullscreen: isFullscreen(), visible: !document.hidden, extended: isExtended() } });
       } catch (err) {
@@ -874,6 +914,12 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
       if (tab) {
         $('[data-confirm]').hidden = true;
         return openProblem(tab.dataset.label).catch(handleError);
+      }
+      if (t.closest('[data-exit-preview]')) {
+        state.ending = true;
+        document.body.classList.remove('exam-mode');
+        cleanups.splice(0).forEach((fn) => fn());
+        return (location.hash = '#/contests');
       }
       if (t.closest('[data-submit]')) return submit();
       /* Link "6 subtask ↓" trong phần thông tin bài: cuộn tới thang điểm, không đổi địa chỉ trang. */
@@ -964,16 +1010,37 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
           <p class="muted" style="margin:0">${contest.phase === 'ended' ? 'Cuộc thi đã kết thúc.' : 'Bạn đã nộp bài và kết thúc.'} ${contest.joined ? '' : isAdmin ? 'Bạn không tham gia thi với tư cách thí sinh.' : 'Bạn không tham gia cuộc thi này.'}</p>
         </div>
         ${info.problems.length ? `
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <h2 class="section-title" style="margin:0">Kết quả bài làm của bạn</h2>
-            <div class="table" role="table" style="max-width:800px">
-              <div class="trow thead exam-sum-cols"><span>Bài</span><span>Tên bài</span><span class="right">Số lần nộp</span><span class="right">Điểm</span></div>
-              ${info.problems.map((p) => `<div class="trow exam-sum-cols"><b class="mono">${esc(p.label)}</b><span class="ellipsis">${esc(p.title)}</span><span class="right mono muted">${p.tries}</span><b class="right mono">${scoreText(p.myScore, p.points)}</b></div>`).join('')}
-              <div class="trow exam-sum-cols"><span></span><b>Tổng điểm</b><span></span><b class="right mono" style="font-size:16px">${Number(info.total.toFixed(2))}/${info.problems.reduce((s, p) => s + p.points, 0)}</b></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span class="pill" style="background:var(--bg3);border:1px solid var(--line2);font-size:13.5px;padding:5px 12px;color:var(--fg);">
+                Điểm bài làm của bạn: <b class="mono" style="color:var(--accent);font-size:15px">${Number(info.total.toFixed(2))}/${info.problems.reduce((s, p) => s + p.points, 0)}</b>
+              </span>
+              <button class="link-btn" data-toggle-mysummary style="font-size:13px;color:var(--accent);font-weight:600;display:inline-flex;align-items:center;gap:4px">
+                <span data-toggle-label>Xem chi tiết từng bài của bạn ▾</span>
+              </button>
+            </div>
+            <div data-my-summary-table hidden style="margin-top:6px">
+              <div class="table" role="table" style="max-width:800px">
+                <div class="trow thead exam-sum-cols"><span>Bài</span><span>Tên bài</span><span class="right">Số lần nộp</span><span class="right">Điểm</span></div>
+                ${info.problems.map((p) => `<div class="trow exam-sum-cols"><b class="mono">${esc(p.label)}</b><span class="ellipsis">${esc(p.title)}</span><span class="right mono muted">${p.tries}</span><b class="right mono">${scoreText(p.myScore, p.points)}</b></div>`).join('')}
+                <div class="trow exam-sum-cols"><span></span><b>Tổng điểm</b><span></span><b class="right mono" style="font-size:16px">${Number(info.total.toFixed(2))}/${info.problems.reduce((s, p) => s + p.points, 0)}</b></div>
+              </div>
             </div>
           </div>` : ''}
         <div data-board>${board ? boardHtml(board) : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Bảng xếp hạng hiện sau khi bạn hoàn tất bài làm.</p>'}</div>
       </main>`;
+
+    const toggleBtn = ctx.view.querySelector('[data-toggle-mysummary]');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const table = ctx.view.querySelector('[data-my-summary-table]');
+        const label = ctx.view.querySelector('[data-toggle-label]');
+        if (table) {
+          table.hidden = !table.hidden;
+          if (label) label.textContent = table.hidden ? 'Xem chi tiết từng bài của bạn ▾' : 'Thu gọn chi tiết bài ▴';
+        }
+      });
+    }
     /* Trong giờ thi bảng xếp hạng là trực tiếp: tự cập nhật 15 giây một lần. */
     if (board && board.phase === 'running') {
       const refresh = async () => {

@@ -40,9 +40,15 @@ export async function render(ctx) {
           : c.phase === 'running'
             ? `Còn <b class="mono">${fmtCountdown(c.endAt - now)}</b>`
             : `Kết thúc lúc ${fmtTime(c.endAt)}`;
-      const cta = c.phase === 'running' ? (c.finished ? (c.canSeeBoard ? 'Xem bảng xếp hạng' : 'Xem bài đã nộp') : c.joined ? 'Tiếp tục làm bài' : 'Vào phòng thi') : c.phase === 'ended' ? (c.canSeeBoard ? 'Xem bảng xếp hạng' : 'Xem kết quả') : 'Xem thông tin';
+      const isAdmin = ctx.user?.role === 'admin';
+      const cta = c.phase === 'running'
+        ? (c.finished ? (c.canSeeBoard ? 'Xem bảng xếp hạng' : 'Xem bài đã nộp') : c.joined ? 'Tiếp tục làm bài' : 'Vào phòng thi')
+        : c.phase === 'ended'
+          ? (c.canSeeBoard ? 'Xem bảng xếp hạng' : 'Xem kết quả')
+          : (c.phase === 'draft' && isAdmin ? 'Xem trước (Admin)' : 'Xem thông tin');
+      const targetUrl = (c.phase === 'draft' && isAdmin) ? `#/contest/${c.id}?preview=1` : `#/contest/${c.id}`;
       return `
-        <button class="contest-card ${c.phase}" data-go="#/contest/${c.id}">
+        <button class="contest-card ${c.phase}" data-go="${targetUrl}">
           <div class="contest-card-top">
             <span class="pill" style="color:${color}">${label}</span>
             <span class="faint" style="font-size:13px">${c.problemCount} bài · ${fmtDuration(c.endAt - c.startAt)}</span>

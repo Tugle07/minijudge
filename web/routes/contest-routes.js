@@ -35,7 +35,11 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
   }
 
   /* Thí sinh đang thi đúng phiên này; trả participant hoặc gửi lỗi. */
+  /* Thí sinh đang thi đúng phiên này; trả participant hoặc gửi lỗi. Admin luôn được xem trước. */
   function seat(req, res, c, { needRunning = true } = {}) {
+    if (req.user.role === 'admin') {
+      return contests.participant(c.id, req.user.id) || { user_id: req.user.id, session_hash: req.sessionHash, isAdminPreview: true };
+    }
     const p = contests.participant(c.id, req.user.id);
     if (!p) return res.status(403).json({ error: 'Bạn chưa vào phòng thi' }), null;
     if (needRunning && contests.phase(c) !== 'running') return res.status(409).json({ error: 'Cuộc thi không trong giờ làm bài' }), null;
@@ -83,13 +87,13 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     const me = contests.participant(c.id, req.user.id);
     const out = { now: Date.now(), contest: publicContest(c, req.user, me), problems: [], total: 0, allowedLangs: settings?.allowedLangs || ['c'] };
     const phase = contests.phase(c);
-    if (me && (phase === 'running' || phase === 'ended' || req.user.role === 'admin')) {
-      const best = new Map(
+    if (req.user.role === 'admin' || (me && (phase === 'running' || phase === 'ended'))) {
+      const best = me ? new Map(
         db
           .prepare(`SELECT problem_id, MAX(score) AS score, COUNT(*) AS n FROM submissions WHERE contest_id = ? AND user_id = ? GROUP BY problem_id`)
           .all(c.id, req.user.id)
           .map((x) => [x.problem_id, x]),
-      );
+      ) : new Map();
       out.problems = contests.problemsOf(c.id).map((p) => ({
         label: p.label,
         title: p.title,
@@ -98,8 +102,8 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
         tries: best.get(p.problemId)?.n ?? 0,
       }));
       out.total = out.problems.reduce((s, p) => s + (p.myScore || 0), 0);
-      out.otherSession = Boolean(me.session_hash && me.session_hash !== req.sessionHash);
-      out.myViolations = contests.incidentsOf(c.id, req.user.id);
+      out.otherSession = Boolean(me && me.session_hash && me.session_hash !== req.sessionHash);
+      out.myViolations = me ? contests.incidentsOf(c.id, req.user.id) : 0;
     }
     res.json(out);
   });
@@ -148,7 +152,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
   r.get('/contests/:id/problems/:label', (req, res) => {
     const c = load(req, res);
     if (!c || !seat(req, res, c, { needRunning: false })) return;
-    if (contests.phase(c) === 'upcoming') return res.status(409).json({ error: 'Chưa đến giờ thi' });
+    if (contests.phase(c) === 'upcoming' && req.user.role !== 'admin') return res.status(409).json({ error: 'Chưa đến giờ thi' });
     const cp = contests.problemsOf(c.id).find((p) => p.label === req.params.label);
     const p = cp && catalog.problemMap.get(cp.problemId);
     if (!p) return res.status(404).json({ error: 'Không tìm thấy bài' });
@@ -161,7 +165,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
       samples: p.samples,
       points: cp.points,
       /* Mô tả subtask có thể lộ hướng giải hoặc giá trị biên — chỉ gửi khi Admin bật showSubtaskNotes. */
-      subtasks: cp.subtasks.map((s) => ({ name: s.name, points: s.points, tests: s.tests, note: c.settings.showSubtaskNotes ? s.note || '' : '' })),
+      subtasks: cp.subtasks.map((s) => ({ name: s.name, points: s.points, tests: s.tests, note: (c.settings.showSubtaskNotes || req.user.role === 'admin') ? s.note || '' : '' })),
     });
   });
 
@@ -240,7 +244,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
 
   r.post('/contests/:id/events', (req, res) => {
     const c = load(req, res);
-    if (!c || !contests.participant(c.id, req.user.id)) return res.status(204).end();
+    if (!c || req.user.role === 'admin' || !contests.participant(c.id, req.user.id)) return res.status(204).end();
     const { type, detail } = req.body ?? {};
     if (!CLIENT_EVENTS.includes(type)) return res.status(400).json({ error: 'Sự kiện không hợp lệ' });
     if (tooManyEvents(`${c.id}:${req.user.id}`)) return res.status(429).json({ error: 'Quá nhiều sự kiện' });

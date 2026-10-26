@@ -384,7 +384,7 @@ export function createContests(db, catalog) {
   function canSeeBoard(c, user, me) {
     if (user.role === 'admin') return true;
     const ended = phase(c) === 'ended';
-    if (ended && c.settings.publishResults) return true;
+    if (ended) return true;
     return Boolean(me && c.settings.boardAfterFinish !== false && (me.finished_at || ended));
   }
 

@@ -125,6 +125,7 @@ async function list(ctx) {
                   <button class="dots-btn" data-menu aria-label="Thao tác">⋯</button>
                   <div class="menu" role="menu" hidden>
                     <button data-open="${c.id}">Giám sát / kết quả</button>
+                    <button data-preview="${c.id}">👁️ Xem trước phòng thi</button>
                     <button data-edit="${c.id}">Sửa</button>
                     <button class="danger" data-del="${c.id}">Xóa</button>
                   </div>
@@ -165,6 +166,8 @@ async function list(ctx) {
       }
       return;
     }
+    const prev = t.closest('[data-preview]');
+    if (prev) return (location.hash = `#/contest/${prev.dataset.preview}?preview=1`);
     const open = t.closest('[data-open]');
     if (open && !t.closest('.row-menu .dots-btn')) location.hash = `#/contests/${open.dataset.open}`;
   });
@@ -269,7 +272,7 @@ async function editor(ctx, summary, problems, onSaved) {
     title: full ? 'Sửa cuộc thi' : 'Tạo cuộc thi',
     wide: true,
     html: '<div data-body style="display:flex;flex-direction:column;gap:16px"></div>',
-    footer: '<button class="btn-line" data-close>Hủy</button><button class="btn-dark" data-save>Lưu</button>',
+    footer: '<button class="btn-line" data-close>Hủy</button>' + (full ? '<a class="btn-line" href="#/contest/' + full.id + '?preview=1" target="_blank" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">👁️ Xem trước</a>' : '') + '<button class="btn-dark" data-save>Lưu</button>',
   });
   const host = el.querySelector('[data-body]');
   const redraw = () => {
@@ -424,7 +427,7 @@ async function detail(ctx, id, tab) {
   ctx.setHead({
     crumb: 'Cuộc thi',
     title: c.title,
-    actions: `<a class="btn-line" style="display:inline-flex;align-items:center" href="#/contests">‹ Danh sách</a><a class="btn-line" style="display:inline-flex;align-items:center" href="/api/admin/contests/${id}/export.csv">Xuất Excel (CSV)</a>`,
+    actions: `<a class="btn-line" style="display:inline-flex;align-items:center" href="#/contests">‹ Danh sách</a><a class="btn-line" style="display:inline-flex;align-items:center" href="/api/admin/contests/${id}/export.csv">Xuất Excel (CSV)</a><a class="btn-primary" style="display:inline-flex;align-items:center;gap:6px" href="#/contest/${id}?preview=1">👁️ Xem trước phòng thi</a>`,
   });
   let timer = null;
   let threshold = 80;
