@@ -8,25 +8,3 @@ Hội đồng thẩm định mở gói thầu mua sắm trang thiết bị cho p
 
 ### Dữ liệu ra (Output)
 In ra giá trị nhỏ thứ hai hoặc in `NONE` nếu không tồn tại.
-
-### Ví dụ 1
-**Input:**
-```text
-10
-4 -2 9 16 -5 1 3 7 -2 25
-```
-**Output:**
-```text
--2
-```
-
-### Ví dụ 2
-**Input:**
-```text
-3
-5 5 5
-```
-**Output:**
-```text
-NONE
-```

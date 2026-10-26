@@ -10,25 +10,3 @@ In ra hai số nguyên cách nhau bởi dấu cách: **vị trí bắt đầu** 
 
 ### Dữ liệu ra (Output)
 Hai số nguyên cách nhau bởi dấu cách: vị trí bắt đầu và độ dài đoạn.
-
-### Ví dụ 1
-**Input:**
-```text
-10
-4 -2 9 16 -5 1 3 7 -2 25
-```
-**Output:**
-```text
-0 1
-```
-
-### Ví dụ 2
-**Input:**
-```text
-3
-5 5 5
-```
-**Output:**
-```text
-0 3
-```

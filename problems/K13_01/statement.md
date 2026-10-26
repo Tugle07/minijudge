@@ -8,25 +8,3 @@ Sếp yêu cầu bạn tính **mức thua lỗ trung bình** của các ngày l�
 
 ### Dữ liệu ra (Output)
 In ra mức thua lỗ trung bình làm tròn 2 chữ số thập phân hoặc in `NONE` nếu mảng không có ngày nào bị lỗ.
-
-### Ví dụ 1
-**Input:**
-```text
-10
-4 -2 9 16 -5 1 3 7 -2 25
-```
-**Output:**
-```text
--3.00
-```
-
-### Ví dụ 2
-**Input:**
-```text
-3
-5 5 5
-```
-**Output:**
-```text
-NONE
-```

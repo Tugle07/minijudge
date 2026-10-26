@@ -8,25 +8,3 @@ Mảng được gọi là đối xứng nếu đọc xuôi hay đọc ngược �
 
 ### Dữ liệu ra (Output)
 In ra `YES` nếu mảng đối xứng, `NO` nếu không đối xứng.
-
-### Ví dụ 1
-**Input:**
-```text
-10
-4 -2 9 16 -5 1 3 7 -2 25
-```
-**Output:**
-```text
-NO
-```
-
-### Ví dụ 2
-**Input:**
-```text
-3
-5 5 5
-```
-**Output:**
-```text
-YES
-```

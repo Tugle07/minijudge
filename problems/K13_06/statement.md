@@ -13,27 +13,3 @@ In ra chuỗi dữ liệu còn lại sau khi xử lý (cách nhau bởi dấu c�
 
 ### Dữ liệu ra (Output)
 In ra các phần tử còn lại sau khi sắp xếp và xóa, cách nhau bởi dấu cách. Nếu không còn phần tử nào, in `EMPTY`.
-
-### Ví dụ 1
-**Input:**
-```text
-10
-4 -2 9 16 -5 1 3 7 -2 25
--2
-```
-**Output:**
-```text
--5 1 3 4 7 9 16 25
-```
-
-### Ví dụ 2
-**Input:**
-```text
-3
-5 5 5
-5
-```
-**Output:**
-```text
-EMPTY
-```

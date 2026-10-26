@@ -8,25 +8,3 @@ Theo tình báo an ninh mạng biết được, các tệp tin chứa mã độc
 
 ### Dữ liệu ra (Output)
 Một số nguyên duy nhất là số lượng phần tử là số nguyên tố.
-
-### Ví dụ 1
-**Input:**
-```text
-10
-4 -2 9 16 -5 1 3 7 -2 25
-```
-**Output:**
-```text
-2
-```
-
-### Ví dụ 2
-**Input:**
-```text
-3
-5 5 5
-```
-**Output:**
-```text
-3
-```
