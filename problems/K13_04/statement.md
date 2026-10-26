@@ -1,4 +1,6 @@
-Cho mảng $a$ gồm $n$ số nguyên. Tìm giá trị nhỏ thứ hai trong mảng (lớn hơn hẳn giá trị nhỏ nhất). Nếu tất cả các phần tử đều bằng nhau, in `NONE`.
+Hội đồng thẩm định mở gói thầu mua sắm trang thiết bị cho phòng thực hành máy tính của trường. Có $n$ báo giá được gửi đến từ các nhà cung cấp.
+
+Theo quy chế chống phá giá và hạn chế rủi ro nhà thầu chào giá thấp bất thường do tính thiếu linh kiện, hội đồng quyết định xem xét mức **giá chào thấp thứ hai** (tức là mức giá nhỏ nhất trong số các báo giá lớn hơn hẳn mức giá thấp nhất). Nếu tất cả các đơn vị tham gia đều chào một mức giá giống hệt nhau, gói thầu không chọn được mức giá thứ hai và cần hủy thầu để đấu giá lại (in `NONE`).
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

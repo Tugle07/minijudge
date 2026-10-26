@@ -1,1 +1,1 @@
-Duyệt mảng, đếm số lượng số âm và cộng dồn tổng vào biến `long long`. Nếu `count == 0` in `NONE`, ngược lại in `(double)sum / count` bằng `%.2lf`.
+Duyệt mảng, tìm các phần tử $a_i < 0$. Nếu đếm được ít nhất 1 ngày lỗ, tính trung bình `(double)sum / count` và in `%.2lf`. Nếu không có ngày nào âm (`count == 0`), in `NONE`.

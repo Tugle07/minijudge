@@ -1,1 +1,1 @@
-Duyệt một vòng lặp kiểm tra `a[i] == a[i - 1]` để tăng độ dài đoạn hiện tại, khi gặp phần tử khác thì cập nhật độ dài lớn nhất và chỉ số bắt đầu.
+Duyệt mảng từ đầu đến cuối, dùng biến đếm độ dài đoạn liên tục hiện tại `cur_len` và vị trí bắt đầu `cur_start`. Khi phần tử đổi giá trị hoặc đến cuối mảng, so sánh và cập nhật `max_len` và `best_start`.

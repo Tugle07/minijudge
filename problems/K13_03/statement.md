@@ -1,4 +1,6 @@
-Cho mảng $a$ gồm $n$ số nguyên. Tìm giá trị lớn nhất trong mảng và vị trí (chỉ số từ 0) xuất hiện cuối cùng của nó.
+Trung tâm quản lý năng lượng giám sát công suất tiêu thụ điện tại một trạm sạc xe điện thông minh qua $n$ mốc thời gian trong ngày (chỉ số mốc từ $0$ đến $n-1$). 
+
+Để tính toán phương án nâng cấp máy biến áp dự phòng, kỹ sư vận hành cần xác định **công suất đỉnh lớn nhất** từng đạt được trong ngày và **thời điểm (vị trí mốc đo) cuối cùng** xuất hiện công suất đỉnh đó.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

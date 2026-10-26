@@ -1,4 +1,6 @@
-Cho mảng $a$ gồm $n$ số nguyên ban đầu. Tìm đoạn con liên tiếp gồm các phần tử bằng nhau có độ dài lớn nhất. In vị trí bắt đầu (chỉ số từ 0) và độ dài của đoạn đó. Nếu có nhiều đoạn cùng độ dài lớn nhất, chọn đoạn đầu tiên.
+Hệ thống camera AI giám sát giao thông tại nút giao trọng điểm ghi nhận mức độ lưu thông qua $n$ khung giờ liên tiếp trong ngày (mỗi mức độ được mã hóa bằng một số nguyên $a_i$).
+
+Để tối ưu hóa chu kỳ chuyển đèn tín hiệu giao thông, trung tâm điều hành cần phát hiện **chuỗi thời gian liên tiếp dài nhất mà tình trạng giao thông giữ nguyên không đổi** (các phần tử liên tiếp bằng nhau). Hãy xác định **vị trí bắt đầu** (chỉ số từ $0$) và **độ dài** của chuỗi thời gian ổn định dài nhất đó trên chuỗi dữ liệu ban đầu. Nếu có nhiều khoảng thời gian cùng đạt độ dài kỷ lục như nhau, hãy ưu tiên chọn chuỗi xuất hiện sớm nhất.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

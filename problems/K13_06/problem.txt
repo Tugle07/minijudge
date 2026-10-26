@@ -1,4 +1,4 @@
-title=Mảng B6: Sắp xếp tăng dần và xóa phần tử X
+title=K13_06: Lọc dữ liệu cảm biến bụi mịn
 time_ms=1000
 memory_mb=256
 tests=11

@@ -1,4 +1,6 @@
-Cho mảng $a$ gồm $n$ số nguyên. Hãy đếm xem có bao nhiêu phần tử trong mảng là số nguyên tố.
+Một trạm cảm biến IoT thông minh thu thập và truyền $n$ gói tin dữ liệu về máy chủ trung tâm. Mỗi gói tin được gắn một mã số nhận diện nguyên $a_i$.
+
+Theo giao thức an ninh mạng của hệ thống, các gói tin có mã số là **số nguyên tố** sẽ được chuyển thẳng vào luồng mã hóa đặc biệt để chống nghe lén. Bạn hãy viết chương trình đếm xem trong đợt truyền này có bao nhiêu gói tin được bảo vệ.
 
 ### Dữ liệu vào (Input)
 - Dòng 1: Số nguyên $n$ ($1 \le n \le 100$).

@@ -1,4 +1,4 @@
-title=Mảng B1: Trung bình cộng các số âm
+title=K13_01: Báo cáo ngày thua lỗ
 time_ms=1000
 memory_mb=256
 tests=11

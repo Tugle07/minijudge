@@ -1,4 +1,4 @@
-title=Mảng B4: Giá trị nhỏ thứ hai
+title=K13_04: Giá thầu thiết bị trường học
 time_ms=1000
 memory_mb=256
 tests=11

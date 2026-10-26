@@ -1,4 +1,4 @@
-title=Mảng B2: Đếm số nguyên tố
+title=K13_02: Gói tin bảo mật IoT
 time_ms=1000
 memory_mb=256
 tests=11
