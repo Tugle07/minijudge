@@ -80,7 +80,7 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Ccircle cx='1.5' cy='1.5' r='1.1' fill='%23fff' fill-opacity='.16'/%3E%3C/svg%3E");
 }
 .overview .page-title { color: var(--on-accent); }
-.overview .muted, .overview .ov-stat > span, .overview .ov-stat small { color: color-mix(in oklch, var(--on-accent) 82%, transparent); }
+.overview .muted, .overview .ov-stat > span, .overview .ov-stat small { color: color-mix(in oklch, var(--on-accent) 94%, transparent); }
 .overview .ov-stat { border-left-color: color-mix(in oklch, var(--on-accent) 28%, transparent); }
 .overview .ov-stat b { font-size: 46px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }
 .ov-next { background: var(--on-accent); color: var(--accent); height: 46px; }
@@ -88,7 +88,7 @@ body {
 .road-track { height: 12px; border-color: var(--ink); background: color-mix(in oklch, var(--on-accent) 22%, transparent); }
 .road-track > span { background: var(--on-accent); }
 .road-seg.done .road-track > span { background: var(--ac); }
-.road-label { color: color-mix(in oklch, var(--on-accent) 75%, transparent); }
+.road-label { color: color-mix(in oklch, var(--on-accent) 92%, transparent); }
 .road-seg:hover .road-track { outline: 2px solid var(--on-accent); }
 @media (max-width: 819px) { .overview { padding: 20px 18px; } .overview .ov-stat b { font-size: 34px; } }
 
@@ -124,10 +124,10 @@ body {
 .kpi .value { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; }
 .drawer { border-left: var(--bw) solid var(--ink); }
 
-/* Chuyển động: các thẻ hiện lần lượt khi mở trang */
-@keyframes mjpop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* Chuyển động: các thẻ hiện lần lượt khi mở trang (chuẩn ease-out mượt, không over-shoot) */
+@keyframes mjpop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .set-grid > *, .roadmap > .step, .ov-stat {
-  animation: mjpop .38s cubic-bezier(.2, .8, .3, 1.2) both;
+  animation: mjpop .32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .set-grid > :nth-child(2), .roadmap > :nth-child(2), .contest-group > :nth-child(3), .ov-stat:nth-child(2), .kpis > :nth-child(2) { animation-delay: .05s; }
 .set-grid > :nth-child(3), .roadmap > :nth-child(3), .contest-group > :nth-child(4), .ov-stat:nth-child(3), .kpis > :nth-child(3) { animation-delay: .1s; }

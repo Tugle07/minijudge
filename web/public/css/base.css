@@ -154,7 +154,7 @@ button.trow:hover:not(:disabled) { background: var(--bg3); }
 
 /* Tiến độ */
 .progress { height: 6px; border-radius: 99px; background: var(--bg3); overflow: hidden; }
-.progress > div, .progress > span { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .5s ease-out; }
+.progress > div, .progress > span { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
 .progress.done > div, .progress.done > span { background: var(--ac); }
 
 /* Thước độ khó 3 vạch: Dễ ▮▯▯ · Trung bình ▮▮▯ · Khó ▮▮▮ */

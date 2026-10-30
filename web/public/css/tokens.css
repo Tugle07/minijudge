@@ -6,10 +6,10 @@
   --bg2: oklch(1 0 0);               /* bề mặt: bảng, khung */
   --bg3: oklch(0.952 0.004 95);      /* hover, track, ô code */
   --line: oklch(0.905 0.005 95);     /* viền mảnh */
-  --line2: oklch(0.83 0.006 95);     /* viền ô nhập */
-  --fg: oklch(0.22 0.012 262);       /* chữ chính */
-  --fg2: oklch(0.42 0.012 262);      /* chữ phụ */
-  --fg3: oklch(0.5 0.012 262);       /* chú thích (đủ 4.5:1 trên nền --bg3) */
+  --line2: oklch(0.80 0.006 95);     /* viền ô nhập */
+  --fg: oklch(0.18 0.012 262);       /* chữ chính */
+  --fg2: oklch(0.36 0.012 262);      /* chữ phụ */
+  --fg3: oklch(0.42 0.012 262);      /* chú thích (đạt chuẩn WCAG AAA trên nền sáng) */
   --accent: oklch(0.47 0.15 262);
   --on-accent: oklch(0.99 0 0);
   --accent-soft: oklch(0.47 0.15 262 / 0.09);
@@ -22,20 +22,20 @@
   color-scheme: light;
 }
 [data-theme="dark"] {
-  /* Xám than thay vì gần đen: tách lớp nền / khung / hover rõ ràng, chữ phụ đủ tương phản */
+  /* Xám than: tương phản cao, tách lớp nền / khung rõ ràng, chữ phụ đạt WCAG AA */
   --bg: oklch(0.225 0.012 262);
   --bg2: oklch(0.265 0.013 262);
   --bg3: oklch(0.315 0.014 262);
   --line: oklch(0.355 0.014 262);
-  --line2: oklch(0.44 0.016 262);
-  --fg: oklch(0.97 0.004 262);
-  --fg2: oklch(0.87 0.01 262);
-  --fg3: oklch(0.74 0.012 262);
+  --line2: oklch(0.48 0.016 262);
+  --fg: oklch(0.98 0.004 262);
+  --fg2: oklch(0.90 0.008 262);
+  --fg3: oklch(0.80 0.01 262);
   /* Nền tối: --accent dùng làm nền (đủ đậm để chữ trắng đạt 4.5:1), --accent-text dùng cho chữ/link trên nền tối */
   --accent: oklch(0.53 0.17 260);
   --on-accent: oklch(0.99 0 0);
   --accent-soft: oklch(0.6 0.16 258 / 0.22);
-  --accent-text: oklch(0.79 0.11 255);
+  --accent-text: oklch(0.82 0.11 255);
   --shadow: 0 12px 32px -12px rgb(0 0 0 / .5);
   --ac: oklch(0.78 0.15 150); --wa: oklch(0.72 0.17 27); --tle: oklch(0.82 0.13 80); --mle: oklch(0.82 0.13 80);
   --re: oklch(0.76 0.13 320); --ce: oklch(0.76 0.03 262); --pd: oklch(0.72 0.01 262); --on-ac: oklch(0.18 0.03 150);
