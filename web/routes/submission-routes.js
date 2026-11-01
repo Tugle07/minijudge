@@ -9,7 +9,9 @@ const MAX_INPUT_BYTES = 64 * 1024;
  * Test ẩn thì không trả gì để không lộ test. */
 function failedSample(row, problem) {
   if (row.verdict !== 'WA' || !problem || row.fail_output == null) return null;
-  const testNo = (row.tests_passed ?? 0) + 1;
+  /* Web chấm hết mọi test (--all), nên tests_passed không cho biết test sai đầu tiên. fail_output là output của test WA đầu tiên. */
+  const tests = row.tests_json ? JSON.parse(row.tests_json) : [];
+  const testNo = tests.findIndex((t) => t.verdict === 'WA') + 1;
   const k = problem.sampleTests.indexOf(testNo);
   if (k < 0) return null;
   return { test: testNo, input: problem.samples[k].input, expected: problem.samples[k].output, output: row.fail_output };
