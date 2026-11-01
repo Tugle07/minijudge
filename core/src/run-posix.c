@@ -97,12 +97,16 @@ int judge_run(const char *exe, const char *in_path, const char *out_path,
 
     long mem_limit_kb = (long)lim->memory_mb * 1024;
     int signaled = WIFSIGNALED(status);
-    if (wall_tle || r->time_ms > lim->time_ms || (signaled && WTERMSIG(status) == SIGXCPU)) {
+    int failed = signaled || r->exit_code != 0;
+    /* Vượt giới hạn, hoặc thoát lỗi khi đã sát giới hạn (malloc trả về NULL do RLIMIT_AS). */
+    int mle = r->memory_kb >= mem_limit_kb || (failed && r->memory_kb >= mem_limit_kb * 95 / 100);
+    int killed_for_time = wall_tle || (signaled && WTERMSIG(status) == SIGXCPU);
+    if (killed_for_time || (!mle && r->time_ms > lim->time_ms)) {
         r->verdict = VERDICT_TLE;
         r->time_ms = lim->time_ms;
-    } else if (r->memory_kb >= mem_limit_kb * 95 / 100) {
+    } else if (mle) {
         r->verdict = VERDICT_MLE;
-    } else if (signaled || r->exit_code != 0) {
+    } else if (failed) {
         r->verdict = VERDICT_RE;
     } else {
         r->verdict = VERDICT_AC;

@@ -6,6 +6,7 @@
 #include "judge.h"
 
 #define POLL_INTERVAL_MS 20
+#define MAX_OUTPUT_BYTES (64LL * 1024 * 1024)
 
 static HANDLE open_inheritable(const char *path, DWORD access, DWORD disposition) {
     SECURITY_ATTRIBUTES sa = {sizeof sa, NULL, TRUE};
@@ -119,6 +120,13 @@ int judge_run(const char *exe, const char *in_path, const char *out_path,
     for (;;) {
         DWORD w = WaitForSingleObject(pi.hProcess, POLL_INTERVAL_MS);
         if (w == WAIT_OBJECT_0) break;
+        /* Cùng mức 64 MiB với RLIMIT_FSIZE của bản Linux: bài ghi output vô tận bị dừng và tính RE. */
+        LARGE_INTEGER out_size;
+        if (GetFileSizeEx(hout, &out_size) && out_size.QuadPart > MAX_OUTPUT_BYTES) {
+            TerminateJobObject(job, 1);
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            break;
+        }
         if (w != WAIT_TIMEOUT || cpu_time_ms(pi.hProcess) > lim->time_ms ||
             GetTickCount64() - start > wall_limit) {
             TerminateJobObject(job, 1);
@@ -139,11 +147,11 @@ int judge_run(const char *exe, const char *in_path, const char *out_path,
         r->memory_kb = (long)(q.PeakProcessMemoryUsed / 1024);
     }
 
-    if (tle) {
+    if (memory_limit_hit(port)) {
+        r->verdict = VERDICT_MLE;
+    } else if (tle) {
         r->verdict = VERDICT_TLE;
         r->time_ms = lim->time_ms;
-    } else if (memory_limit_hit(port)) {
-        r->verdict = VERDICT_MLE;
     } else if (code != 0) {
         r->verdict = VERDICT_RE;
     } else {
