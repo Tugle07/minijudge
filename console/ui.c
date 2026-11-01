@@ -80,3 +80,14 @@ const char *ui_verdict_color(verdict_t v) {
     default: return C_GRAY;
     }
 }
+
+/* Đọc đường dẫn, bỏ dấu ngoặc kép mà Windows thêm vào khi kéo thả file vào console. */
+int ui_read_path(const char *prompt, char *buf, size_t size) {
+    int len = ui_read_line(prompt, buf, size);
+    if (len >= 2 && buf[0] == '"' && buf[len - 1] == '"') {
+        memmove(buf, buf + 1, (size_t)len - 2);
+        buf[len - 2] = '\0';
+        len -= 2;
+    }
+    return len;
+}

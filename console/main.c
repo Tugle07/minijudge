@@ -7,10 +7,12 @@
 /* Menu điều khiển bằng bảng con trỏ hàm: thêm chức năng chỉ cần thêm 1 dòng. */
 static const menu_item_t MENU[] = {
     {"Danh sach de bai", action_list_problems},
+    {"Tim de theo ma hoac ten", action_search_problems},
     {"Xem de bai", action_view_statement},
     {"Nop bai", action_submit},
     {"Lich su nop bai cua toi", action_history},
     {"Bang xep hang (luat ICPC)", action_scoreboard},
+    {"Quan ly de bai", action_manage_problems},
     {"Doi nguoi dung", action_switch_user},
 };
 static const int MENU_SIZE = (int)(sizeof MENU / sizeof MENU[0]);

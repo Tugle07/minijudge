@@ -24,9 +24,11 @@ typedef struct {
 int action_login(app_t *app);
 void action_switch_user(app_t *app);
 void action_list_problems(app_t *app);
+void action_search_problems(app_t *app);
 void action_view_statement(app_t *app);
 void action_submit(app_t *app);
 void action_history(app_t *app);
 void action_scoreboard(app_t *app);
+void action_manage_problems(app_t *app);
 
 #endif

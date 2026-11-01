@@ -19,6 +19,7 @@ void ui_clear(void);
 void ui_pause(void);
 int ui_read_line(const char *prompt, char *buf, size_t size);
 int ui_read_int(const char *prompt, int min, int max, int *out);
+int ui_read_path(const char *prompt, char *buf, size_t size);
 const char *ui_verdict_color(verdict_t v);
 
 #endif

@@ -28,4 +28,12 @@ const problem_t *problem_list_find(const problem_list_t *list, const char *id);
 int problem_list_index(const problem_list_t *list, const char *id);
 void problem_test_paths(const problem_t *p, int index, char *in, char *ans, size_t size);
 
+/* Quản lý đề: ghi xuống problem.txt và index.txt. */
+int problem_save(const problem_t *p);
+int problem_add_test(problem_t *p, const char *in_src, const char *ans_src);
+int problem_index_add(const char *root, const char *id);
+int problem_index_remove(const char *root, const char *id);
+int problem_list_add(problem_list_t *list, const problem_t *p);
+void problem_list_remove(problem_list_t *list, int index);
+
 #endif

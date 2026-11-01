@@ -46,6 +46,36 @@ void action_list_problems(app_t *app) {
     }
 }
 
+/* So khớp không phân biệt hoa thường với chữ ASCII, chữ có dấu phải gõ đúng dấu. */
+static int contains_nocase(const char *text, const char *word) {
+    size_t n = strlen(word);
+    for (; *text; text++) {
+        size_t i = 0;
+        while (i < n && text[i] &&
+               tolower((unsigned char)text[i]) == tolower((unsigned char)word[i])) {
+            i++;
+        }
+        if (i == n) return 1;
+    }
+    return 0;
+}
+
+void action_search_problems(app_t *app) {
+    char word[128];
+    if (ui_read_line("Tu khoa (ma hoac ten de): ", word, sizeof word) <= 0) return;
+    int found = 0;
+    for (int i = 0; i < app->problems.count; i++) {
+        const problem_t *p = &app->problems.items[i];
+        if (contains_nocase(p->id, word) || contains_nocase(p->title, word)) {
+            printf("%-8s %5d ms %5d MB %-6d %s\n", p->id, p->time_ms, p->memory_mb, p->test_count,
+                   p->title);
+            found++;
+        }
+    }
+    if (found) printf(C_GRAY "\nTim thay %d de.\n" C_RESET, found);
+    else printf(C_RED "Khong tim thay de nao.\n" C_RESET);
+}
+
 static const problem_t *ask_problem(app_t *app) {
     char id[16];
     if (ui_read_line("Ma de (vd P01): ", id, sizeof id) <= 0) return NULL;
@@ -70,14 +100,6 @@ void action_view_statement(app_t *app) {
     free(text);
 }
 
-static void strip_quotes(char *s) {
-    size_t n = strlen(s);
-    if (n >= 2 && s[0] == '"' && s[n - 1] == '"') {
-        memmove(s, s + 1, n - 2);
-        s[n - 2] = '\0';
-    }
-}
-
 static void print_report(const judge_report_t *rep) {
     if (rep->verdict == VERDICT_CE) {
         printf(C_BLUE C_BOLD "Compilation Error\n" C_RESET);
@@ -99,8 +121,7 @@ void action_submit(app_t *app) {
     if (!p) return;
 
     char path[MJ_PATH_MAX];
-    if (ui_read_line("Duong dan file .c (co the keo tha file vao): ", path, sizeof path) <= 0) return;
-    strip_quotes(path);
+    if (ui_read_path("Duong dan file .c (co the keo tha file vao): ", path, sizeof path) <= 0) return;
     if (!mj_file_exists(path)) {
         printf(C_RED "Khong mo duoc file: %s\n" C_RESET, path);
         return;
@@ -144,7 +165,7 @@ void action_history(app_t *app) {
         printf("%-5d %-19s %-6s %s%-22s" C_RESET " %3d/%-3d %5d ms %7ld KB\n", s->id, when,
                s->problem_id, ui_verdict_color((verdict_t)s->verdict),
                verdict_name((verdict_t)s->verdict), s->tests_passed, s->test_count, s->time_ms,
-               s->memory_kb);
+               (long)s->memory_kb);
         shown++;
     }
     if (shown == 0) printf(C_GRAY "Ban chua nop bai nao.\n" C_RESET);

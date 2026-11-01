@@ -105,3 +105,89 @@ void problem_test_paths(const problem_t *p, int index, char *in, char *ans, size
     snprintf(in, size, "%s/tests/%d.in", p->dir, index);
     snprintf(ans, size, "%s/tests/%d.out", p->dir, index);
 }
+
+/* Ghi lại 4 khoá của chương trình, giữ nguyên các khoá khác (difficulty, samples...) của bản web. */
+int problem_save(const problem_t *p) {
+    char cfg[MJ_PATH_MAX];
+    mj_path_join(cfg, sizeof cfg, p->dir, "problem.txt");
+    char *old = mj_read_file(cfg, NULL);
+    FILE *f = fopen(cfg, "w");
+    if (!f) {
+        free(old);
+        return -1;
+    }
+    fprintf(f, "title=%s\ntime_ms=%d\nmemory_mb=%d\ntests=%d\n", p->title, p->time_ms, p->memory_mb,
+            p->test_count);
+    if (old) {
+        for (char *line = strtok(old, "\n"); line; line = strtok(NULL, "\n")) {
+            mj_trim(line);
+            if (line[0] == '\0' || strncmp(line, "title=", 6) == 0 || strncmp(line, "time_ms=", 8) == 0 ||
+                strncmp(line, "memory_mb=", 10) == 0 || strncmp(line, "tests=", 6) == 0) {
+                continue;
+            }
+            fprintf(f, "%s\n", line);
+        }
+    }
+    free(old);
+    return fclose(f) == 0 ? 0 : -1;
+}
+
+int problem_add_test(problem_t *p, const char *in_src, const char *ans_src) {
+    char dir[MJ_PATH_MAX], in[MJ_PATH_MAX], ans[MJ_PATH_MAX];
+    mj_path_join(dir, sizeof dir, p->dir, "tests");
+    if (mj_make_dir(dir) != 0) return -1;
+    problem_test_paths(p, p->test_count + 1, in, ans, sizeof in);
+    if (mj_copy_file(in_src, in) != 0 || mj_copy_file(ans_src, ans) != 0) {
+        remove(in);
+        remove(ans);
+        return -1;
+    }
+    p->test_count++;
+    if (problem_save(p) != 0) {
+        p->test_count--;
+        return -1;
+    }
+    return 0;
+}
+
+int problem_index_add(const char *root, const char *id) {
+    char path[MJ_PATH_MAX];
+    mj_path_join(path, sizeof path, root, "index.txt");
+    size_t len = 0;
+    char *old = mj_read_file(path, &len);
+    int need_newline = old && len > 0 && old[len - 1] != '\n';
+    free(old);
+    FILE *f = fopen(path, "a");
+    if (!f) return -1;
+    fprintf(f, "%s%s\n", need_newline ? "\n" : "", id);
+    return fclose(f) == 0 ? 0 : -1;
+}
+
+/* Chỉ bỏ mã đề khỏi index.txt, thư mục đề vẫn còn trên đĩa để khôi phục được. */
+int problem_index_remove(const char *root, const char *id) {
+    char path[MJ_PATH_MAX];
+    mj_path_join(path, sizeof path, root, "index.txt");
+    char *old = mj_read_file(path, NULL);
+    if (!old) return -1;
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        free(old);
+        return -1;
+    }
+    for (char *line = strtok(old, "\n"); line; line = strtok(NULL, "\n")) {
+        mj_trim(line);
+        if (strcmp(line, id) != 0) fprintf(f, "%s\n", line);
+    }
+    free(old);
+    return fclose(f) == 0 ? 0 : -1;
+}
+
+int problem_list_add(problem_list_t *list, const problem_t *p) {
+    return list_push(list, p);
+}
+
+void problem_list_remove(problem_list_t *list, int index) {
+    memmove(&list->items[index], &list->items[index + 1],
+            (size_t)(list->count - index - 1) * sizeof list->items[0]);
+    list->count--;
+}
