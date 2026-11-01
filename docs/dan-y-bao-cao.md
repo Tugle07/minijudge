@@ -18,7 +18,7 @@
 3.1. Biên dịch bằng `system()` + chuyển hướng stderr
 3.2. Windows: `CreateProcess`, Job Object, completion port phát hiện MLE, đo CPU time
 3.3. Linux: `fork`, `dup2`, `setrlimit`, `wait4`, tín hiệu `SIGXCPU`/`SIGKILL`
-3.4. So khớp output theo token; bảng xếp hạng ICPC với `qsort`
+3.4. So khớp output theo từng ký tự; bảng xếp hạng ICPC với `qsort`
 3.5. Nhập liệu an toàn: `fgets`, xử lý trôi lệnh, `strtol` có kiểm tra lỗi
 3.6. Quản lý bộ nhớ: ai cấp phát thì ai giải phóng (`judge_report_free`, `scoreboard_free`…)
 

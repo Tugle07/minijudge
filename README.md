@@ -26,7 +26,7 @@ Hệ thống chấm bài C kiểu Codeforces, gồm **một lõi chấm viết b
 
 `AC` Accepted · `WA` Wrong Answer · `TLE` Time Limit Exceeded · `MLE` Memory Limit Exceeded · `RE` Runtime Error · `CE` Compilation Error
 
-- Output được so theo từng token (bỏ qua khác biệt khoảng trắng), giống checker mặc định của Codeforces.
+- Output được so nghiêm ngặt theo từng ký tự: bỏ qua `\r` và các dòng trống dư ở cuối file, thừa dấu cách là sai.
 - Windows: bài chạy trong **Job Object** (giới hạn RAM, chỉ 1 tiến trình để chặn fork bomb, đo CPU time mỗi 20 ms).
 - Linux: `fork` + `setrlimit` (CPU, RAM, kích thước file) + `wait4`.
 - Bảng xếp hạng theo **luật ICPC**: số bài AC giảm dần, penalty tăng dần (phút AC + 20 phút mỗi lần sai, không tính CE).
@@ -63,7 +63,7 @@ Biến môi trường: `PORT`, `HOST`, `DATA_DIR`, `PROBLEMS_DIR`, `JUDGE_BIN`, 
 
 Hướng dẫn từng bước (WSL + Docker + GitHub Actions + Cloudflare Tunnel): **[docs/trien-khai-server.md](docs/trien-khai-server.md)**.
 
-Tóm tắt: `docker-compose.yml` chạy 3 container: `web` (database), `judge` (chạy bài nộp, không Internet, user `nobody`), `tunnel` (HTTPS công khai). Mỗi lần push lên `main`, GitHub Actions build, chấm 8 bài mẫu và tự deploy.
+Tóm tắt: `docker-compose.yml` chạy 3 container: `web` (database), `judge` (chạy bài nộp, không Internet, user `nobody`), `tunnel` (HTTPS công khai). Workflow GitHub Actions để sẵn ở `docs/workflows/deploy.yml`, hiện chưa bật; muốn dùng thì chép vào `.github/workflows/`.
 
 Kiểm thử trên Linux:
 
@@ -102,7 +102,7 @@ Trình soạn code trên web dùng CodeMirror 6, đã đóng gói sẵn ở `web
 cd web && npm install && npm run build:editor
 ```
 
-Test tích hợp chạy server thật + judge thật: 8 test luồng sinh viên, 5 test luồng Admin (tạo bài → test → kiểm tra lời giải → xuất bản → sinh viên nộp → chấm lại → khóa tài khoản…). CI chạy cả hai mỗi lần push.
+Test tích hợp chạy server thật + judge thật: 8 test luồng sinh viên, 5 test luồng Admin (tạo bài → test → kiểm tra lời giải → xuất bản → sinh viên nộp → chấm lại → khóa tài khoản…).
 
 ## Thêm đề mới
 
@@ -134,7 +134,7 @@ build\judge-cli.exe problems P01 samples/p01-tle.c
 | Thư mục | Nội dung |
 |---|---|
 | `core/include`, `core/src` | Lõi chấm: đọc đề, biên dịch, chạy có giới hạn, so output, lưu bài nộp, bảng xếp hạng |
-| `console/` | Giao diện menu console (bảng con trỏ hàm, nhập liệu an toàn, màu ANSI) |
+| `console/` | Giao diện menu console (bảng con trỏ hàm, tìm đề, quản lý đề, nhập liệu an toàn, màu ANSI) |
 | `cli/` | `judge-cli`: chấm 1 bài, in JSON — cầu nối cho web |
 | `web/` | Server Express + SQLite + giao diện HTML/JS |
 | `problems/` | Đề bài và test |
