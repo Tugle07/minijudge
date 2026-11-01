@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const char STORE_MAGIC[4] = {'M', 'J', 'S', '1'};
+_Static_assert(sizeof(submission_t) == 88, "submission_t phai co dung 88 byte");
+
+static const char STORE_MAGIC[4] = {'M', 'J', 'S', '2'};
 
 static int list_push(submission_list_t *list, const submission_t *s) {
     if (list->count == list->capacity) {
@@ -30,7 +32,8 @@ int store_load(const char *path, submission_list_t *list) {
         return -1;
     }
     submission_t s;
-    while (fread(&s, sizeof s, 1, f) == 1) {
+    size_t got;
+    while ((got = fread(&s, 1, sizeof s, f)) == sizeof s) {
         if (list_push(list, &s) != 0) {
             fclose(f);
             store_free(list);
@@ -38,6 +41,10 @@ int store_load(const char *path, submission_list_t *list) {
         }
     }
     fclose(f);
+    if (got != 0) { /* Bản ghi cuối bị cụt: báo lỗi để lần ghi sau không làm lệch dữ liệu. */
+        store_free(list);
+        return -1;
+    }
     return 0;
 }
 
