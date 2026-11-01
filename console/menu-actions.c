@@ -29,7 +29,7 @@ int action_login(app_t *app) {
         if (is_valid_username(name)) break;
         printf(C_RED "  Ten khong hop le.\n" C_RESET);
     }
-    snprintf(app->user, sizeof app->user, "%s", name);
+    snprintf(app->user, sizeof app->user, "%.31s", name);
     return 1;
 }
 
@@ -100,7 +100,7 @@ void action_view_statement(app_t *app) {
     free(text);
 }
 
-static void print_report(const judge_report_t *rep) {
+static void print_report(const judge_report_t *rep, int total_tests) {
     if (rep->verdict == VERDICT_CE) {
         printf(C_BLUE C_BOLD "Compilation Error\n" C_RESET);
         if (rep->compile_log) printf("%.*s\n", COMPILE_LOG_PREVIEW, rep->compile_log);
@@ -113,7 +113,7 @@ static void print_report(const judge_report_t *rep) {
     }
     printf("\nKet qua: %s" C_BOLD "%s" C_RESET " (%d/%d test, %d ms, %ld KB)\n",
            ui_verdict_color(rep->verdict), verdict_name(rep->verdict), rep->tests_passed,
-           rep->test_count, rep->max_time_ms, rep->max_memory_kb);
+           total_tests, rep->max_time_ms, rep->max_memory_kb);
 }
 
 void action_submit(app_t *app) {
@@ -131,7 +131,7 @@ void action_submit(app_t *app) {
     fflush(stdout);
     judge_report_t rep;
     if (judge_submission(p, path, app->work_dir, &rep) != 0) rep.verdict = VERDICT_IE;
-    print_report(&rep);
+    print_report(&rep, p->test_count);
 
     submission_t s;
     memset(&s, 0, sizeof s);
