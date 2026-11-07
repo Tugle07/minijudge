@@ -10,3 +10,7 @@ web/data/
 .env
 problems/*/sol
 judge-work/
+
+# Du lieu sinh vien, khong dua len repo
+bang-diem-*.csv
+docs/Tai_Khoan/
