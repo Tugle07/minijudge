@@ -1,5 +1,5 @@
 /* ---------- Đọc đề & nộp bài ---------- */
-.split { display: flex; height: calc(100vh - var(--h-header)); }
+.split { display: flex; height: calc(100dvh - var(--h-header)); }
 .pane-left { width: var(--left-w, var(--split, 46%)); flex: none; overflow: auto; min-width: 0; }
 .pane-left { background: var(--bg); }
 .pane-left-inner { max-width: 920px; margin: 0 auto; padding: 20px clamp(20px, 3vw, 44px) 56px; display: flex; flex-direction: column; gap: 20px; }
@@ -71,7 +71,8 @@
 
 .pane-right {
   flex: 1; min-width: 0; display: flex; flex-direction: column;
-  padding: 10px 12px 16px; background: var(--bg); overflow-y: auto;
+  padding: 10px 12px 16px; background: var(--bg); overflow-y: scroll;
+  container-type: inline-size;
 }
 .pane-right .toolbar { border: 1px solid var(--line2); border-bottom: 0; border-radius: var(--r-md) var(--r-md) 0 0; background: var(--bg2); }
 .pane-right .editor { flex: none; height: var(--editor-h, 42vh); min-height: 160px; max-height: 70vh; border: 1px solid var(--line2); border-top-color: var(--line); background: var(--bg2); }
@@ -84,7 +85,7 @@
 }
 .rtabs button.on { border-bottom-color: var(--accent); color: var(--fg); font-weight: 600; }
 .rtabs .count { padding: 0 6px; border-radius: 99px; background: var(--bg3); font-size: 12px; color: var(--fg2); }
-.toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); flex: none; flex-wrap: wrap; }
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); flex: none; overflow: hidden; }
 .lang-chip { padding: 3px 9px; border-radius: 6px; background: var(--bg3); font: 500 13px var(--font-code); color: var(--fg2); }
 .file-btn {
   position: relative; height: 32px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line2);
@@ -100,7 +101,7 @@
 .btn-submit:disabled { opacity: .6; }
 .btn-submit .kbd { font: 500 11px var(--font-code); opacity: .7; padding-left: 8px; border-left: 1px solid color-mix(in oklch, var(--on-accent) 35%, transparent); }
 
-.editor { flex: 1; min-height: 0; overflow: hidden; background: var(--bg); position: relative; }
+.editor { flex: 1; min-height: 0; overflow: hidden; background: var(--bg); position: relative; contain: strict; }
 .editor .cm-editor { height: 100%; }
 .editor .cm-editor.cm-focused { outline: none; }
 .editor-loading { padding: 16px; color: var(--fg3); font-size: var(--text-sm); }
@@ -144,6 +145,15 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent-text); 
 .zoom button { height: 30px; padding: 0 9px; border: 0; background: transparent; color: var(--fg2); font-size: 12.5px; font-weight: 600; }
 .zoom button + button { border-left: 1px solid var(--line2); }
 .zoom button:hover { background: var(--bg3); color: var(--fg); }
+.toolbar .tb-icon { display: none; flex: none; vertical-align: middle; }
+@container (max-width: 540px) {
+  .toolbar .tb-collapse { display: none; }
+  .toolbar .tb-label { display: none; }
+  .toolbar .tb-icon { display: inline-block; }
+}
+@container (max-width: 400px) {
+  .toolbar .zoom { display: none; }
+}
 
 .result {
   border: 1px solid var(--line); border-radius: var(--r-md);
@@ -227,7 +237,20 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent-text); 
 .warn-box .celog { border: 0; border-radius: 0; border-top: 1px solid var(--line); }
 .sub-detail { display: flex; flex-direction: column; gap: 12px; padding: 4px 0 16px; }
 .sub-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.sub-code { margin: 0; max-height: 360px; overflow: auto; padding: 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--bg); font: 13px/22px var(--font-code); white-space: pre; }
+.sub-code {
+  margin: 0;
+  max-height: 360px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font: 13px/22px var(--font-code);
+  font-variant-ligatures: none !important;
+  font-feature-settings: 'liga' 0, 'calt' 0, 'dlig' 0 !important;
+  tab-size: 4;
+  white-space: pre;
+}
 .history-row.clickable { cursor: pointer; }
 .history-row.clickable:hover { background: var(--bg3); }
 .history { flex: 1; overflow: auto; padding: 8px 16px; }
@@ -252,7 +275,17 @@ button.err-line:hover { border-color: var(--accent); color: var(--accent-text); 
 
 
 /* ------- Khung thi/luyện tập: thanh kéo, trạng thái cú pháp, inp.txt/out.txt ------- */
-.exam-sep { flex: none; width: 6px; cursor: col-resize; background: transparent; position: relative; }
+body.resizing, body.resizing-v { user-select: none; }
+body.resizing { cursor: col-resize; }
+body.resizing-v { cursor: row-resize; }
+body.resizing .pane-left, body.resizing .pane-right,
+body.resizing-v .pane-right { pointer-events: none; }
+
+.editor-sep { flex: none; height: 6px; cursor: row-resize; background: transparent; position: relative; touch-action: none; }
+.editor-sep::before { content: ''; position: absolute; top: 2px; left: 0; right: 0; height: 2px; background: var(--line); transition: background .15s; }
+.editor-sep:hover::before, .editor-sep.dragging::before { background: var(--accent); }
+
+.exam-sep { flex: none; width: 6px; cursor: col-resize; background: transparent; position: relative; touch-action: none; }
 .exam-sep::before { content: ''; position: absolute; left: 2px; top: 0; bottom: 0; width: 2px; background: var(--line); transition: background .15s; }
 .exam-sep:hover::before, .exam-sep:focus-visible::before, .exam-sep.dragging::before { background: var(--accent); }
 

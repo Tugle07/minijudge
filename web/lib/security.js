@@ -35,7 +35,7 @@ export function securityHeaders(publicDir) {
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     /* API không cache; file tĩnh luôn hỏi lại server (có ETag nên rẻ) để deploy mới tới ngay người dùng. */
-    res.setHeader('Cache-Control', req.path.startsWith('/api/') ? 'no-store' : 'no-cache');
+    res.setHeader('Cache-Control', req.path.startsWith('/api/') ? 'no-store' : 'no-cache, must-revalidate');
     next();
   };
 }

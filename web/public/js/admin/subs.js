@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { highlightC } from '../highlight.js';
+import { highlightCode } from '../highlight.js';
 import { badge, esc, renderAvatar, toast, verdictLabel, verdictVar } from '../ui.js';
 import { confirmDialog, fmtDateTime, openDrawer } from './kit.js';
 
@@ -114,6 +114,9 @@ export async function render(ctx) {
 
   async function openDetail(id) {
     const s = await api(`/api/admin/submissions/${id}`);
+    const lang = s.lang || 'c';
+    const codeData = highlightCode(s.source || '', lang);
+    const lineCount = (s.source || '').split('\n').length;
     const tests = s.tests.length
       ? s.tests
           .map(
@@ -150,9 +153,31 @@ export async function render(ctx) {
         </div>
         ${tests || s.compileLog ? `<div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden">${tests}${s.compileLog ? `<pre class="celog" style="border:0;border-radius:0;max-height:160px">${esc(s.compileLog)}</pre>` : ''}</div>` : ''}
         ${s.failOutput ? `<div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:12px;font-weight:600;color:var(--wa);text-transform:uppercase;letter-spacing:.04em">Kết quả in ra của thí sinh (Gây sai test):</span><pre class="celog" style="border:1px solid color-mix(in oklch, var(--wa) 40%, var(--line));background:color-mix(in oklch, var(--wa) 6%, var(--bg2));color:var(--fg);max-height:140px;white-space:pre-wrap;font-size:13px;">${esc(s.failOutput)}</pre></div>` : ''}
-        <span style="font-size:12.5px;font-weight:600;color:var(--fg3);text-transform:uppercase;letter-spacing:.04em">Mã nguồn</span>
-        <pre class="sub-code" tabindex="0" style="background:var(--bg2);max-height:none">${highlightC(s.source).html}</pre>`,
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12.5px;font-weight:700;color:var(--fg3);text-transform:uppercase;letter-spacing:.04em">Mã nguồn</span>
+              <span class="pill" style="font-size:11px;padding:1px 7px;background:var(--bg3);border:1px solid var(--line2);color:var(--accent);font-weight:700;text-transform:uppercase">${esc(lang)}</span>
+              <span class="faint mono" style="font-size:11.5px">${lineCount} dòng · ${(s.source || '').length} bytes</span>
+            </div>
+            <button class="btn-line" data-copy-source type="button" style="height:26px;font-size:11.5px;padding:0 10px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+              📋 Sao chép code
+            </button>
+          </div>
+          <div class="code-viewer-panel" style="display:flex;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:#0d1117;max-height:550px;">
+            <pre class="code-gutter" style="margin:0;padding:12px 10px 12px 12px;text-align:right;color:#6e7681;user-select:none;background:#090d13;border-right:1px solid #21262d;font:13px/22px var(--font-code);font-variant-ligatures:none !important;font-feature-settings:'liga' 0, 'calt' 0 !important;white-space:pre;">${codeData.gutter}</pre>
+            <pre class="sub-code code-content" tabindex="0" style="margin:0;padding:12px 16px;flex:1;overflow:auto;background:transparent;border:0;color:#e6edf3;font:13px/22px var(--font-code);font-variant-ligatures:none !important;font-feature-settings:'liga' 0, 'calt' 0 !important;white-space:pre;tab-size:4;">${codeData.html}</pre>
+          </div>
+        </div>`,
       footer: '<button class="btn-dark" data-rejudge-one>Chấm lại</button>',
+    });
+    drawer.el.querySelector('[data-copy-source]')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(s.source || '');
+        toast('Đã sao chép mã nguồn vào clipboard');
+      } catch {
+        toast('Không thể sao chép');
+      }
     });
     drawer.el.addEventListener('click', async (e) => {
       if (!e.target.closest('[data-rejudge-one]')) return;

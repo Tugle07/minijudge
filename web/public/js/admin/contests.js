@@ -167,7 +167,7 @@ async function list(ctx) {
       return;
     }
     const prev = t.closest('[data-preview]');
-    if (prev) return (location.hash = `#/contest/${prev.dataset.preview}?preview=1`);
+    if (prev) return window.open('/#/contest/' + prev.dataset.preview + '?preview=1', '_blank');
     const open = t.closest('[data-open]');
     if (open && !t.closest('.row-menu .dots-btn')) location.hash = `#/contests/${open.dataset.open}`;
   });
@@ -272,7 +272,7 @@ async function editor(ctx, summary, problems, onSaved) {
     title: full ? 'Sửa cuộc thi' : 'Tạo cuộc thi',
     wide: true,
     html: '<div data-body style="display:flex;flex-direction:column;gap:16px"></div>',
-    footer: '<button class="btn-line" data-close>Hủy</button>' + (full ? '<a class="btn-line" href="#/contest/' + full.id + '?preview=1" target="_blank" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">👁️ Xem trước</a>' : '') + '<button class="btn-dark" data-save>Lưu</button>',
+    footer: '<button class="btn-line" data-close>Hủy</button>' + (full ? '<a class="btn-line" href="/#/contest/' + full.id + '?preview=1" target="_blank" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">👁️ Xem trước</a>' : '') + '<button class="btn-dark" data-save>Lưu</button>',
   });
   const host = el.querySelector('[data-body]');
   const redraw = () => {
@@ -427,7 +427,7 @@ async function detail(ctx, id, tab) {
   ctx.setHead({
     crumb: 'Cuộc thi',
     title: c.title,
-    actions: `<a class="btn-line" style="display:inline-flex;align-items:center" href="#/contests">‹ Danh sách</a><a class="btn-line" style="display:inline-flex;align-items:center" href="/api/admin/contests/${id}/export.csv">Xuất Excel (CSV)</a><a class="btn-primary" style="display:inline-flex;align-items:center;gap:6px" href="#/contest/${id}?preview=1">👁️ Xem trước phòng thi</a>`,
+    actions: `<a class="btn-line" style="display:inline-flex;align-items:center" href="#/contests">‹ Danh sách</a><a class="btn-line" style="display:inline-flex;align-items:center" href="/api/admin/contests/${id}/export.csv">Xuất Excel (CSV)</a><a class="btn-primary" style="display:inline-flex;align-items:center;gap:6px" href="/#/contest/${id}?preview=1" target="_blank">👁️ Xem trước phòng thi</a>`,
   });
   let timer = null;
   let threshold = 80;
@@ -556,16 +556,16 @@ async function detail(ctx, id, tab) {
       <div class="panel" style="overflow-x:auto">
         <table class="atable">
           <thead><tr>
-            <th class="num" style="width:50px">#</th>
+            <th style="width:50px;text-align:center">#</th>
             <th>Thí sinh</th>
-            ${b.problems.map((p) => `<th class="num" title="${esc(p.title)}">${esc(p.label)} <span class="faint">/${p.points}</span></th>`).join('')}
-            <th class="num">Tổng</th>
-            <th class="num" title="Thời gian làm bài thực tế từ lúc vào phòng">Làm bài</th>
+            ${b.problems.map((p) => `<th style="text-align:center" title="${esc(p.title)}">${esc(p.label)} <span class="faint">/${p.points}</span></th>`).join('')}
+            <th style="text-align:center">Tổng</th>
+            <th style="text-align:center" title="Thời gian làm bài thực tế từ lúc vào phòng">Làm bài</th>
             <th style="text-align:center" title="Thời điểm hoàn thành bài nộp đạt điểm">Hoàn thành</th>
-            <th class="num" title="Tổng số lần nộp bài">Nộp</th>
+            <th style="text-align:center" title="Tổng số lần nộp bài">Nộp</th>
           </tr></thead>
           <tbody>${b.rows.map((r) => `<tr>
-            <td class="num">${r.rank}</td>
+            <td style="text-align:center">${r.rank}</td>
             <td>
               <div style="display:flex;align-items:center;gap:8px;">
                 ${renderAvatar(r.username, r.avatar, 26, r.fullName)}
@@ -575,11 +575,11 @@ async function detail(ctx, id, tab) {
                 </div>
               </div>
             </td>
-            ${r.cells.map((x) => `<td class="num" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}
-            <td class="num" style="font-weight:700;color:var(--accent);font-size:14.5px;">${num(r.total)}</td>
-            <td class="num mono faint" style="font-size:12.5px;">${fmtWorkTime(r.workDurationMs)}</td>
-            <td class="faint" style="font-size:12px;text-align:center;">${r.finishAt ? fmtClock(r.finishAt) : '—'}</td>
-            <td class="num mono muted" style="font-size:12.5px;">${r.totalTries ?? 0}</td>
+            ${r.cells.map((x) => `<td style="text-align:center" title="${x.tries} lần nộp">${num(x.score)}</td>`).join('')}
+            <td style="text-align:center;font-weight:700;color:var(--accent);font-size:14.5px;">${num(r.total)}</td>
+            <td style="text-align:center;font-size:12.5px;" class="mono faint">${fmtWorkTime(r.workDurationMs)}</td>
+            <td style="font-size:12px;text-align:center;" class="faint">${r.finishAt ? fmtClock(r.finishAt) : '—'}</td>
+            <td style="text-align:center;font-size:12.5px;" class="mono muted">${r.totalTries ?? 0}</td>
           </tr>`).join('')}</tbody>
         </table>
         ${b.rows.length ? '' : '<div class="empty">Chưa có thí sinh.</div>'}

@@ -74,8 +74,10 @@ async function enterFullscreen() {
 const scoreText = (score, points) => (score == null ? `–/${points}` : `${Number(score.toFixed(2))}/${points}`);
 
 export async function render(ctx) {
-  const cid = Number(ctx.arg);
-  const state = { info: null, offset: 0, label: null, problem: null, subs: [], alive: true, timers: [], blocked: null, ending: false };
+  const cid = Number(String(ctx.arg || '').split('?')[0]);
+  const state = { info: null, offset: 0, label: null, problem: null, subs: [], alive: true, timers: [], blocked: null, ending: false, preview: false };
+  let currentBoard = null;
+  let boardSearchQuery = '';
   const cleanups = [];
   const later = (fn, ms) => state.timers.push(setTimeout(fn, ms));
   const now = () => Date.now() + state.offset;
@@ -88,12 +90,12 @@ export async function render(ctx) {
   const report = (type, detail = '') => (state.preview ? Promise.resolve() : api(`/api/contests/${cid}/events`, { method: 'POST', body: { type, detail: String(detail) } }).catch(() => {}));
 
   await loadInfo();
-  route();
+  await route();
 
-  function route() {
+  async function route() {
     const { contest } = state.info;
     const isAdmin = ctx.user?.role === 'admin';
-    const isPreviewParam = new URLSearchParams(window.location.hash.split('?')[1] || '').get('preview') === '1';
+    const isPreviewParam = (ctx.query?.get('preview') === '1') || (new URLSearchParams(window.location.hash.split('?')[1] || '').get('preview') === '1');
 
     if (isAdmin && isPreviewParam) {
       return exam(true);
@@ -265,9 +267,16 @@ export async function render(ctx) {
 
         ${other ? '<p class="bad-text" style="margin:0">Bài thi của bạn đang mở ở một thiết bị/tab khác. Đóng nơi đó rồi bấm Tiếp tục, hoặc báo giám thị mở khóa.</p>' : ''}
 
-        <button class="btn-primary" type="submit" data-join-btn style="height:46px;font-size:15px;font-weight:600;" disabled>
-          ${isJoin ? (contest.needCode ? 'Xác nhận mã &amp; Vào phòng thi (Toàn màn hình)' : 'Vào phòng thi (bật toàn màn hình)') : mode === 'resume' ? 'Tiếp tục làm bài' : 'Vào phòng thi (Chế độ xem trước Admin)'}
-        </button>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button class="btn-primary" type="submit" data-join-btn style="height:46px;font-size:15px;font-weight:600;" disabled>
+            ${isJoin ? (contest.needCode ? 'Xác nhận mã &amp; Vào phòng thi (Toàn màn hình)' : 'Vào phòng thi (bật toàn màn hình)') : mode === 'resume' ? 'Tiếp tục làm bài' : 'Vào phòng thi (Chế độ xem trước Admin)'}
+          </button>
+          ${mode === 'resume' ? `
+            <button class="btn-line" type="button" data-finish-from-lobby style="height:44px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px">
+              🏆 Hoàn tất bài thi &amp; Xem bảng xếp hạng
+            </button>
+          ` : ''}
+        </div>
 
         ${contest.phase === 'draft' ? '<p class="faint" style="margin:0;font-size:13px;text-align:center;">🛠️ Cuộc thi đang ở chế độ nháp (chỉ Admin thấy). Bạn có thể vào xem trước đề và giao diện làm bài.</p>' : ''}
       </form>`;
@@ -321,6 +330,18 @@ export async function render(ctx) {
       if (!fs) toast('Trình duyệt không bật được toàn màn hình — giám thị sẽ thấy cảnh báo');
       await loadInfo();
       exam();
+    });
+
+    box.querySelector('[data-finish-from-lobby]')?.addEventListener('click', async () => {
+      if (confirm('Bạn có chắc chắn muốn nộp bài kết thúc và xem bảng xếp hạng? Sau khi kết thúc, bạn sẽ không thể nộp bài thêm.')) {
+        try {
+          await api(`/api/contests/${cid}/finish`, { method: 'POST' });
+          await loadInfo();
+          summary();
+        } catch (err) {
+          showError(err.message);
+        }
+      }
     });
   }
 
@@ -892,7 +913,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
       }
       later(heartbeat, HEARTBEAT_MS);
     }
-    function clock() {
+    async function clock() {
       if (!state.alive) return;
       const left = contest.endAt - now();
       const el = $('[data-clock]');
@@ -903,6 +924,9 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
       if (left <= 0) {
         state.ending = true;
         toast('Hết giờ làm bài');
+        if (!state.preview) {
+          await api(`/api/contests/${cid}/finish`, { method: 'POST' }).catch(() => {});
+        }
         return leave();
       }
       later(clock, 1000);
@@ -985,11 +1009,14 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
 
   async function leave() {
     state.ending = true;
+    state.alive = false;
+    state.timers.forEach(clearTimeout);
+    state.timers = [];
     document.body.classList.remove('exam-mode');
     if (isFullscreen()) await document.exitFullscreen().catch(() => {});
     cleanups.splice(0).forEach((fn) => fn());
     await loadInfo().catch(() => {});
-    summary();
+    await summary();
   }
 
   /* ---------- Sau giờ thi / đã nộp bài ---------- */
@@ -998,9 +1025,16 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
     const info = state.info;
     const isAdmin = ctx.user?.role === 'admin';
     let board = null;
-    if (contest.canSeeBoard) board = await api(`/api/contests/${cid}/results`).catch(() => null);
+    if (contest.canSeeBoard || contest.phase === 'ended') {
+      try {
+        board = await api(`/api/contests/${cid}/results`);
+        currentBoard = board;
+      } catch (err) {
+        console.error('Failed to fetch contest leaderboard:', err);
+      }
+    }
     ctx.view.innerHTML = `
-      <main class="page" style="max-width:1240px">
+      <main class="page contest-page" style="max-width:1360px;width:100%;">
         <button class="link-btn" data-go="#/contests" style="align-self:flex-start">‹ Danh sách cuộc thi</button>
         <div style="display:flex;flex-direction:column;gap:6px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1027,7 +1061,7 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
               </div>
             </div>
           </div>` : ''}
-        <div data-board>${board ? boardHtml(board) : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Bảng xếp hạng hiện sau khi bạn hoàn tất bài làm.</p>'}</div>
+        <div data-board>${board ? boardHtml(board, boardSearchQuery) : contest.phase === 'ended' ? '<p class="faint">Kết quả chung sẽ hiện ở đây khi giáo viên công bố.</p>' : '<p class="faint">Bảng xếp hạng hiện sau khi bạn hoàn tất bài làm.</p>'}</div>
       </main>`;
 
     const toggleBtn = ctx.view.querySelector('[data-toggle-mysummary]');
@@ -1041,66 +1075,199 @@ $('[data-fill-tools]').innerHTML = p.samples.map((_, i) => `<button class="chip"
         }
       });
     }
-    /* Trong giờ thi bảng xếp hạng là trực tiếp: tự cập nhật 15 giây một lần. */
+
+    ctx.view.addEventListener('input', (e) => {
+      if (e.target.matches('[data-board-search]')) {
+        boardSearchQuery = e.target.value;
+        const rowsBox = ctx.view.querySelector('[data-board-rows]');
+        if (rowsBox && currentBoard) {
+          const q = boardSearchQuery.trim().toLowerCase();
+          const filteredRows = currentBoard.rows.filter(
+            (r) => !q || (r.fullName && r.fullName.toLowerCase().includes(q)) || (r.username && r.username.toLowerCase().includes(q))
+          );
+          const layout = getBoardLayout(currentBoard.problems.length);
+          rowsBox.innerHTML = renderBoardRows(filteredRows, currentBoard, layout);
+        }
+      }
+    });
+
+    /* Trong giờ thi bảng xếp hạng là trực tiếp: tự cập nhật 10 giây một lần. */
     if (board && board.phase === 'running') {
       const refresh = async () => {
         if (!state.alive) return;
         const fresh = await api(`/api/contests/${cid}/results`).catch(() => null);
-        const box = ctx.view.querySelector('[data-board]');
-        if (fresh && box) box.innerHTML = boardHtml(fresh);
-        if (fresh?.phase === 'running') later(refresh, 3000);
+        if (fresh) {
+          currentBoard = fresh;
+          const rowsBox = ctx.view.querySelector('[data-board-rows]');
+          if (rowsBox) {
+            const q = boardSearchQuery.trim().toLowerCase();
+            const filteredRows = fresh.rows.filter(
+              (r) => !q || (r.fullName && r.fullName.toLowerCase().includes(q)) || (r.username && r.username.toLowerCase().includes(q))
+            );
+            const layout = getBoardLayout(fresh.problems.length);
+            rowsBox.innerHTML = renderBoardRows(filteredRows, fresh, layout);
+          }
+        }
+        if (fresh?.phase === 'running') later(refresh, 10000);
       };
-      later(refresh, 3000);
+      later(refresh, 10000);
     }
   }
 
-  function boardHtml(b) {
-    const cols = `48px minmax(180px,1.4fr) repeat(${b.problems.length},68px) 84px 88px 88px 52px`;
-    const minW = 48 + 180 + b.problems.length * 68 + 84 + 88 + 88 + 52 + (b.problems.length + 5) * 12 + 32;
+  function getBoardLayout(pCount) {
+    const probCols = pCount > 0 ? ` repeat(${pCount}, 56px)` : '';
+    const cols = `42px minmax(170px, 1.2fr)${probCols} 72px 76px 80px 46px`;
+    const gap = 10;
+    const padding = 32;
+    const minW = 42 + 170 + pCount * 56 + 72 + 76 + 80 + 46 + (pCount + 5) * gap + padding;
+    return { cols, minW, gap };
+  }
+
+  function renderBoardRows(rows, b, layout) {
+    if (!rows.length) {
+      return '<div class="empty" style="padding:24px 16px;text-align:center;color:var(--fg3)">Không tìm thấy thí sinh phù hợp.</div>';
+    }
+    const { cols, gap } = layout;
+    const cell = (c, p) => {
+      if (c.score == null) return '<span class="center" style="color:var(--fg3);opacity:0.35;font-size:14px;display:flex;justify-content:center">—</span>';
+      const isFull = c.score >= p.points;
+      const isPart = c.score > 0 && !isFull;
+      if (isFull) {
+        return `<span class="center" style="display:flex;justify-content:center"><span class="mono" style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;padding:2px 5px;border-radius:5px;font-weight:700;font-size:12px;background:rgba(34,197,94,0.14);color:#22c55e;border:1px solid rgba(34,197,94,0.3)" title="${c.tries} lần nộp">${Number(c.score.toFixed(2))}</span></span>`;
+      }
+      if (isPart) {
+        return `<span class="center" style="display:flex;justify-content:center"><span class="mono" style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;padding:2px 5px;border-radius:5px;font-weight:700;font-size:12px;background:rgba(245,158,11,0.14);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)" title="${c.tries} lần nộp">${Number(c.score.toFixed(2))}</span></span>`;
+      }
+      return `<span class="center" style="display:flex;justify-content:center"><span class="mono" style="display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:2px 5px;border-radius:5px;font-weight:600;font-size:12px;background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.22)" title="${c.tries} lần nộp">0</span></span>`;
+    };
+
+    return rows
+      .map((r) => {
+        const isMe = Boolean(ctx.user && r.username === ctx.user.username);
+        const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : null;
+        const rankDisplay = medal
+          ? `<span style="font-size:18px;line-height:1" title="Hạng ${r.rank}">${medal}</span>`
+          : `<span class="mono" style="font-size:13px;font-weight:600;color:var(--fg3)">${r.rank}</span>`;
+
+        return `
+        <div class="trow ${isMe ? 'me' : ''}" style="grid-template-columns:${cols};gap:${gap}px;padding:10px 16px;align-items:center;${!isMe && r.rank === 1 ? 'background:rgba(245,158,11,0.03);' : ''}">
+          <div class="center" style="display:flex;align-items:center;justify-content:center">${rankDisplay}</div>
+          <a href="#/profile/${encodeURIComponent(r.username)}" class="rank-user" style="text-decoration:none;color:inherit;display:flex !important;flex-direction:row !important;align-items:center !important;gap:9px;min-width:0;" title="Xem hồ sơ ${esc(r.fullName || r.username)}">
+            ${renderAvatar(r.username, r.avatar, 30, r.fullName)}
+            <div style="display:flex;flex-direction:column;min-width:0;line-height:1.25">
+              <span class="ellipsis" style="font-weight:700;font-size:13px;color:var(--fg);">${esc(r.fullName || r.username)}${isMe ? ' <span class="me-tag" style="background:var(--accent);color:var(--on-accent);padding:1px 5px;border-radius:4px;font-size:10px;margin-left:4px;font-weight:700;">BẠN</span>' : ''}</span>
+              <small class="muted" style="font-size:11px;display:flex;align-items:center;gap:4px;margin-top:1px">
+                ${r.fullName ? `<span class="mono" style="opacity:0.85">${esc(r.username)}</span> · ` : ''}
+                <span style="color:${r.finished ? 'var(--ok)' : 'var(--wa)'};font-weight:500;white-space:nowrap">
+                  ${r.finished ? '✓ đã nộp' : '⚡ đang làm'}
+                </span>
+              </small>
+            </div>
+          </a>
+          ${r.cells.map((c, i) => cell(c, b.problems[i])).join('')}
+          <div class="center" style="display:flex;justify-content:center;align-items:center">
+            <b class="mono" style="color:var(--accent);font-size:13.5px;font-weight:800;background:color-mix(in oklch, var(--accent) 12%, transparent);padding:2px 8px;border-radius:6px;border:1px solid color-mix(in oklch, var(--accent) 25%, transparent)">${Number(r.total.toFixed(2))}</b>
+          </div>
+          <span class="center mono faint" style="font-size:12px;white-space:nowrap;display:flex;justify-content:center;align-items:center">${fmtWorkTime(r.workDurationMs)}</span>
+          <span class="center mono faint" style="font-size:12px;white-space:nowrap;display:flex;justify-content:center;align-items:center">${r.finishAt ? fmtClock(r.finishAt) : '—'}</span>
+          <span class="center mono muted" style="font-size:12px;display:flex;justify-content:center;align-items:center">${r.totalTries ?? 0}</span>
+        </div>`;
+      })
+      .join('');
+  }
+
+  function boardHtml(b, query = boardSearchQuery) {
+    const layout = getBoardLayout(b.problems.length);
     const max = b.problems.reduce((s, p) => s + p.points, 0);
     const live = b.phase === 'running';
     const working = b.rows.filter((r) => !r.finished).length;
-    const cell = (c, p) => {
-      if (c.score == null) return '<span class="right faint">·</span>';
-      const cls = c.score >= p.points ? 'full' : c.score > 0 ? 'part' : 'zero';
-      return `<span class="right mono board-cell ${cls}" title="${c.tries} lần nộp">${Number(c.score.toFixed(2))}</span>`;
-    };
-    return `
-      <div class="board-head">
-        <h2 class="section-title">Bảng xếp hạng${live ? ' <span class="board-live">trực tiếp</span>' : ''}</h2>
-        <span class="faint" style="font-size:13px">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài, cập nhật mỗi 15 giây` : ''}</span>
-      </div>
-      <div class="rank-scroll" style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;">
-        <div class="table" style="min-width:${minW}px;width:100%;">
-        <div class="trow thead" style="grid-template-columns:${cols}">
-          <span>#</span>
-          <span>Thí sinh</span>
-          ${b.problems.map((p) => `<span class="right" title="${esc(p.title)}">${esc(p.label)} <small class="faint">/${p.points}</small></span>`).join('')}
-          <span class="right">Tổng</span>
-          <span class="right" title="Thời gian làm bài thực tế từ lúc vào phòng thi">Làm bài</span>
-          <span class="right" title="Thời điểm hoàn thành bài thi hoặc nộp bài đạt điểm">Hoàn thành</span>
-          <span class="right" title="Tổng số lần nộp bài">Nộp</span>
+
+    const q = (query || '').trim().toLowerCase();
+    const filteredRows = b.rows.filter(
+      (r) => !q || (r.fullName && r.fullName.toLowerCase().includes(q)) || (r.username && r.username.toLowerCase().includes(q))
+    );
+
+    const renderContestPodium = (rows, maxPoints) => {
+      if (!rows || rows.length < 2) return '';
+      const u1 = rows[0];
+      const u2 = rows[1];
+      const u3 = rows[2] || null;
+
+      const renderPillar = (u, rank) => {
+        if (!u) return '<div class="podium-pillar rank-3" style="opacity:0.35"></div>';
+        const name = esc(u.fullName || u.username);
+        const username = esc(u.username);
+        const isRank1 = rank === 1;
+        const avatarSize = isRank1 ? 72 : rank === 2 ? 62 : 56;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+        const rankLabel = rank === 1 ? 'QUÁN QUÂN' : rank === 2 ? 'Á QUÂN' : 'QUÝ QUÂN';
+        const score = Number(u.total.toFixed(2));
+        const workTime = fmtWorkTime(u.workDurationMs);
+
+        return `
+          <div class="podium-pillar rank-${rank}">
+            <div class="podium-person">
+              ${isRank1 ? '<span class="podium-crown">👑</span>' : ''}
+              <div class="podium-avatar-wrap">
+                ${renderAvatar(u.username, u.avatar, avatarSize, u.fullName)}
+                <span class="podium-medal-badge">${medal}</span>
+              </div>
+              <div class="podium-info">
+                <span class="podium-name" title="${name}">${name}</span>
+                <span class="podium-handle">@${username}</span>
+                <span class="podium-score">${score}/${maxPoints} đ ${workTime ? `· ${workTime}` : ''}</span>
+              </div>
+            </div>
+            <div class="podium-step step-${rank}">
+              <span class="podium-rank-num">${rank}</span>
+              <span class="podium-rank-label">${rankLabel}</span>
+            </div>
+          </div>
+        `;
+      };
+
+      return `
+        <div class="podium-container">
+          <div class="podium-stage">
+            ${renderPillar(u2, 2)}
+            ${renderPillar(u1, 1)}
+            ${renderPillar(u3, 3)}
+          </div>
+          <div class="podium-base-bar"></div>
         </div>
-        ${b.rows
-          .map(
-            (r) => `<div class="trow ${r.username === ctx.user.username ? 'me' : ''}" style="grid-template-columns:${cols}">
-              <b class="mono">${r.rank}</b>
-              <a href="#/profile/${encodeURIComponent(r.username)}" class="rank-user" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:8px;" title="Xem hồ sơ ${esc(r.fullName || r.username)}">
-                ${renderAvatar(r.username, r.avatar, 26, r.fullName)}
-                <div style="display:flex;flex-direction:column;min-width:0;">
-                  <span class="ellipsis" style="font-weight:600">${esc(r.fullName || r.username)}${r.username === ctx.user.username ? ' <span class="me-tag">· bạn</span>' : ''}</span>
-                  <small class="muted" style="font-size:11.5px;">${r.fullName ? `<span class="mono">${esc(r.username)}</span> · ` : ''}${r.finished ? 'đã nộp kết thúc' : 'đang làm bài'}</small>
-                </div>
-              </a>
-              ${r.cells.map((c, i) => cell(c, b.problems[i])).join('')}
-              <b class="right mono" style="color:var(--accent);font-size:14.5px;">${Number(r.total.toFixed(2))}</b>
-              <span class="right mono faint" style="font-size:12px;">${fmtWorkTime(r.workDurationMs)}</span>
-              <span class="right faint" style="font-size:12px;">${r.finishAt ? fmtClock(r.finishAt) : '—'}</span>
-              <span class="right mono muted" style="font-size:12px;">${r.totalTries ?? 0}</span>
-            </div>`,
-          )
-          .join('') || '<div class="empty">Chưa có thí sinh.</div>'}
-      </div></div>`;
+      `;
+    };
+
+    return `
+      <div style="margin-top:16px">
+        ${renderContestPodium(b.rows, max)}
+
+        <div class="board-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <h2 class="section-title" style="margin:0">Bảng xếp hạng${live ? ' <span class="board-live">trực tiếp</span>' : ''}</h2>
+            <span class="chip-sm" style="background:var(--bg3);border:1px solid var(--line2);font-size:12px;padding:2px 8px;border-radius:99px;color:var(--fg2)">${b.rows.length} thí sinh${live ? ` · ${working} bạn đang làm bài` : ''}</span>
+          </div>
+          <input class="ctl" data-board-search placeholder="🔍 Tìm theo tên hoặc MSSV…" value="${esc(query || '')}" style="width:240px;height:34px;font-size:12.5px" />
+        </div>
+
+        <div class="rank-scroll" style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r-lg);">
+          <div class="table" style="min-width:${layout.minW}px;width:100%;border-radius:var(--r-lg);overflow:hidden;">
+            <div class="trow thead" style="grid-template-columns:${layout.cols};gap:${layout.gap}px;padding:10px 16px;align-items:center;">
+              <span class="center">#</span>
+              <span>Thí sinh</span>
+              ${b.problems.map((p) => `<span class="center" style="display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;font-size:12px;white-space:nowrap" title="${esc(p.title)}"><b style="color:var(--fg);font-size:13px">${esc(p.label)}</b><small class="faint" style="font-size:10px">/${p.points}</small></span>`).join('')}
+              <span class="center" style="font-weight:700">Tổng</span>
+              <span class="center" title="Thời gian làm bài thực tế từ lúc vào phòng thi">Làm bài</span>
+              <span class="center" title="Thời điểm hoàn thành bài thi hoặc nộp bài đạt điểm">Hoàn tất</span>
+              <span class="center" title="Tổng số lần nộp bài">Nộp</span>
+            </div>
+            <div data-board-rows style="display:flex;flex-direction:column;width:100%;min-width:100%;">
+              ${renderBoardRows(filteredRows, b, layout)}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   return () => {

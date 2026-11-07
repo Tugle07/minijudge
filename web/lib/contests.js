@@ -385,7 +385,8 @@ export function createContests(db, catalog) {
     if (user.role === 'admin') return true;
     const ended = phase(c) === 'ended';
     if (ended) return true;
-    return Boolean(me && c.settings.boardAfterFinish !== false && (me.finished_at || ended));
+    const isFinished = Boolean(me && (me.finished_at || (me.joined_at && Date.now() >= c.endAt)));
+    return Boolean(me && c.settings.boardAfterFinish !== false && isFinished);
   }
 
   return {

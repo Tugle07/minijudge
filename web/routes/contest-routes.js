@@ -66,7 +66,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     desktopOnly: c.settings.desktopOnly !== false,
     allowed: allowed(c, user),
     joined: Boolean(me),
-    finished: Boolean(me?.finished_at),
+    finished: Boolean(me && (me.finished_at || contests.phase(c) === 'ended' || (me.joined_at && Date.now() >= c.endAt))),
     resultsPublished: Boolean(c.settings.publishResults),
     canSeeBoard: canSeeBoard(c, user, me),
     problemCount: contests.problemsOf(c.id).length,
@@ -255,8 +255,10 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
   /* Nộp bài sớm và rời phòng: sau đó không nộp thêm được nữa. */
   r.post('/contests/:id/finish', (req, res) => {
     const c = load(req, res);
-    if (!c || !seat(req, res, c)) return;
-    db.prepare('UPDATE contest_participants SET finished_at = ? WHERE contest_id = ? AND user_id = ?').run(Date.now(), c.id, req.user.id);
+    if (!c) return;
+    const p = seat(req, res, c, { needRunning: false });
+    if (!p) return;
+    db.prepare('UPDATE contest_participants SET finished_at = COALESCE(finished_at, ?) WHERE contest_id = ? AND user_id = ?').run(Date.now(), c.id, req.user.id);
     contests.logEvent(c.id, req.user.id, 'finish', '');
     res.json({ ok: true });
   });

@@ -186,8 +186,9 @@ button.trow:hover:not(:disabled) { background: var(--bg3); }
   .page { padding: 24px 16px 64px; }
 }
 
-/* Tắt ligature của font code (vd == thành một ký hiệu liền) để người mới thấy đúng từng ký tự đã gõ. */
-code, pre, kbd, samp, textarea, .mono, .cm-editor, .cm-content {
-  font-variant-ligatures: none;
-  font-feature-settings: 'liga' 0, 'calt' 0;
+/* Tắt ligature của font code (vd == thành một ký hiệu liền, /= thành ≠) để người lập trình thấy đúng từng ký tự đã gõ. */
+code, pre, kbd, samp, textarea, .mono, .cm-editor, .cm-content, .sub-code, .celog, .sol-area {
+  font-variant-ligatures: none !important;
+  font-feature-settings: 'liga' 0, 'calt' 0, 'dlig' 0 !important;
+  tab-size: 4;
 }

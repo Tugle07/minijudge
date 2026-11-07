@@ -139,7 +139,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', authRoutes({ db, auth, authLimit, settings, adminUsers: ADMIN_USERS }));
-app.use('/api', catalogRoutes({ catalog, stats, auth, settings }));
+app.use('/api', catalogRoutes({ db, catalog, stats, auth, settings }));
 app.use('/api', contestRoutes({ db, catalog, contests, auth, queue, settings, submitLimit }));
 app.use('/api', submissionRoutes({ db, catalog, stats, auth, queue, judge, settings, submitLimit, runLimit, checkLimit }));
 app.use('/api', profileRoutes({ db, catalog, stats, contests, auth, authLimit }));

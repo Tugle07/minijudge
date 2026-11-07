@@ -2,12 +2,13 @@ import { api } from './api.js';
 import { clearDrafts, setDraftOwner } from './drafts.js';
 import { avatarColor, currentTheme, esc, go, initials, renderAvatar, themeButton, themeText } from './ui.js';
 import * as authView from './views/auth.js';
-import * as contestView from './views/contest.js';
-import * as contestsView from './views/contests.js';
-import * as homeView from './views/home.js';
-import * as problemView from './views/problem.js';
-import * as profileView from './views/profile.js';
-import * as setView from './views/set.js';
+import * as contestView from './views/contest.js?v=7';
+import * as contestsView from './views/contests.js?v=7';
+import * as homeView from './views/home.js?v=7';
+import * as problemView from './views/problem.js?v=7';
+import * as profileView from './views/profile.js?v=7';
+import * as courseView from './views/course.js?v=7';
+import * as setView from './views/set.js?v=7';
 
 const topbar = document.getElementById('topbar');
 const view = document.getElementById('view');
@@ -17,6 +18,7 @@ const ROUTES = {
   home: { view: homeView, nav: 'home', title: 'Luyện tập' },
   contests: { view: contestsView, nav: 'contests', title: 'Cuộc thi' },
   contest: { view: contestView, nav: null, title: 'Phòng thi' },
+  course: { view: courseView, nav: 'home', title: 'Khóa học' },
   set: { view: setView, nav: 'home', title: 'Khối bài' },
   problem: { view: problemView, nav: 'home', title: 'Đề bài' },
   profile: { view: profileView, nav: 'profile', title: 'Hồ sơ' },
@@ -120,7 +122,9 @@ function onLoggedIn(userOrName, role = 'student', avatar = '', fullName = '') {
 }
 
 async function router() {
-  const [, page = 'home', arg, extra] = location.hash.split('/');
+  const [hashPath, hashSearch = ''] = location.hash.split('?');
+  const [, page = 'home', arg, extra] = hashPath.split('/');
+  const query = new URLSearchParams(hashSearch);
   const route = ROUTES[page] || ROUTES.home;
   if (!app.user && route.view !== authView) return go('#/login');
   if (app.user && route.view === authView) return go('#/home');
@@ -134,7 +138,7 @@ async function router() {
   document.title = `${page === 'problem' && arg ? decodeURIComponent(arg) : route.title} · MiniJudge`;
 
   try {
-    const ctx = { view, user: app.user, arg: arg && decodeURIComponent(arg), extra, onLoggedIn };
+    const ctx = { view, user: app.user, arg: arg && decodeURIComponent(arg), extra, query, onLoggedIn };
     app.cleanup = (await route.view.render(ctx)) || null;
   } catch (err) {
     if (err.status === 401) {

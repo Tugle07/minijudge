@@ -286,11 +286,18 @@ export function createStats(db, catalog) {
 
     const myRow = rows.find((r) => r.isMe);
     const myRank = myRow ? {
+      id: myRow.id,
+      username: myRow.username,
+      fullName: myRow.fullName,
+      avatar: myRow.avatar,
       rank: myRow.rank,
       score: myRow.score,
       maxScore: myRow.maxScore,
       solved: myRow.solved,
       total: myRow.total,
+      durationMs: myRow.durationMs,
+      submissions: myRow.submissions,
+      pct: myRow.total ? Math.round((myRow.solved / myRow.total) * 100) : 0,
     } : null;
 
     return { rows, myRank };
