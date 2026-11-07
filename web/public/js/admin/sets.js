@@ -16,39 +16,135 @@ export async function render(ctx) {
   ctx.setHead({ crumb: 'Khối bài tập', title: 'Khối bài tập', actions: '<button class="btn-dark" data-new>+ Tạo khối mới</button>' });
   let sets = [];
   let problems = [];
+  let selectedIds = new Set();
+  let query = '';
+  let groupFilter = 'all';
+  let statusFilter = 'all';
 
   async function load() {
     [sets, problems] = await Promise.all([api('/api/admin/sets'), api('/api/admin/problems')]);
     problems = problems.filter((p) => p.status !== 'deleted');
+    // prune selectedIds that no longer exist
+    const setIds = new Set(sets.map((s) => s.id));
+    selectedIds = new Set([...selectedIds].filter((id) => setIds.has(id)));
     draw();
   }
 
   function draw() {
+    const knownCourses = [...new Set(sets.map((s) => (s.group || '').trim()).filter(Boolean))].sort();
+
+    const q = query.trim().toLowerCase();
+    const filtered = sets.filter((s) => {
+      if (q && !`${s.title} ${s.id} ${s.group || ''} ${(s.tags || []).join(' ')}`.toLowerCase().includes(q)) return false;
+      if (groupFilter === '__unassigned__' && (s.group || '').trim()) return false;
+      if (groupFilter !== 'all' && groupFilter !== '__unassigned__' && (s.group || '').trim() !== groupFilter) return false;
+      if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+      return true;
+    });
+
+    const allChecked = filtered.length > 0 && filtered.every((s) => selectedIds.has(s.id));
+
     ctx.page.innerHTML = `
+      <!-- Thanh tìm kiếm & lọc khối bài tập -->
+      <div class="filters" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <input class="ctl" data-q placeholder="Tìm khối (tên, mã, tag)…" value="${esc(query)}" style="flex:1 1 200px;max-width:280px" />
+        <select class="ctl" data-group-filter style="max-width:230px">
+          <option value="all" ${groupFilter === 'all' ? 'selected' : ''}>Tất cả khóa học</option>
+          <option value="__unassigned__" ${groupFilter === '__unassigned__' ? 'selected' : ''}>⚡ Khối tự do (chưa gán)</option>
+          ${knownCourses.map((c) => `<option value="${esc(c)}" ${groupFilter === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+        </select>
+        <select class="ctl" data-status-filter style="max-width:160px">
+          <option value="all" ${statusFilter === 'all' ? 'selected' : ''}>Mọi trạng thái</option>
+          <option value="open" ${statusFilter === 'open' ? 'selected' : ''}>Công khai</option>
+          <option value="hidden" ${statusFilter === 'hidden' ? 'selected' : ''}>Ẩn</option>
+          <option value="draft" ${statusFilter === 'draft' ? 'selected' : ''}>Nháp</option>
+        </select>
+        <span class="count" style="margin-left:auto">${filtered.length}/${sets.length} khối</span>
+      </div>
+
+      <!-- Thanh thao tác nhanh khi chọn nhiều (Bulk Action Bar) -->
+      ${
+        selectedIds.size > 0
+          ? `
+        <div class="bulk-bar" style="display:flex;align-items:center;gap:12px;padding:9px 16px;background:color-mix(in oklch, var(--accent) 12%, var(--bg3));border:1.5px solid var(--accent);border-radius:var(--r-md);margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-weight:600;font-size:13.5px;color:var(--fg)">Đã chọn <b>${selectedIds.size}</b> khối bài tập</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap">
+            <select class="ctl" data-bulk-course style="font-size:13px;padding:4px 10px;border-radius:6px;background:var(--bg)">
+              <option value="">⚡ Gán nhanh vào khóa học…</option>
+              ${knownCourses.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+              <option value="__unassigned__">— Gỡ khỏi khóa (Khối tự do) —</option>
+            </select>
+            <select class="ctl" data-bulk-status style="font-size:13px;padding:4px 10px;border-radius:6px;background:var(--bg)">
+              <option value="">⚡ Đổi trạng thái nhanh…</option>
+              <option value="open">Công khai</option>
+              <option value="hidden">Ẩn khỏi sinh viên</option>
+              <option value="draft">Bản nháp</option>
+            </select>
+            <button type="button" class="btn-ghost" data-bulk-clear style="font-size:13px;padding:4px 10px;border:1px solid var(--line2)">✕ Bỏ chọn</button>
+          </div>
+        </div>`
+          : ''
+      }
+
       <div class="panel">
         <table class="atable">
-          <thead><tr><th>Tên khối</th><th class="num">Số bài</th><th>Trạng thái</th><th>Hạn nộp</th><th style="width:200px">Lớp hoàn thành</th><th style="width:56px"></th></tr></thead>
-          <tbody>${sets
-            .map(
-              (s) => `
+          <thead>
             <tr>
-              <td><button class="link-btn" data-edit="${esc(s.id)}" style="display:flex;align-items:center;gap:10px;color:var(--fg);font-weight:500;text-align:left"><span class="swatch-dot" style="background:${hueColor(s.hue)}"></span>${esc(s.title)}</button></td>
-              <td class="num">${s.problems.length}</td>
-              <td>${pill(...SET_STATUS[s.status])}</td>
-              <td class="mono muted">${deadlineLabel(s.deadline)}</td>
-              <td><div style="display:flex;align-items:center;gap:10px"><div class="progress" style="flex:1"><div style="width:${s.completion}%"></div></div><span class="mono muted" style="width:38px;text-align:right">${s.completion}%</span></div></td>
-              <td class="row-menu">
-                <button class="dots-btn" data-menu aria-haspopup="menu" aria-label="Thao tác">⋯</button>
-                <div class="menu" role="menu" hidden>
-                  <button data-edit="${esc(s.id)}">Sửa</button>
-                  <button data-dup="${esc(s.id)}">Nhân bản</button>
-                  <button data-hide="${esc(s.id)}">${s.status === 'hidden' ? 'Hiện lại' : 'Ẩn'}</button>
-                  <button class="danger" data-del="${esc(s.id)}">Xóa</button>
-                </div>
-              </td>
-            </tr>`,
-            )
-            .join('')}</tbody>
+              <th style="width:38px;text-align:center">
+                <input type="checkbox" data-check-all ${allChecked ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer" title="Chọn tất cả khối đang hiển thị" />
+              </th>
+              <th>Tên khối</th>
+              <th>Khóa học</th>
+              <th class="num">Số bài</th>
+              <th>Trạng thái</th>
+              <th>Hạn nộp</th>
+              <th style="width:180px">Lớp hoàn thành</th>
+              <th style="width:56px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered
+              .map((s) => {
+                const isChecked = selectedIds.has(s.id);
+                return `
+              <tr style="${isChecked ? 'background:color-mix(in oklch, var(--accent) 8%, transparent)' : ''}">
+                <td style="text-align:center">
+                  <input type="checkbox" data-set-check="${esc(s.id)}" ${isChecked ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer" />
+                </td>
+                <td>
+                  <button class="link-btn" data-edit="${esc(s.id)}" style="display:flex;align-items:center;gap:10px;color:var(--fg);font-weight:500;text-align:left">
+                    <span class="swatch-dot" style="background:${hueColor(s.hue)}"></span>${esc(s.title)}
+                  </button>
+                </td>
+                <td>
+                  ${
+                    s.group
+                      ? `<span class="chip-sm" style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;background:var(--bg3);font-size:12px;color:var(--fg2);border:1px solid var(--line2)">${esc(s.group)}</span>`
+                      : '<span class="faint" style="font-size:12px;color:var(--wa)">Tự do (chưa gán)</span>'
+                  }
+                </td>
+                <td class="num font-mono">${s.problems.length}</td>
+                <td>${pill(...SET_STATUS[s.status])}</td>
+                <td class="mono muted">${deadlineLabel(s.deadline)}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div class="progress" style="flex:1"><div style="width:${s.completion}%"></div></div>
+                    <span class="mono muted" style="width:38px;text-align:right">${s.completion}%</span>
+                  </div>
+                </td>
+                <td class="row-menu">
+                  <button class="dots-btn" data-menu aria-haspopup="menu" aria-label="Thao tác">⋯</button>
+                  <div class="menu" role="menu" hidden>
+                    <button data-edit="${esc(s.id)}">Sửa</button>
+                    <button data-dup="${esc(s.id)}">Nhân bản</button>
+                    <button data-hide="${esc(s.id)}">${s.status === 'hidden' ? 'Hiện lại' : 'Ẩn'}</button>
+                    <button class="danger" data-del="${esc(s.id)}">Xóa</button>
+                  </div>
+                </td>
+              </tr>`;
+              })
+              .join('')}
+          </tbody>
         </table>
         ${sets.length ? '' : '<div class="empty">Chưa có khối nào. Bấm <b style="color:var(--fg)">Tạo khối mới</b> để bắt đầu.</div>'}
       </div>`;
@@ -64,7 +160,18 @@ export async function render(ctx) {
 
     const body = () => `
       <label class="afield"><span>Tên khối</span><input class="input ${errors.title ? 'err' : ''}" data-f="title" value="${esc(f.title)}" placeholder="vd. Tuần 3 — Sắp xếp & Tìm kiếm" />${errors.title ? `<span class="err-text">${esc(errors.title)}</span>` : ''}</label>
-      <label class="afield"><span>Nhóm</span><input class="input" data-f="group" value="${esc(f.group || '')}" list="set-groups" placeholder="vd. Lộ trình KTLT" /><datalist id="set-groups">${[...new Set(sets.map((s) => s.group).filter(Boolean))].map((g) => `<option value="${esc(g)}"></option>`).join('')}</datalist><span class="help">Trang chủ gom các khối cùng nhóm thành một mục, theo thứ tự khối.</span></label>
+      <label class="afield"><span>Khóa học</span>${(() => {
+        const known = [...new Set(sets.map((s) => s.group).filter(Boolean))];
+        const isCustom = f.group && !known.includes(f.group);
+        return `
+        <select class="input" data-f="group-select">
+          <option value="">— Không thuộc khóa nào (Khối tự do) —</option>
+          ${known.map((g) => `<option value="${esc(g)}" ${f.group === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+          <option value="__new__" ${isCustom ? 'selected' : ''}>+ Tạo khóa mới…</option>
+        </select>
+        <input class="input" data-f="group-new" value="${isCustom ? esc(f.group) : ''}" placeholder="Nhập tên khóa mới" style="display:${isCustom ? 'block' : 'none'};margin-top:6px" />`;
+      })()}
+        <span class="help">Trang chủ gom các khối cùng khóa thành một mục. Bấm vào tên khóa để xem trang riêng.</span></label>
       <label class="afield"><span>Mô tả</span><input class="input" data-f="desc" value="${esc(f.desc)}" placeholder="Một dòng ngắn" /></label>
       <div class="afield"><span>Màu đại diện</span><div class="swatches">${SWATCH_HUES.map((h) => `<button type="button" class="${h === f.hue ? 'on' : ''}" style="background:${hueColor(h)}" data-hue="${h}" aria-label="Chọn màu" aria-pressed="${h === f.hue}"></button>`).join('')}</div></div>
       <div class="afield"><span>Nhãn chủ đề</span><div class="tag-input">${f.tags.map((t, i) => `<span class="chip-x">${esc(t)}<button type="button" data-untag="${i}" aria-label="Bỏ nhãn">×</button></span>`).join('')}<input data-tag placeholder="Nhập rồi Enter" /></div></div>
@@ -109,7 +216,8 @@ export async function render(ctx) {
 
     el.addEventListener('input', (e) => {
       const k = e.target.dataset.f;
-      if (k) f[k] = e.target.value;
+      if (k === 'group-new') { f.group = e.target.value; return; }
+      if (k && k !== 'group-select') f[k] = e.target.value;
       if (e.target.matches('[data-addq]')) {
         const q = e.target.value.trim().toLowerCase();
         const box = el.querySelector('[data-suggest]');
@@ -120,6 +228,19 @@ export async function render(ctx) {
     });
     el.addEventListener('change', (e) => {
       if (e.target.name === 'vis') f.status = e.target.value;
+      if (e.target.dataset.f === 'group-select') {
+        const v = e.target.value;
+        const newInput = el.querySelector('[data-f="group-new"]');
+        if (v === '__new__') {
+          newInput.style.display = 'block';
+          newInput.value = '';
+          f.group = '';
+          newInput.focus();
+        } else {
+          newInput.style.display = 'none';
+          f.group = v;
+        }
+      }
     });
     el.addEventListener('keydown', (e) => {
       if (e.target.matches('[data-tag]') && e.key === 'Enter' && e.target.value.trim()) {
@@ -151,8 +272,96 @@ export async function render(ctx) {
     });
   }
 
+  // Filter input listeners
+  ctx.page.addEventListener('input', (e) => {
+    if (e.target.matches('[data-q]')) {
+      query = e.target.value;
+      draw();
+    }
+  });
+
+  ctx.page.addEventListener('change', async (e) => {
+    const t = e.target;
+    if (t.matches('[data-group-filter]')) {
+      groupFilter = t.value;
+      draw();
+      return;
+    }
+    if (t.matches('[data-status-filter]')) {
+      statusFilter = t.value;
+      draw();
+      return;
+    }
+    if (t.matches('[data-check-all]')) {
+      const q = query.trim().toLowerCase();
+      const filtered = sets.filter((s) => {
+        if (q && !`${s.title} ${s.id} ${s.group || ''} ${(s.tags || []).join(' ')}`.toLowerCase().includes(q)) return false;
+        if (groupFilter === '__unassigned__' && (s.group || '').trim()) return false;
+        if (groupFilter !== 'all' && groupFilter !== '__unassigned__' && (s.group || '').trim() !== groupFilter) return false;
+        if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+        return true;
+      });
+
+      if (t.checked) {
+        filtered.forEach((s) => selectedIds.add(s.id));
+      } else {
+        filtered.forEach((s) => selectedIds.delete(s.id));
+      }
+      draw();
+      return;
+    }
+    if (t.matches('[data-set-check]')) {
+      const id = t.dataset.setCheck;
+      if (t.checked) selectedIds.add(id);
+      else selectedIds.delete(id);
+      draw();
+      return;
+    }
+    if (t.matches('[data-bulk-course]')) {
+      const val = t.value;
+      if (!val) return;
+      const targetGroup = val === '__unassigned__' ? '' : val;
+      const count = selectedIds.size;
+      try {
+        await api('/api/admin/sets-batch', {
+          method: 'POST',
+          body: { ids: Array.from(selectedIds), group: targetGroup },
+        });
+        toast(targetGroup ? `Đã gán ${count} khối vào khóa học "${targetGroup}"` : `Đã chuyển ${count} khối thành khối tự do`);
+        selectedIds.clear();
+        await load();
+      } catch (err) {
+        toast(err.message || 'Lỗi khi cập nhật khóa học');
+      }
+      return;
+    }
+    if (t.matches('[data-bulk-status]')) {
+      const val = t.value;
+      if (!val) return;
+      const count = selectedIds.size;
+      try {
+        await api('/api/admin/sets-batch', {
+          method: 'POST',
+          body: { ids: Array.from(selectedIds), status: val },
+        });
+        toast(`Đã cập nhật trạng thái cho ${count} khối bài`);
+        selectedIds.clear();
+        await load();
+      } catch (err) {
+        toast(err.message || 'Lỗi khi cập nhật trạng thái');
+      }
+      return;
+    }
+  });
+
   const onClick = async (e) => {
     const t = e.target;
+    if (t.closest('[data-bulk-clear]')) {
+      selectedIds.clear();
+      draw();
+      return;
+    }
+
     const menuBtn = t.closest('[data-menu]');
     if (menuBtn) {
       const m = menuBtn.nextElementSibling;

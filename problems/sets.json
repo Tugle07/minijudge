@@ -4,7 +4,7 @@
     "num": "01",
     "short": "C01 — Nhập xuất & Phép toán",
     "title": "Chương 01 — Nhập xuất cơ bản & Phép toán số học",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Làm quen với printf, scanf, các kiểu dữ liệu int, float, double, chia nguyên /, chia dư %, ép kiểu.",
     "tags": [
       "nhập xuất",
@@ -35,7 +35,7 @@
     "num": "02",
     "short": "C02 — Cấu trúc rẽ nhánh",
     "title": "Chương 02 — Cấu trúc rẽ nhánh (if / else / switch)",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Toán tử so sánh, biểu thức logic && || !, kiểm tra chẵn lẻ, phân loại tam giác, tính cước taxi, năm nhuận.",
     "tags": [
       "rẽ nhánh",
@@ -62,7 +62,7 @@
     "num": "03",
     "short": "C03 — Vòng lặp & Hình sao",
     "title": "Chương 03 — Cấu trúc lặp & Vẽ ma trận hình sao",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Vòng lặp for, while, do-while, lồng vòng lặp vẽ ma trận hình sao, tam giác Floyd, tính tổng chuỗi số.",
     "tags": [
       "vòng lặp",
@@ -94,7 +94,7 @@
     "num": "04",
     "short": "C04 — Hàm & Bài toán số học",
     "title": "Chương 04 — Hàm con & Các bài toán số học kinh điển",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Xây dựng hàm con tách biệt, kiểm tra số nguyên tố, số chính phương, số hoàn hảo, UCLN/BCNN, phân tích thừa số.",
     "tags": [
       "hàm",
@@ -123,7 +123,7 @@
     "num": "05",
     "short": "C05 — Đệ quy & Chia để trị",
     "title": "Chương 05 — Kỹ thuật đệ quy & Bài toán chia để trị",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Nguyên lý đệ quy, điểm dừng base case, tháp Hà Nội, dãy Fibonacci, tổ hợp Pascal, leo bậc thang.",
     "tags": [
       "đệ quy",
@@ -146,7 +146,7 @@
     "num": "06",
     "short": "C06 — Mảng 1 chiều cơ bản",
     "title": "Chương 06 — Mảng một chiều cơ bản (Duyệt, Tìm kiếm, Đếm)",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Khai báo mảng, truy xuất chỉ số 0..n-1, tìm max/min, đếm tần suất, chèn/xóa phần tử, kỹ thuật 2 con trỏ cơ bản.",
     "tags": [
       "mảng 1D",
@@ -172,7 +172,7 @@
     "num": "07",
     "short": "C07 — Mảng 1 chiều nâng cao",
     "title": "Chương 07 — Thuật toán mảng (Sắp xếp, Tìm nhị phân, Hai con trỏ)",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Bubble Sort, Selection Sort, Binary Search, trộn 2 mảng sắp xếp, cửa sổ trượt Sliding Window.",
     "tags": [
       "sắp xếp",
@@ -205,7 +205,7 @@
     "num": "08",
     "short": "C08 — Xâu ký tự (Chuỗi)",
     "title": "Chương 08 — Xâu ký tự & Xử lý văn bản (char[])",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Bảng mã ASCII, thư viện string.h, chuẩn hóa họ tên, đếm từ, kiểm tra Palindrome, tần suất ký tự.",
     "tags": [
       "chuỗi",
@@ -237,7 +237,7 @@
     "num": "09",
     "short": "C09 — Mảng hai chiều",
     "title": "Chương 09 — Mảng hai chiều & Xử lý ma trận",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Ma trận vuông, đường chéo chính/phụ, chuyển vị ma trận, cộng/nhân ma trận, ma trận xoắn ốc.",
     "tags": [
       "ma trận",
@@ -264,7 +264,7 @@
     "num": "10",
     "short": "C10 — Con trỏ & Cấp phát động",
     "title": "Chương 10 — Con trỏ & Quản lý bộ nhớ động",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Địa chỉ biến &, giải tham chiếu *, truyền tham chiếu hàm con, cấp phát malloc/calloc/free.",
     "tags": [
       "con trỏ",
@@ -287,7 +287,7 @@
     "num": "11",
     "short": "C11 — Cấu trúc dữ liệu (Struct)",
     "title": "Chương 11 — Kiểu dữ liệu cấu trúc (struct) & Ứng dụng thực tế",
-    "group": "Lộ trình Kỹ thuật lập trình C (K67)",
+    "group": "Kỹ Thuật Lập Trình - [ C ]",
     "desc": "Định nghĩa struct, phân số, điểm toạ độ, quản lý hồ sơ sinh viên, sắp xếp nhiều tiêu chí với qsort.",
     "tags": [
       "struct",

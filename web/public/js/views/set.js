@@ -15,44 +15,52 @@ function rankBadge(rank) {
 }
 
 function renderPodium(topUsers) {
-  if (!topUsers.length) return '';
+  if (!topUsers || topUsers.length < 2) return '';
+  const u1 = topUsers[0];
+  const u2 = topUsers[1];
+  const u3 = topUsers[2] || null;
+
+  const renderPillar = (u, rank) => {
+    if (!u) return '<div class="podium-pillar rank-3" style="opacity:0.35"></div>';
+    const name = esc(u.fullName || u.username);
+    const username = esc(u.username);
+    const isRank1 = rank === 1;
+    const avatarSize = isRank1 ? 72 : rank === 2 ? 62 : 56;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+    const rankLabel = rank === 1 ? 'QUÁN QUÂN' : rank === 2 ? 'Á QUÂN' : 'QUÝ QUÂN';
+
+    return `
+      <div class="podium-pillar rank-${rank}">
+        <div class="podium-person">
+          ${isRank1 ? '<span class="podium-crown">👑</span>' : ''}
+          <div class="podium-avatar-wrap">
+            ${renderAvatar(u.username, u.avatar, avatarSize, u.fullName)}
+            <span class="podium-medal-badge">${medal}</span>
+          </div>
+          <div class="podium-info">
+            <span class="podium-name" title="${name}">${name}</span>
+            <span class="podium-handle">@${username}</span>
+            <span class="podium-score">${u.score}/${u.maxScore} đ · ${u.solved}/${u.total} AC</span>
+          </div>
+        </div>
+        <div class="podium-step step-${rank}">
+          <span class="podium-rank-num">${rank}</span>
+          <span class="podium-rank-label">${rankLabel}</span>
+        </div>
+      </div>
+    `;
+  };
+
   return `
-    <div class="set-podium" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:20px;">
-      ${topUsers.map((u) => {
-        const medal = u.rank === 1 ? '🥇 Quán quân' : u.rank === 2 ? '🥈 Á quân 1' : '🥉 Á quân 2';
-        const borderColor = u.rank === 1 ? '#eab308' : u.rank === 2 ? '#94a3b8' : '#f97316';
-        return `
-          <a class="card-box" href="#/profile/${encodeURIComponent(u.username)}" style="padding:16px;text-decoration:none;color:inherit;border-top:3px solid ${borderColor};display:flex;flex-direction:column;gap:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12.5px;font-weight:700;color:${borderColor};display:inline-flex;align-items:center;gap:4px;">${medal}</span>
-              ${u.isMe ? '<span style="background:var(--accent);color:#fff;font-size:11px;padding:1px 6px;border-radius:4px;font-weight:600;">Bạn</span>' : ''}
-            </div>
-            <div style="display:flex;align-items:center;gap:12px;">
-              ${renderAvatar(u.username, u.avatar, 42, u.fullName)}
-              <div style="display:flex;flex-direction:column;min-width:0;">
-                <b class="ellipsis" style="font-size:14.5px;">${esc(u.fullName || u.username)}</b>
-                <span class="mono faint" style="font-size:12.5px;">${esc(u.username)}</span>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding-top:6px;border-top:1px solid var(--line);">
-              <span class="muted">Điểm:</span>
-              <b class="num" style="color:var(--accent);font-size:15px;">${u.score} <small class="faint" style="font-size:12px;font-weight:normal;">/ ${u.maxScore}</small></b>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
-              <span class="muted">Đã giải:</span>
-              <span class="num" style="color:var(--ac);font-weight:600;">${u.solved} / ${u.total} AC</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
-              <span class="muted">Làm bài:</span>
-              <span class="mono" style="font-weight:500;">⏱️ ${fmtWorkTime(u.workDurationMs)}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
-              <span class="muted">Hoàn thành:</span>
-              <span class="faint">${fmtWhen(u.finishAt || u.lastScoreAt)}</span>
-            </div>
-          </a>`;
-      }).join('')}
-    </div>`;
+    <div class="podium-container" style="margin-bottom:28px;">
+      <div class="podium-stage">
+        ${renderPillar(u2, 2)}
+        ${renderPillar(u1, 1)}
+        ${renderPillar(u3, 3)}
+      </div>
+      <div class="podium-base-bar"></div>
+    </div>
+  `;
 }
 
 function rankHtml(board) {
@@ -74,11 +82,11 @@ function rankHtml(board) {
       <div class="trow thead" style="grid-template-columns: 50px minmax(170px, 1.4fr) 95px minmax(110px, 1fr) 100px 115px 65px; font-weight:600;" role="row">
         <span style="text-align:center;">Hạng</span>
         <span>Sinh viên</span>
-        <span class="right" style="padding-right:8px;">Điểm</span>
+        <span class="center">Điểm</span>
         <span>Tiến độ bài</span>
-        <span class="right wide-only" title="Tổng thời gian thực tế làm các bài (tính từ khi bấm xem đề đến khi nộp bài đạt AC)">Làm bài</span>
-        <span class="right" title="Thời điểm hoàn thành bài nộp đạt điểm cao nhất">Hoàn thành</span>
-        <span class="right wide-only" title="Tổng số lần nộp bài trong khối">Lần nộp</span>
+        <span class="center wide-only" title="Tổng thời gian thực tế làm các bài (tính từ khi bấm xem đề đến khi nộp bài đạt AC)">Làm bài</span>
+        <span class="center" title="Thời điểm hoàn thành bài nộp đạt điểm cao nhất">Hoàn thành</span>
+        <span class="center wide-only" title="Tổng số lần nộp bài trong khối">Lần nộp</span>
       </div>
       ${board
         .map((u) => {
@@ -96,9 +104,9 @@ function rankHtml(board) {
                   <span class="mono faint" style="font-size:12px;">${esc(u.username)}</span>
                 </div>
               </a>
-              <div class="right" style="padding-right:8px;">
+              <div class="center" style="display:flex;justify-content:center;align-items:baseline;gap:3px;">
                 <b class="num" style="color:var(--accent);font-size:15px;">${u.score}</b>
-                <span class="faint" style="font-size:12px;"> / ${u.maxScore}</span>
+                <span class="faint" style="font-size:12px;">/${u.maxScore}</span>
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;padding-right:12px;">
                 <div style="display:flex;justify-content:space-between;font-size:12.5px;">
@@ -109,9 +117,9 @@ function rankHtml(board) {
                   <div style="width:${u.pct}%;"></div>
                 </div>
               </div>
-              <span class="right mono muted wide-only" style="font-size:12.5px;">${fmtWorkTime(u.workDurationMs)}</span>
-              <span class="right faint" style="font-size:12.5px;">${fmtWhen(u.finishAt || u.lastScoreAt)}</span>
-              <span class="right mono muted wide-only">${u.submissions}</span>
+              <span class="center mono muted wide-only" style="font-size:12.5px;display:flex;justify-content:center;">${fmtWorkTime(u.workDurationMs)}</span>
+              <span class="center faint" style="font-size:12.5px;display:flex;justify-content:center;">${fmtWhen(u.finishAt || u.lastScoreAt)}</span>
+              <span class="center mono muted wide-only" style="display:flex;justify-content:center;">${u.submissions}</span>
             </div>`;
         })
         .join('')}

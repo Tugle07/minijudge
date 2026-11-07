@@ -118,6 +118,174 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     res.json({ ok: true });
   });
 
+  r.post('/sets-batch', (req, res) => {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
+    if (!ids.length) return res.status(400).json({ error: 'Chưa chọn khối bài nào' });
+    const { group, status } = req.body;
+    const sets = rawSets();
+    let updated = 0;
+    for (const s of sets) {
+      if (ids.includes(s.id)) {
+        if (typeof group === 'string') s.group = group.trim().slice(0, 60);
+        if (SET_STATUSES.includes(status)) s.status = status;
+        updated++;
+      }
+    }
+    if (updated) saveSets(sets);
+    res.json({ ok: true, updated });
+  });
+
+  /* ---------- Khóa học (Courses CRUD) ---------- */
+  function getCoursesMeta() {
+    try {
+      const row = db.prepare("SELECT value FROM settings WHERE key = 'course_meta'").get();
+      return row && row.value ? JSON.parse(row.value) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveCoursesMeta(meta) {
+    db.prepare("INSERT INTO settings (key, value) VALUES ('course_meta', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(meta));
+  }
+
+  r.get('/courses', (_req, res) => {
+    const sets = rawSets();
+    const coursesMap = new Map();
+    for (const s of sets) {
+      const g = (s.group || '').trim();
+      if (!g) continue;
+      if (!coursesMap.has(g)) {
+        coursesMap.set(g, { name: g, sets: [] });
+      }
+      coursesMap.get(g).sets.push({ id: s.id, title: s.title, num: s.num, problemCount: s.problems.length, status: s.status });
+    }
+    const metaMap = getCoursesMeta();
+    const courses = Array.from(coursesMap.values()).map((c) => ({
+      name: c.name,
+      setCount: c.sets.length,
+      problemCount: c.sets.reduce((t, s) => t + s.problemCount, 0),
+      sets: c.sets,
+      meta: metaMap[c.name] || {},
+    }));
+    res.json(courses);
+  });
+
+  r.post('/courses', (req, res) => {
+    const name = String(req.body?.name || '').trim().slice(0, 60);
+    if (!name) return res.status(400).json({ error: 'Tên khóa học không được để trống' });
+    const setIds = Array.isArray(req.body?.setIds) ? req.body.setIds.map(String) : [];
+    const sets = rawSets();
+    let updated = false;
+    for (const s of sets) {
+      if (setIds.includes(s.id)) {
+        s.group = name;
+        updated = true;
+      }
+    }
+    if (updated) saveSets(sets);
+
+    const metaMap = getCoursesMeta();
+    metaMap[name] = {
+      badge: String(req.body?.badge || '').slice(0, 50),
+      tech: String(req.body?.tech || '').slice(0, 50),
+      sub: String(req.body?.sub || '').slice(0, 160),
+      dept: String(req.body?.dept || '').slice(0, 100),
+      theme: String(req.body?.theme || 'blue').slice(0, 30),
+      rating: String(req.body?.rating || '').slice(0, 80),
+      schedule: String(req.body?.schedule || '').slice(0, 100),
+      customSetsLabel: String(req.body?.customSetsLabel || '').slice(0, 80),
+      customProblemsLabel: String(req.body?.customProblemsLabel || '').slice(0, 80),
+      customColor: String(req.body?.customColor || '').slice(0, 50),
+      infoItems: Array.isArray(req.body?.infoItems)
+        ? req.body.infoItems.slice(0, 6).map((it) => ({
+            icon: String(it?.icon || '•').slice(0, 10),
+            text: String(it?.text || '').slice(0, 100),
+          }))
+        : [],
+      highlights: Array.isArray(req.body?.highlights)
+        ? req.body.highlights.map((h) => String(h).slice(0, 120)).filter(Boolean).slice(0, 6)
+        : [],
+    };
+    saveCoursesMeta(metaMap);
+
+    res.json({ ok: true, name, assignedCount: setIds.length, meta: metaMap[name] });
+  });
+
+  r.put('/courses/:name', (req, res) => {
+    const oldName = decodeURIComponent(req.params.name).trim();
+    const newName = String(req.body?.newName || req.body?.name || oldName).trim().slice(0, 60);
+    if (!newName) return res.status(400).json({ error: 'Tên khóa học không được để trống' });
+    const setIds = Array.isArray(req.body?.setIds) ? req.body.setIds.map(String) : null;
+    const sets = rawSets();
+    let changed = false;
+    for (const s of sets) {
+      if (s.group === oldName) {
+        if (setIds !== null) {
+          s.group = setIds.includes(s.id) ? newName : '';
+        } else {
+          s.group = newName;
+        }
+        changed = true;
+      } else if (setIds !== null && setIds.includes(s.id)) {
+        s.group = newName;
+        changed = true;
+      }
+    }
+    if (changed) saveSets(sets);
+
+    const metaMap = getCoursesMeta();
+    const existingMeta = metaMap[oldName] || {};
+    if (oldName !== newName) {
+      delete metaMap[oldName];
+    }
+    metaMap[newName] = {
+      ...existingMeta,
+      badge: req.body?.badge !== undefined ? String(req.body.badge).slice(0, 50) : (existingMeta.badge || ''),
+      tech: req.body?.tech !== undefined ? String(req.body.tech).slice(0, 50) : (existingMeta.tech || ''),
+      sub: req.body?.sub !== undefined ? String(req.body.sub).slice(0, 160) : (existingMeta.sub || ''),
+      dept: req.body?.dept !== undefined ? String(req.body.dept).slice(0, 100) : (existingMeta.dept || ''),
+      theme: req.body?.theme !== undefined ? String(req.body.theme).slice(0, 30) : (existingMeta.theme || 'blue'),
+      rating: req.body?.rating !== undefined ? String(req.body.rating).slice(0, 80) : (existingMeta.rating || ''),
+      schedule: req.body?.schedule !== undefined ? String(req.body.schedule).slice(0, 100) : (existingMeta.schedule || ''),
+      customSetsLabel: req.body?.customSetsLabel !== undefined ? String(req.body.customSetsLabel).slice(0, 80) : (existingMeta.customSetsLabel || ''),
+      customProblemsLabel: req.body?.customProblemsLabel !== undefined ? String(req.body.customProblemsLabel).slice(0, 80) : (existingMeta.customProblemsLabel || ''),
+      customColor: req.body?.customColor !== undefined ? String(req.body.customColor).slice(0, 50) : (existingMeta.customColor || ''),
+      infoItems: Array.isArray(req.body?.infoItems)
+        ? req.body.infoItems.slice(0, 6).map((it) => ({
+            icon: String(it?.icon || '•').slice(0, 10),
+            text: String(it?.text || '').slice(0, 100),
+          }))
+        : (existingMeta.infoItems || []),
+      highlights: Array.isArray(req.body?.highlights)
+        ? req.body.highlights.map((h) => String(h).slice(0, 120)).filter(Boolean).slice(0, 6)
+        : (existingMeta.highlights || []),
+    };
+    saveCoursesMeta(metaMap);
+
+    res.json({ ok: true, name: newName, meta: metaMap[newName] });
+  });
+
+  r.delete('/courses/:name', (req, res) => {
+    const name = decodeURIComponent(req.params.name).trim();
+    const sets = rawSets();
+    let changed = false;
+    for (const s of sets) {
+      if (s.group === name) {
+        s.group = '';
+        changed = true;
+      }
+    }
+    if (changed) saveSets(sets);
+
+    const metaMap = getCoursesMeta();
+    if (metaMap[name]) {
+      delete metaMap[name];
+      saveCoursesMeta(metaMap);
+    }
+    res.json({ ok: true });
+  });
+
   /* ---------- Bài nộp ---------- */
   r.get('/submissions', (req, res) => {
     const where = [];
@@ -173,6 +341,7 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
       compileLog: row.compile_log,
       failOutput: row.fail_output || null,
       source: row.source,
+      lang: row.lang || 'c',
       createdAt: row.created_at,
     });
   });
