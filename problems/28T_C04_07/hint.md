@@ -1,0 +1,1 @@
+Tổ hợp Pascal: $C(n, k) = C(n-1, k-1) + C(n-1, k)$.

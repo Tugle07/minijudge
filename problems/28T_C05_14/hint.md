@@ -1,0 +1,1 @@
+Tính ước chung lớn nhất của toàn bộ mảng.

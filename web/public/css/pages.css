@@ -135,7 +135,7 @@
 .step.done:not(:last-child)::after { background: color-mix(in oklch, var(--ac) 55%, var(--line)); }
 .step-dot {
   z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-  border: 2px solid var(--line2); background: var(--bg); color: var(--fg3); font: 700 12px var(--font-code);
+  border: 2px solid var(--line2); background: var(--bg); color: var(--fg3); font: 700 13.5px var(--font-code); font-variant-numeric: tabular-nums;
 }
 .step.started .step-dot { border-color: var(--fg3); color: var(--fg); }
 .step.current .step-dot { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }

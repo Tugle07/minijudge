@@ -1,0 +1,6 @@
+title=Xâu con liên tiếp các ký tự giống nhau dài nhất
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

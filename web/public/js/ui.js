@@ -31,12 +31,17 @@ export const SPINNER = '<span class="spinner" aria-hidden="true"></span>';
 
 export const LANGS = {
   c: { name: 'C', badge: 'C11 · gcc', color: 'var(--fg2)' },
-  cpp: { name: 'C++', badge: 'C++17 · g++', color: '#3b82f6' },
-  py: { name: 'Python', badge: 'Python 3', color: '#eab308' },
+  cpp14: { name: 'C++14', badge: 'C++14 · g++', color: '#06b6d4' },
+  cpp: { name: 'C++17', badge: 'C++17 · g++', color: '#3b82f6' },
+  py: { name: 'Python 3', badge: 'Python 3', color: '#eab308' },
+  pypy3: { name: 'PyPy 3', badge: 'PyPy 3', color: '#f97316' },
 };
-export const langName = (l = 'c') => LANGS[l]?.name || (l === 'python' ? 'Python' : l === 'c++' ? 'C++' : 'C');
+export const langName = (l = 'c') => {
+  const norm = l === 'python' || l === 'py3' ? 'py' : l === 'c++' || l === 'cpp17' ? 'cpp' : l === 'c++14' ? 'cpp14' : l === 'pypy' ? 'pypy3' : (l || 'c');
+  return LANGS[norm]?.name || 'C';
+};
 export const langBadge = (l = 'c') => {
-  const norm = l === 'python' ? 'py' : l === 'c++' ? 'cpp' : (l || 'c');
+  const norm = l === 'python' || l === 'py3' ? 'py' : l === 'c++' || l === 'cpp17' ? 'cpp' : l === 'c++14' ? 'cpp14' : l === 'pypy' ? 'pypy3' : (l || 'c');
   const info = LANGS[norm] || LANGS.c;
   return `<span class="pill mono" style="font-size:11px;padding:1px 6px;border-radius:4px;background:color-mix(in oklch, ${info.color} 15%, transparent);color:${info.color};font-weight:600;">${esc(info.name)}</span>`;
 };

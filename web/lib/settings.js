@@ -1,5 +1,5 @@
 /* Cài đặt chỉnh được trong Admin, lưu trong bảng settings. Giá trị khởi tạo lấy từ biến môi trường. */
-const VALID_LANGS = ['c', 'cpp', 'py'];
+export const VALID_LANGS = ['c', 'cpp14', 'cpp', 'py', 'pypy3'];
 const DEFAULTS = { register_code: '', allow_register: '1', banner: '', allowed_langs: 'c' };
 
 export function createSettings(db, { registerCode = '' } = {}) {

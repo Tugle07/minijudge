@@ -1,0 +1,1 @@
+Số nguyên tố là số $> 1$ và chỉ chia hết cho 1 và chính nó. Duyệt kiểm tra tới $\sqrt{N}$.

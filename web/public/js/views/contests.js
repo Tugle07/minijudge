@@ -51,6 +51,7 @@ export async function render(ctx) {
         <button class="contest-card ${c.phase}" data-go="${targetUrl}">
           <div class="contest-card-top">
             <span class="pill" style="color:${color}">${label}</span>
+            ${c.visibility === 'restricted' ? '<span class="pill" style="background:color-mix(in oklch, #ea580c 15%, transparent);color:#ea580c;border:1px solid color-mix(in oklch, #ea580c 35%, transparent);font-size:11px;padding:2px 7px;font-weight:600">🔒 Chỉ định</span>' : ''}
             <span class="faint" style="font-size:13px">${c.problemCount} bài · ${fmtDuration(c.endAt - c.startAt)}</span>
           </div>
           <b class="contest-card-title">${esc(c.title)}</b>

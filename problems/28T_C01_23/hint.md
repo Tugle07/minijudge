@@ -1,0 +1,1 @@
+Doremon leo cầu thang sao cho số bước là bội số của $m$.

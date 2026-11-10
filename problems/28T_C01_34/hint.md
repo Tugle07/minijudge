@@ -1,0 +1,1 @@
+Kiểm tra số tiền cược ban đầu của mỗi người có bằng nhau không.

@@ -1,0 +1,1 @@
+Dùng hàm `fmax`, `fmin` hoặc câu lệnh `if` để tìm số lớn nhất và nhỏ nhất.

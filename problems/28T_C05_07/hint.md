@@ -1,0 +1,1 @@
+Đếm số cặp có hiệu bằng $K$ (hoặc khoảng cách nhỏ nhất).

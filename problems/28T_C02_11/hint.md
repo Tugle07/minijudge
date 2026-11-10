@@ -1,0 +1,1 @@
+Duyệt từ 1 đến $N$, dùng toán tử $\%$ 2 để phân loại.

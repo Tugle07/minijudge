@@ -1,0 +1,1 @@
+Lọc các sinh viên có điểm GPA $\ge 2.5$.

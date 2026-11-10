@@ -7,6 +7,8 @@ web/data/
 *.db
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
 .env
 problems/*/sol
 judge-work/
@@ -14,3 +16,5 @@ judge-work/
 # Du lieu sinh vien, khong dua len repo
 bang-diem-*.csv
 docs/Tai_Khoan/
+scratch/
+problems-28tech/

@@ -1,0 +1,1 @@
+Dùng thuật toán Euclid tìm $\gcd(a, b)$, sau đó $\text{lcm}(a, b) = (a * b) / \gcd(a, b)$ với kiểu `long long`.

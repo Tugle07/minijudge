@@ -1,0 +1,1 @@
+Bài toán biến đổi $n$ về 1 với số bước ít nhất.

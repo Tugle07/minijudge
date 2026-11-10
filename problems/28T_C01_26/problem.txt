@@ -1,0 +1,6 @@
+title=Số lớn nhất nhỏ nhất trong 4 số
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

@@ -1,0 +1,1 @@
+Số viên đá tối thiểu lát quảng trường $n \times m$ là $\lceil n / a \rceil \times \lceil m / a \rceil$.

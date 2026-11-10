@@ -1,0 +1,1 @@
+Dùng mảng đánh dấu in các phần tử xuất hiện ít nhất 1 lần.

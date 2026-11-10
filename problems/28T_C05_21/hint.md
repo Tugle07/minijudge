@@ -1,0 +1,1 @@
+Dùng mảng đánh dấu để đếm số giá trị phân biệt.

@@ -277,59 +277,40 @@ export async function render(ctx) {
 
     // Courses (named groups)
     const courses = [];
-    const orphanSets = [];
     for (const [name, items] of groups.entries()) {
-      if (name) courses.push({ name, items });
-      else orphanSets.push(...items);
+      if (!name) continue;
+      const cm = coursesMeta[name];
+      if (cm && (cm.visibility === 'unlisted' || cm.visibility === 'draft')) {
+        continue;
+      }
+      courses.push({ name, items });
     }
 
-    if (!courses.length && !orphanSets.length) {
+    if (!courses.length) {
       grid.innerHTML = `
         <div class="empty-box">
-          <b style="font-size:17px;font-weight:600">Không tìm thấy khóa học hoặc khối bài tập nào</b>
+          <b style="font-size:17px;font-weight:600">Không tìm thấy khóa học nào phù hợp</b>
           <span class="muted" style="font-size:14px">Thử từ khóa khác hoặc bỏ bớt bộ lọc.</span>
           <button class="btn" data-clear style="margin-top:6px">Xóa bộ lọc</button>
         </div>`;
       return;
     }
 
-    let html = '';
-
-    // Render Course Cards Grid
-    if (courses.length) {
-      html += `
-        <section class="courses-section">
-          <div class="courses-head">
-            <div>
-              <h2>Khóa học & Lộ trình đào tạo</h2>
-              <p>Chọn một khóa học để xem lộ trình từng chương và bắt đầu làm bài tập</p>
-            </div>
-            <span class="count">${courses.length} khóa học</span>
+    // Render Course Cards Grid - Trang luyện tập CHỈ hiển thị các khóa học
+    const html = `
+      <section class="courses-section">
+        <div class="courses-head">
+          <div>
+            <h2>Khóa học & Lộ trình đào tạo</h2>
+            <p>Chọn một khóa học để xem lộ trình từng chương và bắt đầu làm bài tập</p>
           </div>
-          <div class="courses-grid">
-            ${courses.map((c, i) => courseCard(c.name, c.items, i)).join('')}
-          </div>
-        </section>
-      `;
-    }
-
-    // Render orphan sets if any
-    if (orphanSets.length) {
-      html += `
-        <section class="courses-section" style="margin-top:36px">
-          <div class="courses-head">
-            <div>
-              <h2>Khối bài tập tự do khác</h2>
-              <p>Các khối bài tập bổ trợ chưa phân vào khóa học chính</p>
-            </div>
-            <span class="count">${orphanSets.length} khối</span>
-          </div>
-          <div class="set-grid">
-            ${orphanSets.map((s) => fallbackSetCard(s)).join('')}
-          </div>
-        </section>
-      `;
-    }
+          <span class="count">${courses.length} khóa học</span>
+        </div>
+        <div class="courses-grid">
+          ${courses.map((c, i) => courseCard(c.name, c.items, i)).join('')}
+        </div>
+      </section>
+    `;
 
     grid.innerHTML = html;
   }

@@ -1,0 +1,1 @@
+Tính số cúp và huy chương tối thiểu cần kệ.

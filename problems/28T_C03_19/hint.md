@@ -1,0 +1,1 @@
+Phân tích thừa số nguyên tố, đếm thứ tự xuất hiện của từng ước nguyên tố.

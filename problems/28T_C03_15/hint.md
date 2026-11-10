@@ -1,0 +1,1 @@
+Tách chữ số đầu và cuối, so sánh tỉ lệ $2:1$ hoặc $1:2$ hoặc bằng nhau, chuỗi ở giữa đối xứng.

@@ -1,0 +1,6 @@
+title=Sắp xếp các từ theo thứ tự từ điển
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

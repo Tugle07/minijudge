@@ -1,0 +1,1 @@
+Tính $r = \text{round}(\sqrt{N})$, nếu $r * r == N$ thì là số chính phương.

@@ -26,6 +26,11 @@ export async function render(ctx) {
               <span class="muted" style="font-size:13px">· gcc -std=c11 -O2</span>
             </label>
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" data-lang-opt="cpp14" ${s.allowedLangs.includes('cpp14') ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer">
+              <span style="font-weight:600">C++ (C++14)</span>
+              <span class="muted" style="font-size:13px">· g++ -std=c++14 -O2</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
               <input type="checkbox" data-lang-opt="cpp" ${s.allowedLangs.includes('cpp') ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer">
               <span style="font-weight:600">C++ (C++17)</span>
               <span class="muted" style="font-size:13px">· g++ -std=c++17 -O2</span>
@@ -34,6 +39,11 @@ export async function render(ctx) {
               <input type="checkbox" data-lang-opt="py" ${s.allowedLangs.includes('py') ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer">
               <span style="font-weight:600">Python (Python 3)</span>
               <span class="muted" style="font-size:13px">· python 3.11</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+              <input type="checkbox" data-lang-opt="pypy3" ${s.allowedLangs.includes('pypy3') ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--brand);cursor:pointer">
+              <span style="font-weight:600">Python (PyPy 3)</span>
+              <span class="muted" style="font-size:13px">· pypy 7.3 JIT</span>
             </label>
           </div>
         </div>

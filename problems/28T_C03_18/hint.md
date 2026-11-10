@@ -1,0 +1,1 @@
+Định lý Euclid-Euler: số hoàn hảo chẵn có dạng $2^{p-1} * (2^p - 1)$ với $2^p - 1$ là số nguyên tố Mersenne.

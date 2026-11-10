@@ -1,0 +1,1 @@
+Lọc các số nguyên tố trong mảng và tính trung bình cộng.

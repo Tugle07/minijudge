@@ -1,0 +1,6 @@
+title=Đếm số lượng từ trong xâu
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Dễ
+samples=1

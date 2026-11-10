@@ -1,0 +1,1 @@
+Đếm tần suất xuất hiện của từng phần tử.

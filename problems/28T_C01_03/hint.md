@@ -1,0 +1,1 @@
+Áp dụng công thức $F = (C * 9.0 / 5) + 32$. In định dạng `%.2f`.

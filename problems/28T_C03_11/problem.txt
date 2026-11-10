@@ -1,0 +1,6 @@
+title=Số thuận nghịch có 3 ước nguyên tố
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

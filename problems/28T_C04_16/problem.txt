@@ -1,0 +1,6 @@
+title=Chữ số lớn nhất và nhỏ nhất
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

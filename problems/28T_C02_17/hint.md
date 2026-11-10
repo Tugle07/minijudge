@@ -1,0 +1,1 @@
+Dùng `n % 10` lấy chữ số cuối và cộng dồn, sau đó `n /= 10`.

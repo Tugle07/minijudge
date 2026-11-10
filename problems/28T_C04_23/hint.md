@@ -1,0 +1,1 @@
+Kiểm tra $A[n-1] \% 2 == 0$ và đệ quy cho $n-1$ phần tử đầu.

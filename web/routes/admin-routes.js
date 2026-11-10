@@ -81,6 +81,8 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
         tags: Array.isArray(b.tags) ? b.tags.map((t) => String(t).slice(0, 30)).slice(0, 10) : [],
         difficulty: ['Dễ', 'Trung bình', 'Khó'].includes(b.difficulty) ? b.difficulty : 'Trung bình',
         status: SET_STATUSES.includes(b.status) ? b.status : 'draft',
+        visibility: b.visibility,
+        allowUsers: b.allowUsers,
         openAt: b.openAt || null,
         deadline: b.deadline || null,
         hue: Number.isFinite(Number(b.hue)) ? Number(b.hue) : 200,
@@ -97,8 +99,20 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
   r.patch('/sets/:id/status', (req, res) => {
     const sets = rawSets();
     const s = sets.find((x) => x.id === req.params.id);
-    if (!s || !SET_STATUSES.includes(req.body?.status)) return res.status(400).json({ error: 'Yêu cầu không hợp lệ' });
-    s.status = req.body.status;
+    if (!s) return res.status(404).json({ error: 'Không tìm thấy khối' });
+    if (req.body?.visibility && ['public', 'unlisted', 'restricted', 'draft'].includes(req.body.visibility)) {
+      s.visibility = req.body.visibility;
+      if (s.visibility === 'draft') s.status = 'draft';
+      else if (s.visibility === 'unlisted') s.status = 'hidden';
+      else s.status = 'open';
+    } else if (SET_STATUSES.includes(req.body?.status)) {
+      s.status = req.body.status;
+      if (s.status === 'draft') s.visibility = 'draft';
+      else if (s.status === 'hidden') s.visibility = 'unlisted';
+      else s.visibility = 'public';
+    } else {
+      return res.status(400).json({ error: 'Yêu cầu không hợp lệ' });
+    }
     saveSets(sets);
     res.json(s);
   });
@@ -121,13 +135,23 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
   r.post('/sets-batch', (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : [];
     if (!ids.length) return res.status(400).json({ error: 'Chưa chọn khối bài nào' });
-    const { group, status } = req.body;
+    const { group, status, visibility } = req.body ?? {};
     const sets = rawSets();
     let updated = 0;
     for (const s of sets) {
       if (ids.includes(s.id)) {
         if (typeof group === 'string') s.group = group.trim().slice(0, 60);
-        if (SET_STATUSES.includes(status)) s.status = status;
+        if (visibility && ['public', 'unlisted', 'restricted', 'draft'].includes(visibility)) {
+          s.visibility = visibility;
+          if (s.visibility === 'draft') s.status = 'draft';
+          else if (s.visibility === 'unlisted') s.status = 'hidden';
+          else s.status = 'open';
+        } else if (SET_STATUSES.includes(status)) {
+          s.status = status;
+          if (s.status === 'draft') s.visibility = 'draft';
+          else if (s.status === 'hidden') s.visibility = 'unlisted';
+          else s.visibility = 'public';
+        }
         updated++;
       }
     }
@@ -174,7 +198,8 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
   r.post('/courses', (req, res) => {
     const name = String(req.body?.name || '').trim().slice(0, 60);
     if (!name) return res.status(400).json({ error: 'Tên khóa học không được để trống' });
-    const setIds = Array.isArray(req.body?.setIds) ? req.body.setIds.map(String) : [];
+    const rawSetIds = req.body?.setIds !== undefined ? req.body.setIds : req.body?.sets;
+    const setIds = Array.isArray(rawSetIds) ? rawSetIds.map(String) : [];
     const sets = rawSets();
     let updated = false;
     for (const s of sets) {
@@ -187,6 +212,13 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
 
     const metaMap = getCoursesMeta();
     metaMap[name] = {
+      visibility: ['public', 'unlisted', 'restricted', 'draft'].includes(req.body?.visibility) ? req.body.visibility : 'public',
+      allowUsers: Array.isArray(req.body?.allowUsers)
+        ? req.body.allowUsers.map((x) => String(x || '').trim().toLowerCase()).filter(Boolean)
+        : typeof req.body?.allowUsers === 'string'
+          ? req.body.allowUsers.split(/[\r\n,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean)
+          : [],
+      defaultLang: String(req.body?.defaultLang || '').trim().slice(0, 10),
       badge: String(req.body?.badge || '').slice(0, 50),
       tech: String(req.body?.tech || '').slice(0, 50),
       sub: String(req.body?.sub || '').slice(0, 160),
@@ -216,7 +248,8 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     const oldName = decodeURIComponent(req.params.name).trim();
     const newName = String(req.body?.newName || req.body?.name || oldName).trim().slice(0, 60);
     if (!newName) return res.status(400).json({ error: 'Tên khóa học không được để trống' });
-    const setIds = Array.isArray(req.body?.setIds) ? req.body.setIds.map(String) : null;
+    const rawSetIds = req.body?.setIds !== undefined ? req.body.setIds : req.body?.sets;
+    const setIds = Array.isArray(rawSetIds) ? rawSetIds.map(String) : null;
     const sets = rawSets();
     let changed = false;
     for (const s of sets) {
@@ -241,6 +274,17 @@ export function adminRoutes({ db, catalog, auth, queue, judge, settings, adminSt
     }
     metaMap[newName] = {
       ...existingMeta,
+      visibility: req.body?.visibility && ['public', 'unlisted', 'restricted', 'draft'].includes(req.body.visibility)
+        ? req.body.visibility
+        : (existingMeta.visibility || 'public'),
+      allowUsers: req.body?.allowUsers !== undefined
+        ? (Array.isArray(req.body.allowUsers)
+            ? req.body.allowUsers.map((x) => String(x || '').trim().toLowerCase()).filter(Boolean)
+            : typeof req.body.allowUsers === 'string'
+              ? req.body.allowUsers.split(/[\r\n,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean)
+              : [])
+        : (existingMeta.allowUsers || []),
+      defaultLang: req.body?.defaultLang !== undefined ? String(req.body.defaultLang).trim().slice(0, 10) : (existingMeta.defaultLang || ''),
       badge: req.body?.badge !== undefined ? String(req.body.badge).slice(0, 50) : (existingMeta.badge || ''),
       tech: req.body?.tech !== undefined ? String(req.body.tech).slice(0, 50) : (existingMeta.tech || ''),
       sub: req.body?.sub !== undefined ? String(req.body.sub).slice(0, 160) : (existingMeta.sub || ''),

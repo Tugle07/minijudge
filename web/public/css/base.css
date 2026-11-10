@@ -172,6 +172,44 @@ button.trow:hover:not(:disabled) { background: var(--bg3); }
 .input:focus { border-color: var(--accent); outline: 0; box-shadow: 0 0 0 3px var(--accent-soft); }
 .input.err { border-color: var(--wa); }
 
+/* Select / Dropdown chuẩn hiện đại: có mũi tên SVG đồng bộ, không bị menu mặc định thô của Windows */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font: inherit;
+  color: var(--fg);
+  background-color: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  padding: 0 32px 0 12px;
+  height: var(--h-control, 36px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 10px) center;
+  background-size: 14px 14px;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+select:hover {
+  border-color: var(--line);
+  background-color: var(--bg3);
+}
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+select option {
+  background-color: var(--bg2);
+  color: var(--fg);
+  padding: 8px 12px;
+}
+
 /* Thông báo nhanh */
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;

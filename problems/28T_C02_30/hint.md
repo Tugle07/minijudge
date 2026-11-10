@@ -1,0 +1,1 @@
+Đọc $T$, chạy vòng lặp $T$ lần kiểm tra `n % 2 == 0`.

@@ -33,7 +33,18 @@ export async function renderEditor(ctx, id) {
     });
 
   function pick(x) {
-    return { title: x.title, difficulty: x.difficulty, timeMs: x.timeMs, memoryMb: x.memoryMb, tags: x.tags, statement: x.statement, hint: x.hint, solution: x.solution };
+    return {
+      title: x.title,
+      difficulty: x.difficulty,
+      timeMs: x.timeMs,
+      memoryMb: x.memoryMb,
+      tags: x.tags,
+      visibility: x.visibility || (x.status === 'pub' ? 'public' : 'draft'),
+      allowUsers: Array.isArray(x.allowUsers) ? x.allowUsers : [],
+      statement: x.statement,
+      hint: x.hint,
+      solution: x.solution,
+    };
   }
   const markDirty = () => {
     st.dirty = true;
@@ -60,7 +71,15 @@ export async function renderEditor(ctx, id) {
   const body = ctx.page.querySelector('[data-tabbody]');
 
   function statusPill() {
-    return p.status === 'pub' ? pill('Đã xuất bản', 'var(--ac)') : p.status === 'deleted' ? pill('Thùng rác', 'var(--wa)') : pill('Nháp', 'var(--pd)');
+    if (p.status === 'deleted') return pill('Thùng rác', 'var(--wa)');
+    const v = p.visibility || (p.status === 'pub' ? 'public' : 'draft');
+    if (v === 'public') return pill('🌐 Công khai', 'var(--ac)');
+    if (v === 'unlisted') return pill('🔗 Có link', '#0284c7');
+    if (v === 'restricted') {
+      const n = Array.isArray(p.allowUsers) ? p.allowUsers.length : 0;
+      return pill(`🔒 Chỉ định (${n})`, '#ea580c');
+    }
+    return pill('📝 Nháp', 'var(--pd)');
   }
   /* Nguồn bài + các nút Xóa / Khôi phục; vẽ lại sau mỗi thao tác đổi nguồn hoặc trạng thái. */
   function drawHead() {
@@ -115,6 +134,46 @@ export async function renderEditor(ctx, id) {
         <label class="afield"><span>Bộ nhớ (MB)</span><input class="input mono" type="number" min="16" max="1024" data-f="memoryMb" value="${form.memoryMb}" ${dis} /></label>
         <label class="afield" style="grid-column:1/-1"><span>Nhãn</span><input class="input" data-f="tags" value="${esc(form.tags)}" placeholder="Cách nhau bằng dấu phẩy" /><span class="help">Ví dụ: cửa sổ trượt, mảng</span></label>
         <div class="afield" style="grid-column:1/-1"><span>Thuộc khối</span><span class="muted">${p.sets.map((s) => esc(s.short)).join(', ') || 'Chưa thuộc khối nào — thêm bài vào khối ở trang Khối bài tập.'}</span></div>
+        <div class="afield" style="grid-column:1/-1;background:var(--bg3);padding:14px;border-radius:10px;border:1px solid var(--line2)">
+          <div style="font-weight:600;font-size:13.5px;margin-bottom:8px">Chế độ hiển thị & Quyền truy cập</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:8px">
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--line2);cursor:pointer">
+              <input type="radio" name="prob-vis" value="public" ${form.visibility === 'public' ? 'checked' : ''} style="margin-top:3px;accent-color:var(--accent)" ${dis} />
+              <div>
+                <div style="font-weight:600;font-size:13px">🌐 Công khai</div>
+                <div class="faint" style="font-size:11px">Hiện trong khối bài, ai cũng thấy & làm được</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--line2);cursor:pointer">
+              <input type="radio" name="prob-vis" value="unlisted" ${form.visibility === 'unlisted' ? 'checked' : ''} style="margin-top:3px;accent-color:var(--accent)" ${dis} />
+              <div>
+                <div style="font-weight:600;font-size:13px">🔗 Chỉ có link</div>
+                <div class="faint" style="font-size:11px">Ẩn khỏi danh mục khối, chỉ ai có link mới mở được</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--line2);cursor:pointer">
+              <input type="radio" name="prob-vis" value="restricted" ${form.visibility === 'restricted' ? 'checked' : ''} style="margin-top:3px;accent-color:var(--accent)" ${dis} />
+              <div>
+                <div style="font-weight:600;font-size:13px">🔒 Chỉ định</div>
+                <div class="faint" style="font-size:11px">Chỉ tài khoản admin add tên vào mới xem & nộp được</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--line2);cursor:pointer">
+              <input type="radio" name="prob-vis" value="draft" ${form.visibility === 'draft' ? 'checked' : ''} style="margin-top:3px;accent-color:var(--accent)" ${dis} />
+              <div>
+                <div style="font-weight:600;font-size:13px">📝 Bản nháp</div>
+                <div class="faint" style="font-size:11px">Chỉ Quản trị viên mới thấy và chạy thử</div>
+              </div>
+            </label>
+          </div>
+          <div data-prob-allow-users-box style="margin-top:10px;${form.visibility === 'restricted' ? '' : 'display:none'}">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+              <span style="font-weight:600;font-size:12.5px;color:var(--accent)">Danh sách tài khoản được phép truy cập (Username)</span>
+              <span class="faint" style="font-size:11.5px">Mỗi tài khoản 1 dòng hoặc cách nhau bằng dấu phẩy</span>
+            </div>
+            <textarea class="input font-mono" data-f="allowUsers" rows="3" placeholder="user1, user2" style="font-size:12.5px;line-height:1.5" ${dis}>${esc(Array.isArray(form.allowUsers) ? form.allowUsers.join('\n') : form.allowUsers || '')}</textarea>
+          </div>
+        </div>
       </div>`,
     statement: () => `
       <div class="md-split">
@@ -336,7 +395,17 @@ export async function renderEditor(ctx, id) {
   async function save(status) {
     try {
       if (st.testsDirty && custom) await saveTests();
-      p = await api(`/api/admin/problems/${encodeURIComponent(p.id)}`, { method: 'PUT', body: { ...form, status } });
+      const ausersInput = ctx.page.querySelector('[data-f="allowUsers"]');
+      const allowUsers = ausersInput
+        ? ausersInput.value.split(/[\r\n,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean)
+        : (Array.isArray(form.allowUsers) ? form.allowUsers : []);
+      let vis = form.visibility || (status === 'pub' ? 'public' : 'draft');
+      if (status === 'draft' && vis === 'public') vis = 'draft';
+      if (status === 'pub' && vis === 'draft') vis = 'public';
+      p = await api(`/api/admin/problems/${encodeURIComponent(p.id)}`, {
+        method: 'PUT',
+        body: { ...form, visibility: vis, allowUsers, status },
+      });
       form = pick(p);
       tests = p.tests;
       Object.assign(st, { dirty: false, errors: {} });
@@ -371,6 +440,13 @@ export async function renderEditor(ctx, id) {
     markDirty();
   });
   ctx.page.addEventListener('change', (e) => {
+    if (e.target.name === 'prob-vis') {
+      form.visibility = e.target.value;
+      const box = ctx.page.querySelector('[data-prob-allow-users-box]');
+      if (box) box.style.display = form.visibility === 'restricted' ? 'block' : 'none';
+      markDirty();
+      return;
+    }
     if (e.target.dataset.sub) return drawTab();
     if (e.target.matches('[data-sample]')) {
       tests[Number(e.target.dataset.sample)].sample = e.target.checked;

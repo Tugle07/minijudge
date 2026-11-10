@@ -1,0 +1,1 @@
+Tính giai thừa ở mẫu và cộng dồn.

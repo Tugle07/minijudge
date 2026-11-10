@@ -1,0 +1,1 @@
+Đếm số lượng số nguyên tố khác nhau trong mảng.

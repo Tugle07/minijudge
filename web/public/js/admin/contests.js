@@ -8,6 +8,17 @@ const PHASE = {
   running: ['Đang thi', 'var(--ac)'],
   ended: ['Đã kết thúc', 'var(--fg3)'],
 };
+
+function contestVisPill(c) {
+  const v = c.visibility || (c.status === 'published' ? 'public' : 'draft');
+  if (v === 'public') return pill('Công khai', 'var(--ac)');
+  if (v === 'unlisted') return pill('Có link', '#0284c7');
+  if (v === 'restricted') {
+    const n = Array.isArray(c.settings?.allowUsers) ? c.settings.allowUsers.length : 0;
+    return pill(`Chỉ định (${n})`, '#ea580c');
+  }
+  return pill('Nháp', 'var(--pd)');
+}
 const EVENT_TEXT = {
   join: 'Vào phòng', rejoin: 'Vào lại', fullscreen_exit: 'Thoát toàn màn hình', fullscreen_enter: 'Bật lại toàn màn hình',
   tab_hidden: 'Rời trang thi', tab_visible: 'Quay lại trang thi', blur: 'Chuyển cửa sổ khác', multi_screen: 'Nhiều màn hình',
@@ -111,12 +122,13 @@ async function list(ctx) {
     ctx.page.innerHTML = `
       <div class="panel">
         <table class="atable">
-          <thead><tr><th>Cuộc thi</th><th>Trạng thái</th><th>Bắt đầu</th><th class="num">Thời gian</th><th class="num">Số bài</th><th class="num">Thí sinh</th><th style="width:56px"></th></tr></thead>
+          <thead><tr><th>Cuộc thi</th><th>Giai đoạn</th><th>Chế độ</th><th>Bắt đầu</th><th class="num">Thời gian</th><th class="num">Số bài</th><th class="num">Thí sinh</th><th style="width:56px"></th></tr></thead>
           <tbody>${contests
             .map(
               (c) => `<tr class="click" data-open="${c.id}">
                 <td style="font-weight:500">${esc(c.title)}</td>
                 <td>${pill(...PHASE[c.phase])}</td>
+                <td>${contestVisPill(c)}</td>
                 <td class="mono muted">${fmtDateTime(c.startAt)}</td>
                 <td class="num">${minutes(c.endAt - c.startAt)}</td>
                 <td class="num">${c.problemCount}</td>
@@ -180,8 +192,8 @@ async function editor(ctx, summary, problems, onSaved) {
   const full = summary ? await api(`/api/admin/contests/${summary.id}`) : null;
   const start = Date.now() + 3_600_000;
   const f = full
-    ? { ...full, settings: { ...full.settings }, problems: full.problems.map((p) => ({ problemId: p.problemId, subtasks: p.subtasks.map((s) => ({ ...s })) })) }
-    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, showSubtaskNotes: false }, problems: [] };
+    ? { ...full, visibility: full.visibility || (full.status === 'published' ? 'public' : 'draft'), settings: { ...full.settings }, problems: full.problems.map((p) => ({ problemId: p.problemId, subtasks: p.subtasks.map((s) => ({ ...s })) })) }
+    : { title: '', description: '', startAt: start - (start % 900_000), endAt: start - (start % 900_000) + 90 * 60_000, status: 'draft', visibility: 'public', settings: { code: Math.random().toString(36).slice(2, 8).toUpperCase(), ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, showSubtaskNotes: false }, problems: [] };
   let errors = {};
   const pmap = new Map(problems.map((p) => [p.id, p]));
 
@@ -259,8 +271,39 @@ async function editor(ctx, summary, problems, onSaved) {
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" data-b="publishResults" ${f.settings.publishResults ? 'checked' : ''} />Công bố bảng kết quả cho mọi người (sau giờ thi)</label>
       <label style="display:flex;gap:7px;align-items:center" title="Mô tả thường nêu hướng giải hoặc trường hợp biên — nên tắt khi kiểm tra"><input type="checkbox" data-b="showSubtaskNotes" ${f.settings.showSubtaskNotes ? 'checked' : ''} />Hiện mô tả subtask cho thí sinh (thường lộ hướng giải, nên tắt khi kiểm tra)</label>
     </div>
-    <div class="afield"><span>Trạng thái</span><div class="seg" style="max-width:320px">${[['draft', 'Nháp'], ['published', 'Xuất bản']].map(([k, l]) => `<button type="button" class="${f.status === k ? 'on' : ''}" data-status="${k}">${l}</button>`).join('')}</div>
-      <span class="help">Nháp: thí sinh chưa thấy. Xuất bản: hiện trong mục Cuộc thi, vào được khi đến giờ.</span></div>
+    <div class="afield">
+      <span>Chế độ hiển thị & Quyền tham gia</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;margin-top:4px;">
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border:1px solid var(--line2);border-radius:8px;cursor:pointer;background:var(--bg2);">
+          <input type="radio" name="contest_vis" value="public" ${f.visibility === 'public' ? 'checked' : ''} style="margin-top:2px;">
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <b style="font-size:13px;color:var(--fg);">🌐 Công khai</b>
+            <span class="muted" style="font-size:11.5px;">Hiện ở trang Cuộc thi, mọi thí sinh đều thấy.</span>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border:1px solid var(--line2);border-radius:8px;cursor:pointer;background:var(--bg2);">
+          <input type="radio" name="contest_vis" value="unlisted" ${f.visibility === 'unlisted' ? 'checked' : ''} style="margin-top:2px;">
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <b style="font-size:13px;color:var(--fg);">🔗 Có link</b>
+            <span class="muted" style="font-size:11.5px;">Ẩn khỏi trang ngoài, chỉ ai có link mới vào thi.</span>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border:1px solid var(--line2);border-radius:8px;cursor:pointer;background:var(--bg2);">
+          <input type="radio" name="contest_vis" value="restricted" ${f.visibility === 'restricted' ? 'checked' : ''} style="margin-top:2px;">
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <b style="font-size:13px;color:var(--fg);">🔒 Chỉ định</b>
+            <span class="muted" style="font-size:11.5px;">Chỉ tài khoản trong danh sách mới được thi.</span>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border:1px solid var(--line2);border-radius:8px;cursor:pointer;background:var(--bg2);">
+          <input type="radio" name="contest_vis" value="draft" ${f.visibility === 'draft' ? 'checked' : ''} style="margin-top:2px;">
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            <b style="font-size:13px;color:var(--fg);">📝 Bản nháp</b>
+            <span class="muted" style="font-size:11.5px;">Chỉ Admin thấy và làm thử đề thi.</span>
+          </div>
+        </label>
+      </div>
+    </div>
     <div class="afield">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:500">Bài thi</span><span class="faint" style="font-size:13px">${f.problems.length} bài · tổng ${f.problems.reduce((s, p) => s + p.subtasks.reduce((a, x) => a + (Number(x.points) || 0), 0), 0)} điểm</span></div>
       <div style="position:relative"><input class="input" data-addq placeholder="Bấm để chọn bài, gõ mã (vd. P01) hoặc tên để lọc" autocomplete="off" /><div class="suggest" data-suggest hidden></div></div>
@@ -329,6 +372,11 @@ async function editor(ctx, summary, problems, onSaved) {
       f.endAt = f.startAt + Math.min(600, Math.max(5, Number(t.value) || 90)) * 60_000;
       redraw();
     }
+    if (t.name === 'contest_vis') {
+      f.visibility = t.value;
+      f.status = f.visibility === 'draft' ? 'draft' : 'published';
+      redraw();
+    }
     if (t.dataset.st) redraw();
   });
   host.addEventListener('click', (e) => {
@@ -395,7 +443,15 @@ async function editor(ctx, summary, problems, onSaved) {
       host.querySelector('[data-addq]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
-    const payload = { title: f.title, description: f.description, startAt: f.startAt, endAt: f.endAt, settings: f.settings };
+    const payload = {
+      title: f.title,
+      description: f.description,
+      startAt: f.startAt,
+      endAt: f.endAt,
+      visibility: f.visibility || (f.status === 'published' ? 'public' : 'draft'),
+      status: f.status,
+      settings: f.settings,
+    };
     try {
       let saved = contestId
         ? await api(`/api/admin/contests/${contestId}`, { method: 'PUT', body: payload })
@@ -408,7 +464,9 @@ async function editor(ctx, summary, problems, onSaved) {
         errors.problems = err.message;
         throw err;
       }
-      if (saved.status !== f.status) saved = await api(`/api/admin/contests/${saved.id}`, { method: 'PUT', body: { ...payload, status: f.status } });
+      if (saved.status !== f.status || saved.visibility !== f.visibility) {
+        saved = await api(`/api/admin/contests/${saved.id}`, { method: 'PUT', body: { ...payload, status: f.status, visibility: f.visibility } });
+      }
       toast(saved.status === 'published' ? 'Đã lưu, cuộc thi đang xuất bản' : 'Đã lưu nháp cuộc thi');
       close();
       onSaved();

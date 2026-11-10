@@ -1,0 +1,1 @@
+Tính khoảng cách giữa 2 điểm trong mặt phẳng Oxy.

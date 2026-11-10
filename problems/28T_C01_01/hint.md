@@ -1,0 +1,1 @@
+Áp dụng công thức $A(x) = x^3 + 3x^2 + x + 1$. Chú ý dùng kiểu `long long` để tránh tràn số khi tính $x^3$ với $-10^5 \le x \le 10^5$.

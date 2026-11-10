@@ -1,0 +1,1 @@
+2 vòng lặp lồng nhau duyệt hàng và cột.

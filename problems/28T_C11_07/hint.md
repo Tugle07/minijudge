@@ -1,0 +1,1 @@
+Lọc các sinh viên có điểm GPA $< 1.0$ (bị cảnh cáo/buộc thôi học).

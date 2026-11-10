@@ -1,0 +1,1 @@
+Công thức $S(n) = n + S(n-1)$, điều kiện dừng $S(0) = 0$.

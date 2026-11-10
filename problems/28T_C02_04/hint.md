@@ -1,0 +1,1 @@
+Khởi tạo tổng là số thực `double sum = 0.0`, cộng dồn `1.0 / i`.

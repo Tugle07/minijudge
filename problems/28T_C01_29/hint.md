@@ -1,0 +1,1 @@
+Kiểm tra 4 số lập thành cấp số nhân.

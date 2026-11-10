@@ -63,9 +63,9 @@ const contests = createContests(db, catalog);
   const visibleProblem = catalog.isProblemVisible;
   const visibleOfSet = catalog.visibleProblems;
   catalog.isProblemVisible = (p) => visibleProblem(p) && !contests.lockedProblemIds().has(p.id);
-  catalog.visibleProblems = (set) => {
+  catalog.visibleProblems = (set, user, coursesMeta) => {
     const locked = contests.lockedProblemIds();
-    return visibleOfSet(set).filter((pid) => !locked.has(pid));
+    return visibleOfSet(set, user, coursesMeta).filter((pid) => !locked.has(pid));
   };
 }
 const stats = createStats(db, catalog);

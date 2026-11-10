@@ -1,0 +1,1 @@
+Chia liên tục cho 10: `n /= 10` cho đến khi `n == 0`.

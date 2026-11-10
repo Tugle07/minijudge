@@ -1,0 +1,1 @@
+Mảng đánh dấu tìm phần tử xuất hiện ở cả 2 mảng.

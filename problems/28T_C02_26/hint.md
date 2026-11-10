@@ -1,0 +1,1 @@
+Duyệt $x$ từ 0 đến $n / a$, nếu $(n - a*x) \% b == 0$ thì có nghiệm.

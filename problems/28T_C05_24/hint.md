@@ -1,0 +1,1 @@
+In phần tử có tần suất xuất hiện lớn nhất.

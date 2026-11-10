@@ -165,9 +165,36 @@ export function createContests(db, catalog) {
       startAt: row.start_at,
       endAt: row.end_at,
       status: row.status,
+      visibility: row.visibility || (row.status === 'published' ? 'public' : 'draft'),
       settings: { code: '', ipPrefixes: [], allowUsers: [], publishResults: false, boardAfterFinish: true, blockMultiScreen: true, beepOnLeave: true, blockPaste: true, desktopOnly: true, showSubtaskNotes: false, ...JSON.parse(row.settings || '{}') },
       createdAt: row.created_at,
     };
+
+  const isUserAllowed = (allowUsers, user) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (!Array.isArray(allowUsers) || !allowUsers.length) return false;
+    const username = String(user.username || '').trim().toLowerCase();
+    return allowUsers.some((u) => String(u || '').trim().toLowerCase() === username);
+  };
+
+  const canAccessContest = (c, user) => {
+    if (!c) return false;
+    if (user?.role === 'admin') return true;
+    const vis = c.visibility || (c.status === 'published' ? 'public' : 'draft');
+    if (vis === 'draft' || c.status === 'draft') return false;
+    if (vis === 'restricted') return isUserAllowed(c.settings?.allowUsers, user);
+    return true; // 'public', 'unlisted'
+  };
+
+  const canListContest = (c, user) => {
+    if (!c) return false;
+    const vis = c.visibility || (c.status === 'published' ? 'public' : 'draft');
+    if (vis === 'draft' || c.status === 'draft') return false;
+    if (vis === 'unlisted') return false; // Hidden from public contest list!
+    if (vis === 'restricted') return isUserAllowed(c.settings?.allowUsers, user);
+    return true; // 'public'
+  };
 
   /* upcoming / running / ended theo đồng hồ server; nháp luôn là draft. */
   const phase = (c, now = Date.now()) => (c.status !== 'published' ? 'draft' : now < c.startAt ? 'upcoming' : now < c.endAt ? 'running' : 'ended');
@@ -407,5 +434,8 @@ export function createContests(db, catalog) {
     scoreboard,
     monitor,
     similar,
+    canAccessContest,
+    canListContest,
+    isUserAllowed,
   };
 }

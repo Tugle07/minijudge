@@ -1,0 +1,1 @@
+Dùng vòng lặp hoặc công thức $n * (n + 1) * (2n + 1) / 6$.

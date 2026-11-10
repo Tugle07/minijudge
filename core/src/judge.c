@@ -10,16 +10,20 @@
 
 typedef enum {
     LANG_C,
+    LANG_CPP14,
     LANG_CPP,
-    LANG_PYTHON
+    LANG_PYTHON,
+    LANG_PYPY
 } lang_t;
 
 static lang_t detect_lang(const char *path) {
     if (!path) return LANG_C;
     const char *dot = strrchr(path, '.');
     if (!dot) return LANG_C;
-    if (strcmp(dot, ".cpp") == 0 || strcmp(dot, ".cc") == 0 || strcmp(dot, ".cxx") == 0) return LANG_CPP;
-    if (strcmp(dot, ".py") == 0) return LANG_PYTHON;
+    if (strcmp(dot, ".cpp14") == 0) return LANG_CPP14;
+    if (strcmp(dot, ".cpp") == 0 || strcmp(dot, ".cc") == 0 || strcmp(dot, ".cxx") == 0 || strcmp(dot, ".cpp17") == 0) return LANG_CPP;
+    if (strcmp(dot, ".pypy") == 0 || strcmp(dot, ".pypy3") == 0) return LANG_PYPY;
+    if (strcmp(dot, ".py") == 0 || strcmp(dot, ".py3") == 0) return LANG_PYTHON;
     return LANG_C;
 }
 
@@ -44,17 +48,54 @@ int judge_compile(const char *source, const char *exe, const char *log_path, cha
     lang_t lang = detect_lang(source);
     remove(exe);
 
-    if (lang == LANG_CPP) {
+    if (lang == LANG_CPP14) {
 #ifdef _WIN32
         const char *extra = "-Wl,--stack,268435456";
 #else
         const char *extra = "";
 #endif
-        snprintf(cmd, sizeof cmd, "g++ -std=c++17 -O2 -Wall %s -o \"%s\" \"%s\" -lm 2> \"%s\"", extra, exe,
+        snprintf(cmd, sizeof cmd, "g++ -x c++ -std=c++14 -O2 -Wall %s -o \"%s\" \"%s\" -lm 2> \"%s\"", extra, exe,
                  source, log_path);
         int rc = system(cmd);
         if (log_out) *log_out = mj_read_file(log_path, NULL);
         return (rc == 0 && mj_file_exists(exe)) ? 0 : -1;
+    } else if (lang == LANG_CPP) {
+#ifdef _WIN32
+        const char *extra = "-Wl,--stack,268435456";
+#else
+        const char *extra = "";
+#endif
+        snprintf(cmd, sizeof cmd, "g++ -x c++ -std=c++17 -O2 -Wall %s -o \"%s\" \"%s\" -lm 2> \"%s\"", extra, exe,
+                 source, log_path);
+        int rc = system(cmd);
+        if (log_out) *log_out = mj_read_file(log_path, NULL);
+        return (rc == 0 && mj_file_exists(exe)) ? 0 : -1;
+    } else if (lang == LANG_PYPY) {
+        snprintf(cmd, sizeof cmd, "pypy3 -m py_compile \"%s\" 2> \"%s\"", source, log_path);
+        int rc = system(cmd);
+        if (rc != 0) {
+            if (log_out) *log_out = mj_read_file(log_path, NULL);
+            return -1;
+        }
+#ifdef _WIN32
+        FILE *f = fopen(exe, "w");
+        if (!f) return -1;
+        fprintf(f, "@pypy3 \"%s\" %%*\n", source);
+        fclose(f);
+#else
+        FILE *f = fopen(exe, "w");
+        if (!f) return -1;
+        fprintf(f, "#!/usr/bin/pypy3 -u\n");
+        char *code = mj_read_file(source, NULL);
+        if (code) {
+            fputs(code, f);
+            free(code);
+        }
+        fclose(f);
+        chmod(exe, 0755);
+#endif
+        if (log_out) *log_out = mj_read_file(log_path, NULL);
+        return mj_file_exists(exe) ? 0 : -1;
     } else if (lang == LANG_PYTHON) {
         snprintf(cmd, sizeof cmd, "python3 -m py_compile \"%s\" 2> \"%s\"", source, log_path);
         int rc = system(cmd);
@@ -102,7 +143,10 @@ static int prepare_executable(const char *source, const char *work_dir, char *ex
     if (mj_make_dir(work_dir) != 0) return -1;
     char src[MJ_PATH_MAX], log[MJ_PATH_MAX];
     lang_t lang = detect_lang(source);
-    const char *ext = (lang == LANG_CPP) ? ".cpp" : (lang == LANG_PYTHON) ? ".py" : ".c";
+    const char *ext = (lang == LANG_CPP14)  ? ".cpp14" :
+                      (lang == LANG_CPP)    ? ".cpp" :
+                      (lang == LANG_PYPY)   ? ".pypy" :
+                      (lang == LANG_PYTHON) ? ".py" : ".c";
     snprintf(src, sizeof src, "%s/main%s", work_dir, ext);
     snprintf(exe, exe_size, "%s/main%s", work_dir, MJ_EXE_EXT);
     snprintf(log, sizeof log, "%s/compile.log", work_dir);
@@ -128,7 +172,7 @@ int judge_submission(const problem_t *p, const char *source, const char *work_di
 
     lang_t lang = detect_lang(source);
     judge_limits_t lim = {p->time_ms, p->memory_mb};
-    if (lang == LANG_PYTHON) {
+    if (lang == LANG_PYTHON || lang == LANG_PYPY) {
         lim.time_ms = p->time_ms * 2 + 500;
         lim.memory_mb = p->memory_mb < 128 ? 128 : p->memory_mb * 2;
     }
@@ -186,7 +230,7 @@ int judge_run_custom(const char *source, const char *in_path, const char *work_d
     snprintf(out, sizeof out, "%s/custom-out.txt", work_dir);
     lang_t lang = detect_lang(source);
     judge_limits_t custom_lim = *lim;
-    if (lang == LANG_PYTHON) {
+    if (lang == LANG_PYTHON || lang == LANG_PYPY) {
         custom_lim.time_ms = lim->time_ms * 2 + 500;
         custom_lim.memory_mb = lim->memory_mb < 128 ? 128 : lim->memory_mb * 2;
     }

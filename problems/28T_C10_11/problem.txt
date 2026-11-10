@@ -1,0 +1,6 @@
+title=Sắp xếp từ theo từ điển tăng và giảm
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

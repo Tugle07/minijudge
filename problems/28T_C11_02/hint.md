@@ -1,0 +1,1 @@
+Tính số phức: $(a+bi) + (c+di) = (a+c) + (b+d)i$, tích $(ac-bd) + (ad+bc)i$.

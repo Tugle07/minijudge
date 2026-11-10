@@ -39,8 +39,11 @@ function invoke(judgeBin, workRoot, files, buildArgs, env) {
 }
 
 export function sourceFilename(lang = 'c') {
-  if (lang === 'cpp' || lang === 'c++') return 'main.cpp';
-  if (lang === 'py' || lang === 'python') return 'main.py';
+  const norm = String(lang || '').trim().toLowerCase();
+  if (norm === 'cpp14' || norm === 'c++14') return 'main.cpp14';
+  if (norm === 'cpp' || norm === 'cpp17' || norm === 'c++' || norm === 'c++17') return 'main.cpp';
+  if (norm === 'pypy' || norm === 'pypy3') return 'main.pypy';
+  if (norm === 'py' || norm === 'py3' || norm === 'python' || norm === 'python3') return 'main.py';
   return 'main.c';
 }
 
@@ -53,16 +56,30 @@ function syntaxCheck(workRoot, source, lang = 'c') {
     fs.writeFileSync(path.join(dir, filename), source, { mode: 0o644 });
     const opts = { cwd: dir, timeout: 8000, maxBuffer: 1 << 18, windowsHide: true };
 
-    if (filename.endsWith('.py')) {
+    if (filename.endsWith('.pypy')) {
+      const pypy = process.env.MJ_PYPY || 'pypy3';
+      execFile(pypy, ['-m', 'py_compile', filename], opts, (err, _out, stderr) => {
+        fs.rmSync(dir, { recursive: true, force: true });
+        if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
+        resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
+      });
+    } else if (filename.endsWith('.py')) {
       const py = process.env.MJ_PYTHON || 'python3';
       execFile(py, ['-m', 'py_compile', filename], opts, (err, _out, stderr) => {
         fs.rmSync(dir, { recursive: true, force: true });
         if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
         resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
       });
+    } else if (filename.endsWith('.cpp14')) {
+      const gpp = process.env.MJ_GXX || 'g++';
+      execFile(gpp, ['-x', 'c++', '-std=c++14', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', filename], opts, (err, _out, stderr) => {
+        fs.rmSync(dir, { recursive: true, force: true });
+        if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
+        resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });
+      });
     } else if (filename.endsWith('.cpp')) {
       const gpp = process.env.MJ_GXX || 'g++';
-      execFile(gpp, ['-std=c++17', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', filename], opts, (err, _out, stderr) => {
+      execFile(gpp, ['-x', 'c++', '-std=c++17', '-Wall', '-fsyntax-only', '-fdiagnostics-color=never', filename], opts, (err, _out, stderr) => {
         fs.rmSync(dir, { recursive: true, force: true });
         if (err && err.code === 'ENOENT') return resolve({ ok: false, log: '' });
         resolve({ ok: !err, log: stripPaths(String(stderr || ''), dir).slice(0, 16384) });

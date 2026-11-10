@@ -1,0 +1,1 @@
+Nếu $n < 10$ trả về $n$, ngược lại gọi đệ quy $n / 10$.

@@ -1,0 +1,1 @@
+Xây dựng hàm rút gọn phân số bằng cách chia cho GCD, tính tổng $a/b + c/d = (ad+bc)/(bd)$.

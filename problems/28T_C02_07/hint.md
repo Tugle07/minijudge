@@ -1,0 +1,1 @@
+Duyệt từ 1 đến $N$ nếu $N \% i == 0$ thì in ra $i$.

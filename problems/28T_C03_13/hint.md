@@ -1,0 +1,1 @@
+Kết hợp kiểm tra thuận nghịch, tìm chữ số 6 và tổng các chữ số $\% 10 == 8$.

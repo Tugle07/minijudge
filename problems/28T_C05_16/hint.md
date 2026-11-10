@@ -1,0 +1,1 @@
+Liệt kê các số nguyên tố trong mảng.

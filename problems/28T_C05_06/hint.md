@@ -1,0 +1,1 @@
+Đếm số cặp phần tử có tổng bằng $K$.

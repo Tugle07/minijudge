@@ -1,0 +1,1 @@
+Phân tích thừa số nguyên tố, đếm số thừa số phân biệt và kiểm tra số mũ của mỗi thừa số đều bằng 1.

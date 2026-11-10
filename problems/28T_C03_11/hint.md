@@ -1,0 +1,1 @@
+Kiểm tra tính đối xứng của xâu số kết hợp đếm số lượng thừa số nguyên tố phân biệt.

@@ -5,6 +5,15 @@ const PAGE_SIZE = 100;
 
 const MAX_INPUT_BYTES = 64 * 1024;
 
+export function normalizeLang(rawLang) {
+  const s = String(rawLang || '').trim().toLowerCase();
+  if (s === 'cpp14' || s === 'c++14') return 'cpp14';
+  if (s === 'cpp' || s === 'cpp17' || s === 'c++' || s === 'c++17') return 'cpp';
+  if (s === 'pypy' || s === 'pypy3') return 'pypy3';
+  if (s === 'py' || s === 'py3' || s === 'python' || s === 'python3') return 'py';
+  return 'c';
+}
+
 /* Nếu bài sai (WA) đúng ở một test ví dụ thì cho xem input / đáp án / output của mình.
  * Test ẩn thì không trả gì để không lộ test. */
 function failedSample(row, problem) {
@@ -21,15 +30,13 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, setti
   const r = Router();
   r.use(auth.requireUser);
 
-  /* Kiểm tra cú pháp khi đang gõ: gcc/g++ -fsyntax-only hoặc python -m py_compile. */
+  /* Kiểm tra cú pháp khi đang gõ: gcc/g++ -fsyntax-only hoặc python/pypy3 -m py_compile. */
   r.post('/check', checkLimit, async (req, res) => {
     const { source, lang: rawLang } = req.body ?? {};
     if (typeof source !== 'string' || Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn không hợp lệ' });
     if (!judge.check) return res.json({ ok: true, log: '' });
     const allowed = settings?.allowedLangs || ['c'];
-    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
-      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
-      : 'c';
+    const requested = normalizeLang(rawLang);
     const lang = allowed.includes(requested) ? requested : (allowed[0] || 'c');
     try {
       const { ok, log } = await judge.check(source, lang);
@@ -40,21 +47,31 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, setti
   });
 
   r.post('/run', runLimit, async (req, res) => {
-    const { problemId, source, input, lang: rawLang } = req.body ?? {};
+    const { source, input, lang: rawLang } = req.body ?? {};
+    const problemId = req.body?.problemId || req.body?.problem_id;
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
     if (typeof input !== 'string' || Buffer.byteLength(input) > MAX_INPUT_BYTES) {
       return res.status(400).json({ error: 'Input tối đa 64KB' });
     }
     const allowed = settings?.allowedLangs || ['c'];
-    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
-      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
-      : 'c';
+    const requested = normalizeLang(rawLang);
     if (!allowed.includes(requested)) {
       return res.status(400).json({ error: `Ngôn ngữ ${requested.toUpperCase()} hiện chưa được bật trên hệ thống` });
     }
     const lang = requested;
-    const p = catalog.problemMap.get(problemId);
+    const coursesMeta = (() => {
+      try {
+        const row = db.prepare("SELECT value FROM settings WHERE key = 'course_meta'").get();
+        return row && row.value ? JSON.parse(row.value) : {};
+      } catch {
+        return {};
+      }
+    })();
+    const p = problemId ? catalog.problemMap.get(problemId) : null;
+    if (problemId && (!p || !catalog.canAccessProblem(p, req.user, coursesMeta))) {
+      return res.status(403).json({ error: 'Bạn không có quyền chạy thử bài tập này' });
+    }
     try {
       const result = await judge.run(source, input.endsWith('\n') ? input : `${input}\n`, p?.timeMs ?? 2000, p?.memoryMb ?? 256, lang);
       res.json(result);
@@ -65,18 +82,25 @@ export function submissionRoutes({ db, catalog, stats, auth, queue, judge, setti
   });
 
   r.post('/submissions', submitLimit, (req, res) => {
-    const { problemId, source, lang: rawLang } = req.body ?? {};
+    const { source, lang: rawLang } = req.body ?? {};
+    const problemId = req.body?.problemId || req.body?.problem_id;
+    const coursesMeta = (() => {
+      try {
+        const row = db.prepare("SELECT value FROM settings WHERE key = 'course_meta'").get();
+        return row && row.value ? JSON.parse(row.value) : {};
+      } catch {
+        return {};
+      }
+    })();
     const problem = catalog.problemMap.get(problemId);
-    if (!problem || (req.user.role !== 'admin' && !catalog.isProblemVisible(problem))) {
-      return res.status(400).json({ error: 'Mã đề không hợp lệ' });
+    if (!problem || !catalog.canAccessProblem(problem, req.user, coursesMeta)) {
+      return res.status(403).json({ error: 'Bạn không có quyền nộp bài tập này' });
     }
     if (typeof source !== 'string' || !source.trim()) return res.status(400).json({ error: 'Mã nguồn trống' });
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
 
     const allowed = settings?.allowedLangs || ['c'];
-    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
-      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
-      : 'c';
+    const requested = normalizeLang(rawLang);
     if (!allowed.includes(requested)) {
       return res.status(400).json({ error: `Ngôn ngữ ${requested.toUpperCase()} hiện chưa được bật trên hệ thống` });
     }

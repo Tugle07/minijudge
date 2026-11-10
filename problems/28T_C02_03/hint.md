@@ -1,0 +1,1 @@
+Duyệt bước nhảy 3 từ 3 đến $n$: `for (int i = 3; i <= n; i += 3)`.

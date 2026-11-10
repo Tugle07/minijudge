@@ -1,0 +1,1 @@
+Cộng dồn $1.0 / n + S(n-1)$ với điều kiện dừng $n = 1$.

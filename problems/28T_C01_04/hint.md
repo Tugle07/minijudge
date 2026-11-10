@@ -1,0 +1,1 @@
+Chu vi $C = 2 * PI * R$, Diện tích $S = PI * R * R$ với $PI = 3.14$. In `%.4f`.

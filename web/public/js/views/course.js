@@ -50,19 +50,35 @@ function formatDuration(ms) {
 export async function render(ctx) {
   const courseName = ctx.arg || '';
 
-  const [homeData, lbData] = await Promise.all([
-    api('/api/home'),
-    api(`/api/courses/${encodeURIComponent(courseName)}/leaderboard`).catch(() => ({ leaderboard: [], myRank: null })),
-  ]);
+  let courseData, lbData;
+  try {
+    [courseData, lbData] = await Promise.all([
+      api(`/api/courses/${encodeURIComponent(courseName)}`),
+      api(`/api/courses/${encodeURIComponent(courseName)}/leaderboard`).catch(() => ({ leaderboard: [], myRank: null })),
+    ]);
+  } catch (err) {
+    const isRestricted = err.status === 403 || err.data?.code === 'restricted';
+    const msg = isRestricted
+      ? 'Khóa học này được đặt ở chế độ riêng tư, chỉ tài khoản được chỉ định mới có thể truy cập.'
+      : (err.message || `Không tìm thấy khóa học "${courseName}"`);
+    ctx.view.innerHTML = `
+      <main class="page" style="max-width:720px;padding-top:48px">
+        <div class="empty-box" style="padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <span style="font-size:42px">${isRestricted ? '🔒' : '🔍'}</span>
+          <b style="font-size:16px">${esc(msg)}</b>
+          <button class="btn" data-go="#/home" style="margin-top:8px">Về danh sách khóa học</button>
+        </div>
+      </main>`;
+    return;
+  }
 
-  const { sets, coursesMeta = {} } = homeData;
+  const courseSets = courseData.sets || [];
+  const meta = courseData.meta || {};
   const { leaderboard = [], myRank = null } = lbData;
 
-  const courseSets = sets.filter((s) => (s.group || '').trim() === courseName.trim());
-
-  if (!courseSets.length) {
+  if (!courseSets.length && !meta.badge) {
     ctx.view.innerHTML = `
-      <main class="page" style="max-width:720px">
+      <main class="page" style="max-width:720px;padding-top:48px">
         <div class="empty-box">
           <b>Không tìm thấy khóa học "${esc(courseName)}"</b>
           <button class="btn" data-go="#/home">Về danh sách khóa học</button>
@@ -70,8 +86,6 @@ export async function render(ctx) {
       </main>`;
     return;
   }
-
-  const meta = coursesMeta[courseName] || {};
   const theme = THEME_PRESETS[meta.theme || 'blue'] || THEME_PRESETS.blue;
   const bannerGradient = (meta.customColor && meta.customColor.trim())
     ? `linear-gradient(135deg, #090d16 0%, ${meta.customColor.trim()} 65%, color-mix(in srgb, ${meta.customColor.trim()} 75%, #ffffff) 100%)`
@@ -107,7 +121,7 @@ export async function render(ctx) {
 
     return `
       <li class="step ${cls}">
-        <span class="step-dot" aria-hidden="true">${isDone ? '✓' : esc(s.num || String(i + 1))}</span>
+        <span class="step-dot" aria-hidden="true">${isDone ? '✓' : (i + 1)}</span>
         <button class="step-card" data-go="#/set/${encodeURIComponent(s.id)}">
           <span class="step-text">
             <span class="step-title">

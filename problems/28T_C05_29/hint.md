@@ -1,0 +1,1 @@
+Thao tác trên mảng con / tam giác Pascal.

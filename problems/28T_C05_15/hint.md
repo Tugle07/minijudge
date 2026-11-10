@@ -1,0 +1,1 @@
+Tìm số lớn nhất và số lớn thứ hai trong mảng.

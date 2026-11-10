@@ -1,0 +1,1 @@
+Tháng 1, 3, 5, 7, 8, 10, 12 có 31 ngày; Tháng 4, 6, 9, 11 có 30 ngày; Tháng 2 có 29 ngày nếu năm nhuận, ngược lại 28 ngày.

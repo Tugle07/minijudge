@@ -1,0 +1,1 @@
+Chia tiền đều cho 3 người.

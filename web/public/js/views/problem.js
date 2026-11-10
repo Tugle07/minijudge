@@ -1,15 +1,62 @@
 import { api } from '../api.js';
 import { readDraft as draftGet, saveDraft as draftSet } from '../drafts.js';
 import { mountEditor } from '../editor.js';
-import { highlightC } from '../highlight.js';
-import { badge, diffMeter, esc, fmtWhen, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
+
+import { badge, diffMeter, esc, fmtWhen, langBadge, renderMarkdown, statLine, toast, verdictLabel, verdictVar } from '../ui.js';
+import { highlightCode } from '../highlight.js';
 import { compileErrorsHtml, resultHtml, runResultHtml } from './problem-result.js';
 
-const TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
+const TEMPLATES = {
+  c: '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n',
+  cpp14: '#include <iostream>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    return 0;\n}\n',
+  cpp: '#include <iostream>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    return 0;\n}\n',
+  py: '# Đọc dữ liệu từ sys.stdin và in ra màn hình\nimport sys\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n',
+  pypy3: '# Đọc dữ liệu từ sys.stdin và in ra màn hình\nimport sys\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n',
+};
+const LANG_CHIPS = {
+  c: 'C11 · gcc -O2',
+  cpp14: 'C++14 · g++ -O2',
+  cpp: 'C++17 · g++ -O2',
+  py: 'Python 3.11',
+  pypy3: 'PyPy 3',
+};
+const FILE_ACCEPTS = {
+  c: '.c,text/x-c,text/plain',
+  cpp14: '.cpp,.cc,.cxx,.h,.hpp,text/x-c++src,text/plain',
+  cpp: '.cpp,.cc,.cxx,.h,.hpp,text/x-c++src,text/plain',
+  py: '.py,text/x-python,text/plain',
+  pypy3: '.py,text/x-python,text/plain',
+};
+const FILE_EXTS = {
+  c: 'c',
+  cpp14: 'cpp',
+  cpp: 'cpp',
+  py: 'py',
+  pypy3: 'py',
+};
+const LANG_LABELS = {
+  c: 'C (C11)',
+  cpp14: 'C++ (C++14)',
+  cpp: 'C++ (C++17)',
+  py: 'Python (Python 3)',
+  pypy3: 'Python (PyPy 3)',
+};
 const SPINNER_SM = '<span class="spin-sm" aria-hidden="true"></span>';
 const POLL_MS = 800;
-const readDraft = (id) => draftGet(`code-${id}`);
-const saveDraft = (id, code) => draftSet(`code-${id}`, code);
+const readDraft = (id, lang = 'c') => draftGet(`code-${id}-${lang}`) ?? (lang === 'c' ? draftGet(`code-${id}`) : null);
+const saveDraft = (id, lang, code) => {
+  draftSet(`code-${id}-${lang}`, code);
+  if (lang === 'c') draftSet(`code-${id}`, code);
+};
+const getLastLang = (id) => {
+  try { return localStorage.getItem(`mj-prob-lang-${id}`) || localStorage.getItem('mj-last-lang'); } catch { return null; }
+};
+const setLastLang = (id, lang) => {
+  try {
+    localStorage.setItem(`mj-prob-lang-${id}`, lang);
+    localStorage.setItem('mj-last-lang', lang);
+  } catch {}
+};
 
 const MY_LABEL = { ac: ['Bạn đã AC bài này', 'var(--ac)'], tried: ['Bạn đã nộp, chưa AC', 'var(--wa)'] };
 
@@ -24,7 +71,8 @@ function setNavHtml(p, set) {
   const i = list.findIndex((x) => x.id === p.id);
   const prev = list[i - 1];
   const next = list[i + 1];
-  const go = (x, label) => (x ? `<button class="nav-btn" data-go="#/problem/${encodeURIComponent(x.id)}" title="${esc(x.id)} — ${esc(x.title)}">${label}</button>` : `<button class="nav-btn" disabled>${label}</button>`);
+  const sParam = set.set?.id ? `?set=${encodeURIComponent(set.set.id)}` : '';
+  const go = (x, label) => (x ? `<button class="nav-btn" data-go="#/problem/${encodeURIComponent(x.id)}${sParam}" title="${esc(x.id)} — ${esc(x.title)}">${label}</button>` : `<button class="nav-btn" disabled>${label}</button>`);
   const cls = (x) => (x.my === 'ac' ? 'full' : x.my === 'tried' ? 'part' : 'todo');
   return {
     top: i < 0 ? '' : `<div class="prob-nav">${go(prev, '‹ Bài trước')}<span class="mono muted">${i + 1}/${list.length}</span>${go(next, 'Bài sau ›')}</div>`,
@@ -32,7 +80,7 @@ function setNavHtml(p, set) {
       <nav class="exam-rail set-rail" aria-label="Danh sách bài trong khối">
         <span class="rail-count"><b>${list.length} bài</b><small>Đã AC ${set.set.ac}/${set.set.count}</small></span>
         ${list
-          .map((x, j) => `<button class="exam-tab ${cls(x)} ${x.id === p.id ? 'on' : ''}" data-go="#/problem/${encodeURIComponent(x.id)}" title="${esc(x.id)}. ${esc(x.title)} · Alt + ${letter(j)}" aria-label="Bài ${letter(j)}: ${esc(x.title)}">${letter(j)}</button>`)
+          .map((x, j) => `<button class="exam-tab ${cls(x)} ${x.id === p.id ? 'on' : ''}" data-go="#/problem/${encodeURIComponent(x.id)}${sParam}" title="${esc(x.id)}. ${esc(x.title)} · Alt + ${letter(j)}" aria-label="Bài ${letter(j)}: ${esc(x.title)}">${letter(j)}</button>`)
           .join('')}
       </nav>`,
   };
@@ -76,9 +124,46 @@ function statementHtml(p, set) {
 }
 
 export async function render(ctx) {
-  const p = await api(`/api/problems/${encodeURIComponent(ctx.arg || '')}`);
-  const set = p.set ? await api(`/api/sets/${encodeURIComponent(p.set.id)}`).catch(() => null) : null;
+  const setId = ctx.query?.get('set') || '';
+  let p;
+  try {
+    p = await api(`/api/problems/${encodeURIComponent(ctx.arg || '')}${setId ? `?set=${encodeURIComponent(setId)}` : ''}`);
+  } catch (err) {
+    const isRestricted = err.status === 403 || err.data?.code === 'restricted';
+    const msg = isRestricted
+      ? 'Bài tập này được đặt ở chế độ riêng tư, chỉ tài khoản được chỉ định mới có thể truy cập.'
+      : (err.message || 'Không tìm thấy đề');
+    ctx.view.innerHTML = `
+      <main class="page" style="max-width:720px;padding-top:48px">
+        <div class="empty-box" style="padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <span style="font-size:42px">${isRestricted ? '🔒' : '🔍'}</span>
+          <b style="font-size:16px">${esc(msg)}</b>
+          <button class="btn" data-go="#/home" style="margin-top:8px">Về danh sách bài tập</button>
+        </div>
+      </main>`;
+    return;
+  }
+  const activeSetId = setId || p.set?.id || '';
+  const set = activeSetId ? await api(`/api/sets/${encodeURIComponent(activeSetId)}`).catch(() => null) : null;
+  const allowedLangs = Array.isArray(p.allowedLangs) && p.allowedLangs.length ? p.allowedLangs : ['c'];
+  const probLang = (() => {
+    try { return localStorage.getItem(`mj-prob-lang-${p.id}`); } catch { return null; }
+  })();
+  let currentLang;
+  if (probLang && allowedLangs.includes(probLang)) {
+    currentLang = probLang;
+  } else if (p.defaultLang && allowedLangs.includes(p.defaultLang)) {
+    currentLang = p.defaultLang;
+  } else {
+    const lastGlobal = (() => {
+      try { return localStorage.getItem('mj-last-lang'); } catch { return null; }
+    })();
+    currentLang = (lastGlobal && allowedLangs.includes(lastGlobal)) ? lastGlobal : (allowedLangs[0] || 'c');
+  }
+
   const state = {
+    lang: currentLang,
+    allowedLangs,
     samples: p.samples.map(() => ({ status: 'idle' })),
     tab: ctx.extra === 'history' ? 'history' : 'submit',
     result: { phase: 'idle' },
@@ -98,14 +183,19 @@ export async function render(ctx) {
       <section class="pane-right exam-right" aria-label="Soạn mã và nộp bài">
         <div class="mobile-head narrow-only">
           <button class="link-btn" data-close-editor style="color:var(--fg);height:36px">‹ Đề bài</button>
-          <span class="mono muted" style="font-size:14px">${esc(p.id)}.c</span>
+          <span class="mono muted" style="font-size:14px" data-file-label>${esc(p.id)}.${FILE_EXTS[state.lang] || 'c'}</span>
           <button class="btn-primary" data-submit style="height:36px;padding:0 14px;font-size:14px">Nộp bài</button>
         </div>
         <header class="toolbar">
-          <span class="lang-chip">C11 · gcc -O2</span>
+          ${allowedLangs.length > 1
+            ? `<select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
+                ${allowedLangs.map((l) => `<option value="${l}" ${state.lang === l ? 'selected' : ''}>${LANG_LABELS[l] || l}${p.defaultLang === l ? ' ★ Khuyên dùng' : ''}</option>`).join('')}
+              </select>`
+            : `<span class="lang-chip">${LANG_CHIPS[state.lang] || 'C11 · gcc -O2'}</span>`
+          }
           <div class="zoom" role="group" aria-label="Cỡ chữ"><button data-zoom="-1" title="Chữ nhỏ hơn"><span class="tb-label">A</span>−</button><button data-zoom="1" title="Chữ lớn hơn"><span class="tb-label">A</span>+</button></div>
           <button class="file-btn tb-collapse" data-reset title="Xóa code, quay về khung mẫu">Khung mẫu</button>
-          <label class="file-btn"><svg class="tb-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="tb-label">Tải file .c</span><input type="file" accept=".c,text/x-c,text/plain" data-file /></label>
+          <label class="file-btn"><svg class="tb-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="tb-label" data-upload-text>Tải file .${FILE_EXTS[state.lang] || 'c'}</span><input type="file" accept="${FILE_ACCEPTS[state.lang] || '.c,text/x-c,text/plain'}" data-file /></label>
           <span class="faint wide-only" style="font-size:12.5px" data-saved>Nháp tự lưu trên máy này</span>
           <div class="spacer"></div>
           <button class="btn-submit wide-only" data-submit title="Ctrl + Enter">Nộp bài</button>
@@ -157,9 +247,9 @@ export async function render(ctx) {
   const $ = (sel) => ctx.view.querySelector(sel);
   let savedTimer = null;
   const editor = await mountEditor($('[data-editor]'), {
-    value: readDraft(p.id) ?? TEMPLATE,
+    value: readDraft(p.id, state.lang) ?? TEMPLATES[state.lang] ?? TEMPLATES.c,
     onChange: (code) => {
-      saveDraft(p.id, code);
+      saveDraft(p.id, state.lang, code);
       const el = $('[data-saved]');
       if (el) el.textContent = 'Đã lưu nháp';
       clearTimeout(savedTimer);
@@ -175,7 +265,7 @@ export async function render(ctx) {
     },
     onCheck: async (source) => {
       try {
-        return (await api('/api/check', { method: 'POST', body: { source } })).log;
+        return (await api('/api/check', { method: 'POST', body: { source, lang: state.lang } })).log;
       } catch {
         return null;
       }
@@ -191,6 +281,23 @@ export async function render(ctx) {
       err.classList.toggle('on', en > 0);
       warn.classList.toggle('on', wn > 0);
     },
+  });
+
+  const langSel = $('[data-lang]');
+  langSel?.addEventListener('change', (e) => {
+    const newLang = e.target.value;
+    if (newLang === state.lang) return;
+    if (editor.value) saveDraft(p.id, state.lang, editor.value);
+    state.lang = newLang;
+    setLastLang(p.id, newLang);
+    editor.value = readDraft(p.id, state.lang) ?? TEMPLATES[state.lang] ?? TEMPLATES.c;
+    const fileLabel = $('[data-file-label]');
+    if (fileLabel) fileLabel.textContent = `${p.id}.${FILE_EXTS[state.lang] || 'c'}`;
+    const uploadText = $('[data-upload-text]');
+    if (uploadText) uploadText.textContent = `Tải file .${FILE_EXTS[state.lang] || 'c'}`;
+    const fileInput = $('[data-file]');
+    if (fileInput) fileInput.accept = FILE_ACCEPTS[state.lang] || '.c,text/x-c,text/plain';
+    editor.recheck?.();
   });
 
   const assistCheck = $('[data-assist]');
@@ -243,7 +350,7 @@ export async function render(ctx) {
     for (let i = 0; i < p.samples.length && state.alive; i++) {
       try {
         const input = p.samples[i].input;
-        const r = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input } });
+        const r = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input, lang: state.lang } });
         if (r.verdict === 'CE') {
           editor.showDiagnostics?.(r.compile_log);
           state.samples = state.samples.map(() => ({ status: 'error' }));
@@ -275,7 +382,7 @@ export async function render(ctx) {
     if (out) out.innerHTML = runResultHtml({ loading: true });
     ctx.view.querySelectorAll('[data-run-go]').forEach((b) => (b.disabled = true));
     try {
-      state.run = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input: runInput.value } });
+      state.run = await api('/api/run', { method: 'POST', body: { problemId: p.id, source: editor.value, input: runInput.value, lang: state.lang } });
       if (state.alive && state.run.compile_log) {
         editor.showDiagnostics?.(state.run.compile_log);
       }
@@ -323,11 +430,11 @@ export async function render(ctx) {
         <div class="sub-detail">
           <div class="sub-detail-head">
             <button class="link-btn" data-back-history>‹ Tất cả bài nộp</button>
-            <span class="mono faint" style="font-size:13px">#${s.id} · ${fmtWhen(s.createdAt)}</span>
+            <span class="mono faint" style="font-size:13px">#${s.id} · ${langBadge(s.lang || 'c')} · ${fmtWhen(s.createdAt)}</span>
             <button class="btn" data-load-code style="height:30px;font-size:13px">Nạp code này vào trình soạn</button>
           </div>
           <div class="result" style="max-height:none">${resultHtml({ phase: s.verdict === 'PENDING' ? 'judging' : 'done', sub: s }, p.tests)}</div>
-          <pre class="sub-code">${highlightC(s.source).html}</pre>
+          <pre class="sub-code">${highlightCode(s.source, s.lang || 'c').html}</pre>
         </div>`;
       return;
     }
@@ -338,7 +445,7 @@ export async function render(ctx) {
           <div class="history-row clickable" data-sub="${h.id}" role="button" tabindex="0" title="Xem chi tiết và code">
             <span class="mono faint">#${h.id}</span>
             <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
-              <span class="vtext" style="--v:${verdictVar(h.verdict)};font-weight:500">${badge(h.verdict)}${esc(verdictLabel(h.verdict))}</span>
+              <span class="vtext" style="--v:${verdictVar(h.verdict)};font-weight:500">${badge(h.verdict)}${langBadge(h.lang || 'c')}${esc(verdictLabel(h.verdict))}</span>
               <span class="faint" style="font-size:13px">${fmtWhen(h.created_at)}</span>
             </span>
             <span class="mono muted right" style="font-size:13px">${statLine(h)}</span>
@@ -379,7 +486,7 @@ export async function render(ctx) {
     drawTabs();
     drawResult();
     try {
-      const { id } = await api('/api/submissions', { method: 'POST', body: { problemId: p.id, source: editor.value } });
+      const { id } = await api('/api/submissions', { method: 'POST', body: { problemId: p.id, source: editor.value, lang: state.lang } });
       poll(id);
     } catch (err) {
       state.result = { phase: 'idle' };
@@ -397,7 +504,19 @@ export async function render(ctx) {
     }
     if (t.closest('[data-back-history]')) return (state.detail = null), drawHistory();
     if (t.closest('[data-load-code]')) {
-      const { id, source } = state.detail;
+      const { id, source, lang: subLang } = state.detail;
+      if (subLang && state.allowedLangs.includes(subLang) && subLang !== state.lang) {
+        state.lang = subLang;
+        setLastLang(p.id, subLang);
+        const ls = $('[data-lang]');
+        if (ls) ls.value = subLang;
+        const fileLabel = $('[data-file-label]');
+        if (fileLabel) fileLabel.textContent = `${p.id}.${FILE_EXTS[state.lang] || 'c'}`;
+        const uploadText = $('[data-upload-text]');
+        if (uploadText) uploadText.textContent = `Tải file .${FILE_EXTS[state.lang] || 'c'}`;
+        const fileInput = $('[data-file]');
+        if (fileInput) fileInput.accept = FILE_ACCEPTS[state.lang] || '.c,text/x-c,text/plain';
+      }
       editor.value = source;
       Object.assign(state, { tab: 'submit', detail: null });
       drawTabs();
@@ -412,8 +531,9 @@ export async function render(ctx) {
     const zoom = t.closest('[data-zoom]');
     if (zoom) return editor.zoom(Number(zoom.dataset.zoom));
     if (t.closest('[data-reset]')) {
-      if (editor.value !== TEMPLATE && !confirm('Xóa code hiện tại và quay về khung mẫu?')) return;
-      editor.value = TEMPLATE;
+      const curTpl = TEMPLATES[state.lang] ?? TEMPLATES.c;
+      if (editor.value !== curTpl && !confirm('Xóa code hiện tại và quay về khung mẫu?')) return;
+      editor.value = curTpl;
       return editor.focus();
     }
     if (t.closest('[data-run-samples]')) return runSamples();

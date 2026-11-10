@@ -55,6 +55,7 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
   const summary = (c) => ({
     ...c,
     phase: contests.phase(c),
+    visibility: c.visibility || (c.status === 'published' ? 'public' : 'draft'),
     problemCount: contests.problemsOf(c.id).length,
     participants: db.prepare('SELECT COUNT(*) AS n FROM contest_participants WHERE contest_id = ?').get(c.id).n,
   });
@@ -65,9 +66,12 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     const b = req.body ?? {};
     const { fields, title, startAt, endAt } = validate(b);
     if (Object.keys(fields).length) return res.status(400).json({ error: 'Thông tin chưa hợp lệ', fields });
+    let visibility = b.visibility && ['public', 'unlisted', 'restricted', 'draft'].includes(b.visibility) ? b.visibility : 'draft';
+    let status = b.status === 'published' || b.status === 'draft' ? b.status : (visibility === 'draft' ? 'draft' : 'published');
+    if (visibility === 'draft') status = 'draft';
     const { lastInsertRowid } = db
-      .prepare('INSERT INTO contests (title, description, start_at, end_at, status, settings, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(title, String(b.description ?? '').slice(0, 4000), startAt, endAt, 'draft', JSON.stringify(readSettings(b.settings ?? {})), Date.now());
+      .prepare('INSERT INTO contests (title, description, start_at, end_at, status, visibility, settings, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(title, String(b.description ?? '').slice(0, 4000), startAt, endAt, status, visibility, JSON.stringify(readSettings(b.settings ?? {})), Date.now());
     res.status(201).json(summary(contests.get(Number(lastInsertRowid))));
   });
 
@@ -83,13 +87,23 @@ export function adminContestRoutes({ db, catalog, contests, auth }) {
     const b = { title: c.title, startAt: c.startAt, endAt: c.endAt, description: c.description, ...req.body };
     const { fields, title, startAt, endAt } = validate(b);
     if (Object.keys(fields).length) return res.status(400).json({ error: 'Thông tin chưa hợp lệ', fields });
-    const status = b.status === 'published' || b.status === 'draft' ? b.status : c.status;
-    if (status === 'published' && contests.problemsOf(c.id).length === 0) {
+    let visibility = b.visibility && ['public', 'unlisted', 'restricted', 'draft'].includes(b.visibility)
+      ? b.visibility
+      : (c.visibility || (c.status === 'published' ? 'public' : 'draft'));
+    let status = c.status;
+    if (b.status === 'published' || b.status === 'draft') {
+      status = b.status;
+      if (b.status === 'draft' && !b.visibility) visibility = 'draft';
+      if (b.status === 'published' && !b.visibility && visibility === 'draft') visibility = 'public';
+    } else {
+      status = visibility === 'draft' ? 'draft' : 'published';
+    }
+    if ((status === 'published' || visibility !== 'draft') && contests.problemsOf(c.id).length === 0) {
       return res.status(400).json({ error: 'Cuộc thi chưa có bài nào' });
     }
     const settings = readSettings({ ...c.settings, ...(b.settings ?? {}) });
-    db.prepare('UPDATE contests SET title = ?, description = ?, start_at = ?, end_at = ?, status = ?, settings = ? WHERE id = ?').run(
-      title, String(b.description ?? '').slice(0, 4000), startAt, endAt, status, JSON.stringify(settings), c.id,
+    db.prepare('UPDATE contests SET title = ?, description = ?, start_at = ?, end_at = ?, status = ?, visibility = ?, settings = ? WHERE id = ?').run(
+      title, String(b.description ?? '').slice(0, 4000), startAt, endAt, status, visibility, JSON.stringify(settings), c.id,
     );
     res.json(summary(contests.get(c.id)));
   });

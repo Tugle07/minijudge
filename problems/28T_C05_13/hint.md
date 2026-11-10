@@ -1,0 +1,1 @@
+Tính tổng và tích các phần tử modulo $10^9+7$.

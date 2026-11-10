@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { CLIENT_EVENTS, deviceOf } from '../lib/contests.js';
+import { normalizeLang } from './submission-routes.js';
 
 const MAX_SOURCE_BYTES = 64 * 1024;
 const STALE_SESSION_MS = 45_000;
@@ -21,13 +22,22 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     return list.length > MAX_EVENTS_PER_MIN;
   };
 
-  const canSee = (c, user) => c && (c.status === 'published' || user.role === 'admin');
+  const canSee = (c, user) => contests.canListContest(c, user);
   const allowed = (c, user) => !c.settings.allowUsers.length || c.settings.allowUsers.map((u) => u.toLowerCase()).includes(user.username.toLowerCase());
   const ipOk = (c, ip) => !c.settings.ipPrefixes.length || c.settings.ipPrefixes.some((p) => String(ip || '').startsWith(p));
 
   function load(req, res) {
     const c = contests.get(req.params.id);
-    if (!canSee(c, req.user)) {
+    if (!c) {
+      res.status(404).json({ error: 'Không tìm thấy cuộc thi' });
+      return null;
+    }
+    if (!contests.canAccessContest(c, req.user)) {
+      const vis = c.visibility || (c.status === 'published' ? 'public' : 'draft');
+      if (vis === 'restricted') {
+        res.status(403).json({ error: 'Cuộc thi này chỉ dành cho thí sinh được chỉ định', code: 'restricted' });
+        return null;
+      }
       res.status(404).json({ error: 'Không tìm thấy cuộc thi' });
       return null;
     }
@@ -59,6 +69,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     startAt: c.startAt,
     endAt: c.endAt,
     phase: contests.phase(c),
+    visibility: c.visibility || (c.status === 'published' ? 'public' : 'draft'),
     needCode: Boolean(c.settings.code),
     blockMultiScreen: c.settings.blockMultiScreen !== false,
     beepOnLeave: c.settings.beepOnLeave !== false,
@@ -179,9 +190,7 @@ export function contestRoutes({ db, catalog, contests, auth, queue, settings, su
     if (Buffer.byteLength(source) > MAX_SOURCE_BYTES) return res.status(400).json({ error: 'Mã nguồn tối đa 64KB' });
 
     const allowed = settings?.allowedLangs || ['c'];
-    const requested = ['cpp', 'c++', 'py', 'python'].includes(String(rawLang || '').toLowerCase())
-      ? (String(rawLang).toLowerCase().startsWith('py') ? 'py' : 'cpp')
-      : 'c';
+    const requested = normalizeLang(rawLang);
     if (!allowed.includes(requested)) {
       return res.status(400).json({ error: `Ngôn ngữ ${requested.toUpperCase()} hiện chưa được bật trên hệ thống` });
     }

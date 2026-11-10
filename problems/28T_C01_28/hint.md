@@ -1,0 +1,1 @@
+Kiểm tra 3 số lập thành cấp số cộng: $b - a == c - b$.

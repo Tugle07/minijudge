@@ -1,0 +1,1 @@
+Ưu tiên chọn số 2 tối đa. Nếu $N$ lẻ thì để lại một số 3.

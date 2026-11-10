@@ -1,0 +1,1 @@
+Duyệt $i$ từ 1 đến $N$ với bước nhảy 2.

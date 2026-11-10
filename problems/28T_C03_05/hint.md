@@ -1,0 +1,1 @@
+Duyệt từ 1 đến $\sqrt{N}$, nếu $i$ chia hết $N$ thì cộng $i$ và $N/i$.

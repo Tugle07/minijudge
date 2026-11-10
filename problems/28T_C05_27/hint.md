@@ -1,0 +1,1 @@
+Kiểm tra mảng có tăng dần nghiêm ngặt hay không.

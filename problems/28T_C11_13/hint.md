@@ -1,0 +1,1 @@
+Khai báo struct NhanVien và xuất thông tin.

@@ -3,7 +3,7 @@
 FROM node:24-bookworm-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends gcc g++ python3 libc6-dev make \
+ && apt-get install -y --no-install-recommends gcc g++ python3 pypy3 libc6-dev make \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

@@ -54,11 +54,13 @@ export function openDatabase(file) {
 
     /* Thông tin quản trị của từng bài (cả bài trong repo lẫn bài tạo trên web). */
     CREATE TABLE IF NOT EXISTS problem_meta (
-      id         TEXT PRIMARY KEY,
-      status     TEXT NOT NULL DEFAULT 'pub',
-      tags       TEXT NOT NULL DEFAULT '',
-      solution   TEXT NOT NULL DEFAULT '',
-      updated_at INTEGER
+      id          TEXT PRIMARY KEY,
+      status      TEXT NOT NULL DEFAULT 'pub',
+      visibility  TEXT NOT NULL DEFAULT 'public',
+      allow_users TEXT NOT NULL DEFAULT '[]',
+      tags        TEXT NOT NULL DEFAULT '',
+      solution    TEXT NOT NULL DEFAULT '',
+      updated_at  INTEGER
     );
 
     /* Cuộc thi: settings là JSON (mã phòng, dải IP, danh sách thí sinh, công bố kết quả…). */
@@ -69,6 +71,7 @@ export function openDatabase(file) {
       start_at    INTEGER NOT NULL,
       end_at      INTEGER NOT NULL,
       status      TEXT NOT NULL DEFAULT 'draft',
+      visibility  TEXT NOT NULL DEFAULT 'public',
       settings    TEXT NOT NULL DEFAULT '{}',
       created_at  INTEGER NOT NULL
     );
@@ -141,8 +144,21 @@ function migrate(db) {
   if (!users.has('avatar')) db.exec("ALTER TABLE users ADD COLUMN avatar TEXT NOT NULL DEFAULT ''");
   const meta = columnsOf(db, 'problem_meta');
   if (meta.size && !meta.has('subtasks')) db.exec('ALTER TABLE problem_meta ADD COLUMN subtasks TEXT');
+  if (meta.size && !meta.has('visibility')) db.exec("ALTER TABLE problem_meta ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'");
+  if (meta.size && !meta.has('allow_users')) db.exec("ALTER TABLE problem_meta ADD COLUMN allow_users TEXT NOT NULL DEFAULT '[]'");
+  if (meta.size) {
+    db.exec("UPDATE problem_meta SET visibility = 'draft' WHERE status = 'draft' AND (visibility IS NULL OR visibility = 'public')");
+  }
   const parts = columnsOf(db, 'contest_participants');
   if (parts.size && !parts.has('device')) db.exec("ALTER TABLE contest_participants ADD COLUMN device TEXT NOT NULL DEFAULT ''");
+
+  const contestsCols = columnsOf(db, 'contests');
+  if (contestsCols.size && !contestsCols.has('visibility')) {
+    db.exec("ALTER TABLE contests ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'");
+  }
+  if (contestsCols.size) {
+    db.exec("UPDATE contests SET visibility = 'draft' WHERE status = 'draft' AND (visibility IS NULL OR visibility = 'public')");
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS problem_attempts (

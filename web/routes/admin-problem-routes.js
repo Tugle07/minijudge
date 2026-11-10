@@ -15,8 +15,8 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
   r.use(auth.requireAdmin);
 
   const upsertMeta = db.prepare(`
-    INSERT INTO problem_meta (id, status, tags, solution, updated_at) VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET status = excluded.status, tags = excluded.tags, solution = excluded.solution, updated_at = excluded.updated_at`);
+    INSERT INTO problem_meta (id, status, tags, solution, visibility, allow_users, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET status = excluded.status, tags = excluded.tags, solution = excluded.solution, visibility = excluded.visibility, allow_users = excluded.allow_users, updated_at = excluded.updated_at`);
   const subCounts = db.prepare('SELECT problem_id, COUNT(*) AS n FROM submissions GROUP BY problem_id');
   const setRows = db.prepare('SELECT id, data FROM problem_sets');
   const saveSet = db.prepare('UPDATE problem_sets SET data = ? WHERE id = ?');
@@ -48,6 +48,8 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
     memoryMb: p.memoryMb,
     difficulty: p.difficulty,
     status: p.status,
+    visibility: p.visibility || (p.status === 'pub' ? 'public' : 'draft'),
+    allowUsers: p.allowUsers || [],
     tags: p.tags,
     statement: p.statement,
     hint: p.hint,
@@ -73,6 +75,8 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
           overridesRepo: Boolean(p.overridesRepo),
           difficulty: p.difficulty,
           status: p.status,
+          visibility: p.visibility || (p.status === 'pub' ? 'public' : 'draft'),
+          allowUsers: p.allowUsers || [],
           tests: p.tests,
           subtasks: p.subtasks,
           submissions: subs.get(p.id) || 0,
@@ -90,11 +94,26 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
 
     if (action === 'publish' || action === 'draft') {
       const status = action === 'publish' ? 'pub' : 'draft';
+      const vis = action === 'publish' ? 'public' : 'draft';
       for (const id of ids) {
         const p = catalog.problemMap.get(id);
         if (p && p.status !== 'deleted') {
           if (status === 'pub' && p.origin === 'custom' && store.listTests(p.id).length === 0) continue;
-          upsertMeta.run(p.id, status, p.tags, p.solution, Date.now());
+          upsertMeta.run(p.id, status, p.tags, p.solution, vis, JSON.stringify(p.allowUsers || []), Date.now());
+        }
+      }
+      catalog.reload();
+      return res.json({ ok: true, count: ids.length });
+    }
+
+    if (action === 'visibility' && ['public', 'unlisted', 'restricted', 'draft'].includes(req.body.visibility)) {
+      const vis = req.body.visibility;
+      const status = vis === 'draft' ? 'draft' : 'pub';
+      for (const id of ids) {
+        const p = catalog.problemMap.get(id);
+        if (p && p.status !== 'deleted') {
+          if (vis !== 'draft' && p.origin === 'custom' && store.listTests(p.id).length === 0) continue;
+          upsertMeta.run(p.id, status, p.tags, p.solution, vis, JSON.stringify(p.allowUsers || []), Date.now());
         }
       }
       catalog.reload();
@@ -113,7 +132,7 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
             saveSet.run(JSON.stringify({ ...data, problems: data.problems.filter((x) => x !== p.id) }), row.id);
           }
         }
-        upsertMeta.run(p.id, 'deleted', p.tags, p.solution, Date.now());
+        upsertMeta.run(p.id, 'deleted', p.tags, p.solution, p.visibility || 'draft', JSON.stringify(p.allowUsers || []), Date.now());
       }
       catalog.reload();
       return res.json({ ok: true, count: ids.length });
@@ -123,7 +142,7 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
       for (const id of ids) {
         const p = catalog.problemMap.get(id);
         if (p && p.status === 'deleted') {
-          upsertMeta.run(p.id, 'draft', p.tags, p.solution, Date.now());
+          upsertMeta.run(p.id, 'draft', p.tags, p.solution, 'draft', JSON.stringify(p.allowUsers || []), Date.now());
         }
       }
       catalog.reload();
@@ -167,7 +186,7 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
     if (!NEW_ID_RE.test(id)) return res.status(400).json({ error: 'Mã bài gồm 2–15 ký tự in hoa/số/_ và bắt đầu bằng chữ (vd P18)' });
     if (catalog.problemMap.has(id) || store.exists(id)) return res.status(409).json({ error: `Mã ${id} đã tồn tại` });
     store.create(id);
-    upsertMeta.run(id, 'draft', '', '', Date.now());
+    upsertMeta.run(id, 'draft', '', '', 'draft', '[]', Date.now());
     catalog.reload();
     res.status(201).json(detail(catalog.problemMap.get(id)));
   });
@@ -187,25 +206,47 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
       (typeof b.difficulty === 'string' && b.difficulty !== p.difficulty);
     if (changed) p = editable(p);
     if (p.origin === 'custom') {
-      if (typeof b.title !== 'string' || !b.title.trim()) return res.status(400).json({ error: 'Nhập tên bài', fields: { title: 'Nhập tên bài' } });
+      const title = typeof b.title === 'string' ? b.title.trim().slice(0, 120) : p.title;
+      if (!title) return res.status(400).json({ error: 'Nhập tên bài', fields: { title: 'Nhập tên bài' } });
       store.saveMeta(p.id, {
-        title: b.title.trim().slice(0, 120),
-        timeMs: b.timeMs,
-        memoryMb: b.memoryMb,
-        difficulty: ['Dễ', 'Trung bình', 'Khó'].includes(b.difficulty) ? b.difficulty : undefined,
+        title,
+        timeMs: b.timeMs !== undefined ? Number(b.timeMs) : p.timeMs,
+        memoryMb: b.memoryMb !== undefined ? Number(b.memoryMb) : p.memoryMb,
+        difficulty: ['Dễ', 'Trung bình', 'Khó'].includes(b.difficulty) ? b.difficulty : p.difficulty,
         statement: typeof b.statement === 'string' ? b.statement.slice(0, 50_000) : undefined,
         hint: typeof b.hint === 'string' ? b.hint.slice(0, 5_000) : undefined,
       });
     }
-    const status = b.status === 'pub' || b.status === 'draft' ? b.status : p.status;
-    if (status === 'pub' && p.origin === 'custom' && store.listTests(p.id).length === 0) {
-      return res.status(400).json({ error: 'Cần ít nhất 1 test trước khi xuất bản' });
+    let visibility = p.visibility || (p.status === 'pub' ? 'public' : 'draft');
+    if (b.visibility && ['public', 'unlisted', 'restricted', 'draft'].includes(b.visibility)) {
+      visibility = b.visibility;
+    }
+    let allowUsers = p.allowUsers || [];
+    if (b.allowUsers !== undefined) {
+      if (typeof b.allowUsers === 'string') {
+        allowUsers = b.allowUsers.split(/[\r\n,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+      } else if (Array.isArray(b.allowUsers)) {
+        allowUsers = b.allowUsers.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean);
+      }
+    }
+    let status = p.status;
+    if (b.status === 'pub' || b.status === 'draft') {
+      status = b.status;
+      if (b.status === 'draft' && !b.visibility) visibility = 'draft';
+      if (b.status === 'pub' && !b.visibility && visibility === 'draft') visibility = 'public';
+    } else {
+      status = visibility === 'draft' ? 'draft' : 'pub';
+    }
+    if ((status === 'pub' || visibility !== 'draft') && p.origin === 'custom' && store.listTests(p.id).length === 0) {
+      return res.status(400).json({ error: 'Cần ít nhất 1 test trước khi xuất bản / công khai' });
     }
     upsertMeta.run(
       p.id,
       status,
       typeof b.tags === 'string' ? b.tags.slice(0, 200) : p.tags,
       typeof b.solution === 'string' ? b.solution.slice(0, 64 * 1024) : p.solution,
+      visibility,
+      JSON.stringify(allowUsers),
       Date.now(),
     );
     catalog.reload();
@@ -214,17 +255,19 @@ export function adminProblemRoutes({ db, catalog, auth, judge, store, adminStats
 
   /* Bộ subtask mặc định của bài: dùng khi thêm bài vào cuộc thi. reset = true thì quay về bộ soạn kèm bài. */
   const saveSubtasks = db.prepare(`
-    INSERT INTO problem_meta (id, status, tags, solution, subtasks, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO problem_meta (id, status, tags, solution, visibility, allow_users, subtasks, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET subtasks = excluded.subtasks, updated_at = excluded.updated_at`);
   r.put('/problems/:id/subtasks', (req, res) => {
     const p = find(req, res);
     if (!p) return;
+    const vis = p.visibility || (p.status === 'pub' ? 'public' : 'draft');
+    const ausers = JSON.stringify(p.allowUsers || []);
     if (req.body?.reset) {
-      saveSubtasks.run(p.id, p.status, p.tags, p.solution, null, Date.now());
+      saveSubtasks.run(p.id, p.status, p.tags, p.solution, vis, ausers, null, Date.now());
     } else {
       const { subtasks, error } = normalizeSubtasks(req.body?.subtasks, p.tests);
       if (error) return res.status(400).json({ error });
-      saveSubtasks.run(p.id, p.status, p.tags, p.solution, JSON.stringify(subtasks), Date.now());
+      saveSubtasks.run(p.id, p.status, p.tags, p.solution, vis, ausers, JSON.stringify(subtasks), Date.now());
     }
     catalog.reload();
     res.json(detail(catalog.problemMap.get(p.id)));

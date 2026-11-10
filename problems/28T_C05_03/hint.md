@@ -1,0 +1,1 @@
+Tìm giá trị nhỏ nhất trong mảng.

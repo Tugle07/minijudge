@@ -11,8 +11,17 @@ import { fmtCountdown, fmtDuration, fmtTime } from './contests.js';
 
 const TEMPLATES = {
   c: '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n',
+  cpp14: '#include <iostream>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    return 0;\n}\n',
   cpp: '#include <iostream>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    return 0;\n}\n',
   py: '# Đọc dữ liệu từ sys.stdin và in ra màn hình\nimport sys\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n',
+  pypy3: '# Đọc dữ liệu từ sys.stdin và in ra màn hình\nimport sys\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()\n',
+};
+const LANG_LABELS = {
+  c: 'C (C11)',
+  cpp14: 'C++ (C++14)',
+  cpp: 'C++ (C++17)',
+  py: 'Python (Python 3)',
+  pypy3: 'Python (PyPy 3)',
 };
 const HEARTBEAT_MS = 10_000;
 const POLL_MS = 800;
@@ -83,14 +92,30 @@ export async function render(ctx) {
   const now = () => Date.now() + state.offset;
 
   async function loadInfo() {
-    state.info = await api(`/api/contests/${cid}`);
-    state.offset = state.info.now - Date.now();
-    return state.info;
+    try {
+      state.info = await api(`/api/contests/${cid}`);
+      state.offset = state.info.now - Date.now();
+      return state.info;
+    } catch (err) {
+      const isRestricted = err.status === 403 || err.data?.code === 'restricted';
+      const msg = isRestricted
+        ? 'Cuộc thi này được đặt ở chế độ riêng tư, chỉ thí sinh được chỉ định mới có thể tham gia.'
+        : (err.message || 'Không tìm thấy cuộc thi');
+      ctx.view.innerHTML = `
+        <main class="page" style="max-width:720px;padding-top:48px">
+          <div class="empty-box" style="padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+            <span style="font-size:42px">${isRestricted ? '🔒' : '🔍'}</span>
+            <b style="font-size:16px">${esc(msg)}</b>
+            <button class="btn" data-go="#/contests" style="margin-top:8px">Về danh sách cuộc thi</button>
+          </div>
+        </main>`;
+      return null;
+    }
   }
   const report = (type, detail = '') => (state.preview ? Promise.resolve() : api(`/api/contests/${cid}/events`, { method: 'POST', body: { type, detail: String(detail) } }).catch(() => {}));
 
-  await loadInfo();
-  await route();
+  const loaded = await loadInfo();
+  if (loaded) await route();
 
   async function route() {
     const { contest } = state.info;
@@ -381,7 +406,7 @@ export async function render(ctx) {
             <div class="toolbar">
               ${allowedLangs.length > 1
                 ? `<select class="lang-select" data-lang aria-label="Ngôn ngữ lập trình" style="background:var(--bg3);color:var(--fg);border:1px solid var(--line);border-radius:var(--r-sm);font-weight:600;font-size:13px;padding:4px 8px;cursor:pointer;">
-                    ${allowedLangs.map((l) => `<option value="${l}" ${state.lang === l ? 'selected' : ''}>${l === 'c' ? 'C (C11)' : l === 'cpp' ? 'C++ (C++17)' : 'Python (Python 3)'}</option>`).join('')}
+                    ${allowedLangs.map((l) => `<option value="${l}" ${state.lang === l ? 'selected' : ''}>${LANG_LABELS[l] || l}</option>`).join('')}
                   </select>`
                 : `<span class="lang-chip">C11 · gcc -O2</span>`
               }

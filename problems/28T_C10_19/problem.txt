@@ -1,0 +1,6 @@
+title=Tạo địa chỉ email sinh viên 2 và mật khẩu
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

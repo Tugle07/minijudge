@@ -1,0 +1,1 @@
+Tính $r = \lceil\sqrt{N}\rceil$, kết quả là $r * r$.

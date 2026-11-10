@@ -1,0 +1,1 @@
+Số lượng số chính phương trong $[a, b]$ bằng $\lfloor\sqrt{b}\rfloor - \lceil\sqrt{a}\rceil + 1$.

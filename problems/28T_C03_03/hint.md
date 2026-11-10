@@ -1,0 +1,1 @@
+Duyệt các ước nguyên tố từ 2, chia cho đến khi không chia hết rồi tăng ước.

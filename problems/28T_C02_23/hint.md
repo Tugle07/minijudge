@@ -1,0 +1,1 @@
+Hàng thứ $i$ in ra $i$ dấu sao.

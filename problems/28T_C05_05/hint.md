@@ -1,0 +1,1 @@
+In các phần tử ở vị trí chỉ số chẵn (hoặc lẻ).

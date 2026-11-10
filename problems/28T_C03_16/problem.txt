@@ -1,0 +1,6 @@
+title=Ước chung lớn nhất, bội chung nhỏ nhất
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

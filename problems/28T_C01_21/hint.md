@@ -1,0 +1,1 @@
+Tính vị trí ếch sau $k$ bước nhảy.

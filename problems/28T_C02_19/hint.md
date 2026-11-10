@@ -1,0 +1,1 @@
+Mua được ban đầu $n / 28$ chai. Dùng vòng lặp đổi vỏ chai `vo >= 3`.

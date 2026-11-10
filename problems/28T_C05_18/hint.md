@@ -1,0 +1,1 @@
+Đếm các cặp phần tử liền kề trái dấu nhau.

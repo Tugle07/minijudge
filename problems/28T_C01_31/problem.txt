@@ -1,0 +1,6 @@
+title=Bizon the champion
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Khó
+samples=1

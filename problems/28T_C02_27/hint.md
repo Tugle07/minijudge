@@ -1,0 +1,1 @@
+Vòng lặp `while (n >= 10)` tính tổng chữ số.

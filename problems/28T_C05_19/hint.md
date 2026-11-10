@@ -1,0 +1,1 @@
+Khởi tạo và xuất mảng số nguyên.

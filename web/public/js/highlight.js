@@ -26,8 +26,8 @@ const TOKEN_RE_PY = /(#.*$)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')|(\b\d+(?:\.\
 const span = (text, color) => `<span style="color:var(${color})">${esc(text)}</span>`;
 
 function highlightLine(line, lang = 'c') {
-  const isPy = lang === 'py' || lang === 'python';
-  const isCpp = lang === 'cpp' || lang === 'c++';
+  const isPy = lang === 'py' || lang === 'python' || lang === 'pypy' || lang === 'pypy3';
+  const isCpp = lang === 'cpp' || lang === 'cpp14' || lang === 'cpp17' || lang === 'c++';
 
   if (!isPy && /^\s*#/.test(line)) return span(line, '--sp');
 

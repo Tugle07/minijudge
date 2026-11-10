@@ -7,7 +7,7 @@ import * as contestsView from './views/contests.js?v=7';
 import * as homeView from './views/home.js?v=7';
 import * as problemView from './views/problem.js?v=7';
 import * as profileView from './views/profile.js?v=7';
-import * as courseView from './views/course.js?v=7';
+import * as courseView from './views/course.js?v=8';
 import * as setView from './views/set.js?v=7';
 
 const topbar = document.getElementById('topbar');

@@ -1,0 +1,1 @@
+Kiểm tra mảng cân bằng nguyên tố.

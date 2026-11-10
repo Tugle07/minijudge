@@ -1,0 +1,1 @@
+Duyệt từ $1$ đến $\sqrt{n}$, nếu $i$ là ước thì cộng $i$ và $n / i$.

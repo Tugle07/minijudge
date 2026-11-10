@@ -1,0 +1,1 @@
+Tính $S = a*(b+c) + b*(a-c)$ với kiểu `long long`.

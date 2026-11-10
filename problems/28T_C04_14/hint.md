@@ -1,0 +1,1 @@
+Đếm chữ số: $1 + \text{count}(n / 10)$.

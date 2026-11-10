@@ -1,0 +1,1 @@
+So sánh 2 đầu $A[l] == A[r]$ và đệ quy thu hẹp khoảng.

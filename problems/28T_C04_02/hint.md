@@ -1,0 +1,1 @@
+Công thức $S(n) = n^2 + S(n-1)$, điều kiện dừng $n = 0$.

@@ -1,0 +1,1 @@
+Dùng vòng lặp hoặc công thức $n * (n + 1) / 2$ với kiểu `long long`.

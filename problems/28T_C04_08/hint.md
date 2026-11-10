@@ -1,0 +1,1 @@
+Thuật toán Euclid đệ quy tìm GCD: `gcd(b, a % b)`.

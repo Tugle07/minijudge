@@ -1,0 +1,1 @@
+Kiểm tra từng chữ số của $N$ có thuộc tập $\{0, 6, 8\}$.

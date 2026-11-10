@@ -1,0 +1,1 @@
+Khai báo struct SinhVien gồm tên, ngày sinh, điểm GPA. Chuẩn hóa ngày sinh dạng dd/mm/yyyy.

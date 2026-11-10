@@ -1,0 +1,1 @@
+Ước chung lớn nhất của $a!$ và $b!$ chính là $(\min(a, b))!$.

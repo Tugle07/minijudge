@@ -1,0 +1,1 @@
+Phân loại tam giác: Đều (1), Cân (2), Vuông (3), Thường (4), Không hợp lệ (INVALID).

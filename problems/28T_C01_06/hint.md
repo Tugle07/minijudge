@@ -1,0 +1,1 @@
+Viết các câu lệnh `if` kiểm tra từng điều kiện theo yêu cầu đề bài.

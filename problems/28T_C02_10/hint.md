@@ -1,0 +1,1 @@
+Số nguyên tố là số $> 1$ và chỉ có 2 ước 1 và chính nó. Duyệt đến $\sqrt{n}$.

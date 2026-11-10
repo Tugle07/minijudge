@@ -1,0 +1,1 @@
+Làm tròn số thực theo quy tắc chuẩn bằng hàm `round`.

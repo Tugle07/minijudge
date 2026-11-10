@@ -1,0 +1,1 @@
+Kiểm tra ký tự in hoa (`isupper`), in thường (`islower`), chữ số (`isdigit`) hoặc ký tự đặc biệt.

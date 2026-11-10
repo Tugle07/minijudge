@@ -1,0 +1,1 @@
+Duyệt căn bậc hai từ $\lceil\sqrt{a}\rceil$ đến $\lfloor\sqrt{b}\rfloor$.

@@ -1,0 +1,1 @@
+Kiểm tra đồng thời 3 điều kiện: $N$ nguyên tố, các chữ số $\in \{2,3,5,7\}$, tổng chữ số nguyên tố.

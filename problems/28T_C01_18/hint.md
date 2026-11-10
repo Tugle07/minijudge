@@ -1,0 +1,1 @@
+Chuyển đổi ký tự hoa/thường bằng `toupper` / `tolower` hoặc cộng trừ 32.

@@ -1,0 +1,7 @@
+id=28T_C11_05
+title=Sắp xếp sinh viên theo tên
+time_ms=1000
+memory_mb=256
+difficulty=Medium
+tests=12
+samples=1

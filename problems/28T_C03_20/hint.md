@@ -1,0 +1,1 @@
+Kiểm tra tồn tại thừa số nguyên tố $p$ có số mũ $\ge 2$.

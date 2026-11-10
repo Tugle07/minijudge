@@ -132,7 +132,25 @@ export async function render(ctx) {
   const setId = parts[0];
   const initialTab = ctx.extra === 'rank' || parts[1] === 'rank' ? 'rank' : 'probs';
 
-  const { set, problems, leaderboard = [], myRank } = await api(`/api/sets/${encodeURIComponent(setId)}`);
+  let setData;
+  try {
+    setData = await api(`/api/sets/${encodeURIComponent(setId)}`);
+  } catch (err) {
+    const isRestricted = err.status === 403 || err.data?.code === 'restricted';
+    const msg = isRestricted
+      ? 'Khối bài tập này được đặt ở chế độ riêng tư, chỉ tài khoản được chỉ định mới có thể truy cập.'
+      : (err.message || 'Không tìm thấy khối bài');
+    ctx.view.innerHTML = `
+      <main class="page" style="max-width:720px;padding-top:48px">
+        <div class="empty-box" style="padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px">
+          <span style="font-size:42px">${isRestricted ? '🔒' : '🔍'}</span>
+          <b style="font-size:16px">${esc(msg)}</b>
+          <button class="btn" data-go="#/home" style="margin-top:8px">Về danh sách bài tập</button>
+        </div>
+      </main>`;
+    return;
+  }
+  const { set, problems, leaderboard = [], myRank } = setData;
   const [label, color] = setStatus(set);
   const pct = set.count ? Math.round((set.ac / set.count) * 100) : 0;
   let activeTab = initialTab;
@@ -140,7 +158,7 @@ export async function render(ctx) {
   const problemRow = (p) => {
     const [icon, cls, title] = MY[p.my] || MY[''];
     return `
-      <button class="trow set-cols" data-go="#/problem/${encodeURIComponent(p.id)}">
+      <button class="trow set-cols" data-go="#/problem/${encodeURIComponent(p.id)}?set=${encodeURIComponent(set.id)}">
         <span class="my-icon ${cls}" title="${title}">${icon}</span>
         <span class="mono muted">${esc(p.id)}</span>
         <span class="ellipsis" style="font-weight:500">${esc(p.title)}</span>

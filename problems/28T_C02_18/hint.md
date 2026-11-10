@@ -1,0 +1,1 @@
+Kiểm tra từng chữ số có thuộc tập {2, 3, 5, 7} hay không.

@@ -1,0 +1,1 @@
+Duyệt $p$ từ 2 đến $N/2$, nếu cả $p$ và $N - p$ đều là số nguyên tố thì in ra.

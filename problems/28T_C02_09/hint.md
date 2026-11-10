@@ -1,0 +1,1 @@
+Duyệt tìm ước và nhân dồn vào biến `long long`.

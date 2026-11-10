@@ -1,0 +1,1 @@
+Ghép số may mắn nhỏ nhất.

@@ -1,0 +1,1 @@
+Nhập từng số và cộng nếu số đó chẵn.

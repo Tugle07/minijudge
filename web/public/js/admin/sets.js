@@ -4,10 +4,22 @@ import { confirmDialog, hueColor, makeSortable, openDrawer, pill, SET_STATUS, SW
 
 const DIFFS = ['Dễ', 'Trung bình', 'Khó'];
 const VIS = [
-  ['open', 'Công khai'],
-  ['hidden', 'Ẩn'],
-  ['draft', 'Nháp'],
+  ['public', '🌐 Công khai'],
+  ['unlisted', '🔗 Có link'],
+  ['restricted', '🔒 Chỉ định'],
+  ['draft', '📝 Nháp'],
 ];
+
+function setVisBadge(s) {
+  const v = s.visibility || (s.status === 'draft' ? 'draft' : s.status === 'hidden' ? 'unlisted' : 'public');
+  if (v === 'public') return pill('Công khai', 'var(--ac)');
+  if (v === 'unlisted') return pill('Có link', '#0284c7');
+  if (v === 'restricted') {
+    const n = Array.isArray(s.allowUsers) ? s.allowUsers.length : 0;
+    return pill(`Chỉ định (${n})`, '#ea580c');
+  }
+  return pill('Nháp', 'var(--pd)');
+}
 /* datetime-local cần dạng YYYY-MM-DDTHH:mm; ngày không kèm giờ (từ sets.json) hiểu là 23:59 ngày đó. */
 const toLocal = (v) => (!v ? '' : String(v).length === 10 ? `${v}T23:59` : String(v).slice(0, 16));
 const deadlineLabel = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}${d.length > 10 ? ` ${d.slice(11, 16)}` : ''}` : '—');
@@ -38,7 +50,15 @@ export async function render(ctx) {
       if (q && !`${s.title} ${s.id} ${s.group || ''} ${(s.tags || []).join(' ')}`.toLowerCase().includes(q)) return false;
       if (groupFilter === '__unassigned__' && (s.group || '').trim()) return false;
       if (groupFilter !== 'all' && groupFilter !== '__unassigned__' && (s.group || '').trim() !== groupFilter) return false;
-      if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+      if (statusFilter !== 'all') {
+        const v = s.visibility || (s.status === 'draft' ? 'draft' : s.status === 'hidden' ? 'unlisted' : 'public');
+        if (statusFilter === 'public' && v !== 'public' && s.status !== 'open') return false;
+        if (statusFilter === 'unlisted' && v !== 'unlisted' && s.status !== 'hidden') return false;
+        if (statusFilter === 'restricted' && v !== 'restricted') return false;
+        if (statusFilter === 'draft' && v !== 'draft' && s.status !== 'draft') return false;
+        if (statusFilter === 'open' && (s.status !== 'open' && s.status !== 'closed')) return false;
+        if (statusFilter === 'hidden' && s.status !== 'hidden') return false;
+      }
       return true;
     });
 
@@ -55,9 +75,10 @@ export async function render(ctx) {
         </select>
         <select class="ctl" data-status-filter style="max-width:160px">
           <option value="all" ${statusFilter === 'all' ? 'selected' : ''}>Mọi trạng thái</option>
-          <option value="open" ${statusFilter === 'open' ? 'selected' : ''}>Công khai</option>
-          <option value="hidden" ${statusFilter === 'hidden' ? 'selected' : ''}>Ẩn</option>
-          <option value="draft" ${statusFilter === 'draft' ? 'selected' : ''}>Nháp</option>
+          <option value="public" ${statusFilter === 'public' ? 'selected' : ''}>🌐 Công khai</option>
+          <option value="unlisted" ${statusFilter === 'unlisted' ? 'selected' : ''}>🔗 Có link</option>
+          <option value="restricted" ${statusFilter === 'restricted' ? 'selected' : ''}>🔒 Chỉ định</option>
+          <option value="draft" ${statusFilter === 'draft' ? 'selected' : ''}>📝 Nháp</option>
         </select>
         <span class="count" style="margin-left:auto">${filtered.length}/${sets.length} khối</span>
       </div>
@@ -75,10 +96,11 @@ export async function render(ctx) {
               <option value="__unassigned__">— Gỡ khỏi khóa (Khối tự do) —</option>
             </select>
             <select class="ctl" data-bulk-status style="font-size:13px;padding:4px 10px;border-radius:6px;background:var(--bg)">
-              <option value="">⚡ Đổi trạng thái nhanh…</option>
-              <option value="open">Công khai</option>
-              <option value="hidden">Ẩn khỏi sinh viên</option>
-              <option value="draft">Bản nháp</option>
+              <option value="">⚡ Đổi chế độ hiển thị…</option>
+              <option value="public">🌐 Công khai</option>
+              <option value="unlisted">🔗 Chỉ xem khi có link</option>
+              <option value="restricted">🔒 Chỉ định tài khoản</option>
+              <option value="draft">📝 Bản nháp</option>
             </select>
             <button type="button" class="btn-ghost" data-bulk-clear style="font-size:13px;padding:4px 10px;border:1px solid var(--line2)">✕ Bỏ chọn</button>
           </div>
@@ -124,7 +146,7 @@ export async function render(ctx) {
                   }
                 </td>
                 <td class="num font-mono">${s.problems.length}</td>
-                <td>${pill(...SET_STATUS[s.status])}</td>
+                <td>${setVisBadge(s)}</td>
                 <td class="mono muted">${deadlineLabel(s.deadline)}</td>
                 <td>
                   <div style="display:flex;align-items:center;gap:10px">
@@ -153,8 +175,14 @@ export async function render(ctx) {
   function openEditor(set) {
     const isNew = !set;
     const f = set
-      ? { ...set, openAt: toLocal(set.openAt), deadline: toLocal(set.deadline) }
-      : { title: '', group: '', desc: '', hue: SWATCH_HUES[4], tags: [], difficulty: 'Trung bình', openAt: '', deadline: '', status: 'draft', problems: [] };
+      ? {
+          ...set,
+          visibility: set.visibility || (set.status === 'draft' ? 'draft' : set.status === 'hidden' ? 'unlisted' : 'public'),
+          allowUsers: Array.isArray(set.allowUsers) ? set.allowUsers : [],
+          openAt: toLocal(set.openAt),
+          deadline: toLocal(set.deadline),
+        }
+      : { title: '', group: '', desc: '', hue: SWATCH_HUES[4], tags: [], difficulty: 'Trung bình', visibility: 'public', allowUsers: [], openAt: '', deadline: '', status: 'draft', problems: [] };
     let errors = {};
     const titleOf = (id) => problems.find((p) => p.id === id)?.title ?? id;
 
@@ -181,8 +209,16 @@ export async function render(ctx) {
         <label class="afield"><span>Hạn nộp</span><input class="input ${errors.deadline ? 'err' : ''}" type="datetime-local" data-f="deadline" value="${esc(f.deadline)}" /></label>
         ${errors.deadline ? `<span class="err-text" style="grid-column:1/-1;font-size:13px;color:var(--wa)">${esc(errors.deadline)}</span>` : ''}
       </div>
-      <div class="afield"><span>Hiển thị</span><div style="display:flex;flex-wrap:wrap;gap:16px">${VIS.map(([k, l]) => `<label style="display:flex;align-items:center;gap:7px;font-size:14.5px;cursor:pointer"><input type="radio" name="vis" value="${k}" ${f.status === k || (k === 'open' && f.status === 'closed') ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--fg)" />${l}</label>`).join('')}</div>
-        <span class="help">Công khai: sinh viên thấy khối từ thời gian mở. Khối đã qua hạn vẫn hiện, ghi "Đã đóng" nếu bạn đóng nó trong menu ⋯.</span></div>
+      <div class="afield"><span>Hiển thị & Quyền truy cập</span>
+        <div style="display:flex;flex-wrap:wrap;gap:16px">${VIS.map(([k, l]) => `<label style="display:flex;align-items:center;gap:7px;font-size:14px;cursor:pointer"><input type="radio" name="vis" value="${k}" ${(f.visibility || 'public') === k ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--accent)" />${l}</label>`).join('')}</div>
+        <div data-set-allow-users-box style="margin-top:10px;${f.visibility === 'restricted' ? '' : 'display:none'}">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+            <span style="font-weight:600;font-size:12.5px;color:var(--accent)">Danh sách tài khoản được phép truy cập (Username)</span>
+            <span class="faint" style="font-size:11.5px">Mỗi tài khoản 1 dòng hoặc cách nhau bằng dấu phẩy</span>
+          </div>
+          <textarea class="input font-mono" data-f="allowUsers" rows="3" placeholder="sinhvien01, sinhvien02" style="font-size:12.5px;line-height:1.5">${esc(Array.isArray(f.allowUsers) ? f.allowUsers.join('\n') : f.allowUsers || '')}</textarea>
+        </div>
+        <span class="help">Công khai: sinh viên thấy khối từ thời gian mở. Có link: chỉ ai có link mới mở được. Chỉ định: chỉ tài khoản trong danh sách.</span></div>
       <div class="afield">
         <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:500">Bài trong khối</span><span class="faint" style="font-size:13px">${f.problems.length} bài · kéo ⋮⋮ để sắp thứ tự</span></div>
         <div style="position:relative"><input class="input" data-addq placeholder="Tìm bài để thêm (mã hoặc tên)" autocomplete="off" /><div class="suggest" data-suggest hidden></div></div>
@@ -227,7 +263,15 @@ export async function render(ctx) {
       }
     });
     el.addEventListener('change', (e) => {
-      if (e.target.name === 'vis') f.status = e.target.value;
+      if (e.target.name === 'vis') {
+        f.visibility = e.target.value;
+        if (f.visibility === 'draft') f.status = 'draft';
+        else if (f.visibility === 'unlisted') f.status = 'hidden';
+        else f.status = 'open';
+        const box = el.querySelector('[data-set-allow-users-box]');
+        if (box) box.style.display = f.visibility === 'restricted' ? 'block' : 'none';
+        return;
+      }
       if (e.target.dataset.f === 'group-select') {
         const v = e.target.value;
         const newInput = el.querySelector('[data-f="group-new"]');
@@ -259,7 +303,20 @@ export async function render(ctx) {
       if (t.closest('[data-add]')) return f.problems.push(t.closest('[data-add]').dataset.add), redraw();
       if (t.closest('[data-save]')) {
         try {
-          await api(`/api/admin/sets/${isNew ? 'new' : encodeURIComponent(set.id)}`, { method: 'PUT', body: { ...f, openAt: f.openAt || null, deadline: f.deadline || null } });
+          const ausersInput = el.querySelector('[data-f="allowUsers"]');
+          const allowUsers = ausersInput
+            ? ausersInput.value.split(/[\r\n,]+/).map((s) => s.trim().toLowerCase()).filter(Boolean)
+            : (Array.isArray(f.allowUsers) ? f.allowUsers : []);
+          await api(`/api/admin/sets/${isNew ? 'new' : encodeURIComponent(set.id)}`, {
+            method: 'PUT',
+            body: {
+              ...f,
+              visibility: f.visibility || 'public',
+              allowUsers,
+              openAt: f.openAt || null,
+              deadline: f.deadline || null,
+            },
+          });
           drawer.close();
           toast('Đã lưu khối');
           load();
@@ -342,7 +399,7 @@ export async function render(ctx) {
       try {
         await api('/api/admin/sets-batch', {
           method: 'POST',
-          body: { ids: Array.from(selectedIds), status: val },
+          body: { ids: Array.from(selectedIds), visibility: val, status: val },
         });
         toast(`Đã cập nhật trạng thái cho ${count} khối bài`);
         selectedIds.clear();

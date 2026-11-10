@@ -1,0 +1,6 @@
+title=Tính tổng các số xuất hiện trong xâu
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

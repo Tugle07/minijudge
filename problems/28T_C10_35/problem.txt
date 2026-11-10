@@ -1,0 +1,6 @@
+title=Số chia hết cho 6
+time_ms=1000
+memory_mb=256
+tests=12
+difficulty=Trung bình
+samples=1

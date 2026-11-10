@@ -1,0 +1,1 @@
+Sàng nguyên tố Eratosthenes kết hợp kiểm tra chữ số hàng đơn vị $\ge$ các chữ số còn lại.

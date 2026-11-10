@@ -1,0 +1,1 @@
+Đếm số phần tử lớn hơn và nhỏ hơn số $X$ cho trước.

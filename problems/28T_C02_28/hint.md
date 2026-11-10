@@ -1,0 +1,1 @@
+Cộng dồn giai thừa của từng số từ 1 đến $n$.

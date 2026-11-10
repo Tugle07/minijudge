@@ -1,0 +1,1 @@
+Kiểm tra $N$ không phải là số nguyên tố, sau đó so sánh tổng chữ số của $N$ với tổng chữ số các thừa số nguyên tố.

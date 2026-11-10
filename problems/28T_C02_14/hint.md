@@ -1,0 +1,1 @@
+Dùng kiểu `long long` để tránh tràn số.

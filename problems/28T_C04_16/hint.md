@@ -1,0 +1,1 @@
+Tìm $\max, \min$ giữa chữ số cuối và phần còn lại.

@@ -1,0 +1,1 @@
+Đếm số cặp nghịch thế trong mảng.

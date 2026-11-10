@@ -1,0 +1,1 @@
+Tìm các cực đại địa phương (lớn hơn 2 phần tử kề cạnh).

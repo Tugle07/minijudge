@@ -1,0 +1,1 @@
+Đếm số lượng và tổng các số chẵn, lẻ trong mảng.

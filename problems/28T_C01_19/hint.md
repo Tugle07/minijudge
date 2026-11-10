@@ -1,0 +1,1 @@
+Số thanh domino tối đa xếp được vào bảng $M \times N$ là $(M * N) / 2$.

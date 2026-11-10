@@ -1,0 +1,1 @@
+Kiểm tra từng chữ số có chẵn không.

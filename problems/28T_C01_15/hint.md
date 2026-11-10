@@ -1,0 +1,1 @@
+So sánh mua 2 chai 1L ($2a$) với 1 chai 2L ($b$) để tối ưu chi phí.

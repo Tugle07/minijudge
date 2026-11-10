@@ -1,0 +1,1 @@
+Duyệt $i$ từ 1 đến $\sqrt{n}$, in ra $i * i$.

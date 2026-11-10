@@ -1,0 +1,1 @@
+Lũy thừa nhị phân đệ quy chia để trị $a^b = (a^{b/2})^2$.
